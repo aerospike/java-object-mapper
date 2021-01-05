@@ -1,0 +1,7 @@
+.classpath
+.project
+.DS_Store
+/bin/
+org.eclipse.jdt.core.prefs
+target
+org.eclipse.m2e.core.prefs
