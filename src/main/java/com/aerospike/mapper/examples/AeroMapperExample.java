@@ -2,7 +2,9 @@ package com.aerospike.mapper.examples;
 
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
 
 import com.aerospike.client.AerospikeClient;
@@ -16,37 +18,6 @@ public class AeroMapperExample {
 		
 		IAerospikeClient client = new AerospikeClient("localhost",3000);
 		
-		/*
-		Key key = new Key("test", "testSet", 1);
-		List<Byte> bytes = new ArrayList<>();
-		bytes.add((byte)1);
-		bytes.add((byte)2);
-		bytes.add((byte)3);
-		bytes.add((byte)4);
-
-		List<Short> shorts = new ArrayList<>();
-		shorts.add((short)1);
-		shorts.add((short)2);
-		shorts.add((short)3);
-		shorts.add((short)4);
-
-		List<Integer> ints = new ArrayList<>();
-		ints.add((int)1);
-		ints.add((int)2);
-		ints.add((int)3);
-		ints.add((int)4);
-		
-		List<Long> longs = new ArrayList<>();
-		longs.add(1L);
-		longs.add(2L);
-		longs.add(3L);
-		longs.add(4L);
-		
-		client.put(null, key, new Bin("bytes", bytes), new Bin("shorts", shorts), new Bin("ints", ints), new Bin("longs", longs));
-		
-		Record r = client.get(null, key);
-		System.out.println(r.getValue("test"));
-				*/
 		AeroMapper mapper = new AeroMapper(client);
 		
 		// The following lines are for performance reasons only, they are not required.
@@ -105,7 +76,20 @@ public class AeroMapperExample {
 		p.setLongData(new long[] {1,2,3,4,5});
 		
 		p.setAccountArray(new Account[] {a, b, c});
-
+		
+		Map<Integer, String> testMap = new HashMap<>();
+		testMap.put(4, "a");
+		testMap.put(3, "b");
+		testMap.put(2, "c");
+		testMap.put(1, "d");
+		p.setTestMap(testMap);
+		
+		Map<String, Product> products = new HashMap<>();
+		products.put("Product 1", new Product(200, 1, "Product 200v1", ProductType.CHECKING));
+		products.put("Product 2", new Product(200, 2, "Product 200v2", ProductType.CHECKING));
+		products.put("Product 3", new Product(300, 1, "Product 300v1", ProductType.SAVINGS));
+		p.setProductMap(products);
+		
 		Account otherAccount = new Account();
 		otherAccount.setBalance(150);
 		otherAccount.setCrazyness(22);

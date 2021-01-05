@@ -55,9 +55,6 @@ public class Person {
 	private List<String> stringList;
 	
 	@AerospikeBin
-	private Map<String, Person> map;
-	
-	@AerospikeBin
 	private String[] stringArray;
 
 	@AerospikeBin
@@ -65,8 +62,12 @@ public class Person {
 	private List<Account> accounts;
 	
 	@AerospikeBin
-	private Map<String, Account> accountMap;
+	@AerospikeEmbed(elementType = EmbedType.LIST)
+	private Map<String, Product> productMap;
 
+	@AerospikeBin
+	private Map<Integer, String> testMap;
+	
 	@AerospikeBin
 	@AerospikeEmbed(type = EmbedType.LIST)
 	private Account primaryAccount;
@@ -159,13 +160,19 @@ public class Person {
 	public void setStringList(List<String> stringList) {
 		this.stringList = stringList;
 	}
-	
-	public Map<String, Person> getMap() {
-		return map;
-	}
 
-	public void setMap(Map<String, Person> map) {
-		this.map = map;
+	public Map<String, Product> getProductMap() {
+		return productMap;
+	}
+	public void setProductMap(Map<String, Product> productMap) {
+		this.productMap = productMap;
+	}
+	
+	public Map<Integer, String> getTestMap() {
+		return testMap;
+	}
+	public void setTestMap(Map<Integer, String> testMap) {
+		this.testMap = testMap;
 	}
 
 	public String[] getStringArray() {

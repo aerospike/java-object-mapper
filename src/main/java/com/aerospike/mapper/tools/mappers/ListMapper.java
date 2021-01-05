@@ -49,6 +49,7 @@ public class ListMapper implements TypeMapper {
 		}
 		else {
 			for (Object obj : list) {
+				// TODO: Handle subclasses of the objects
 				results.add(this.instanceClassMapper.toAerospikeFormat(obj));
 			}
 		}

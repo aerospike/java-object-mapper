@@ -10,6 +10,17 @@ public class Product {
 	private ProductType type;
 	private int version;
 	
+	public Product() {
+	}
+	
+	public Product(long id, int version, String name, ProductType type) {
+		super();
+		this.id = id;
+		this.name = name;
+		this.type = type;
+		this.version = version;
+	}
+
 	@AerospikeKey
 	public String getKey() {
 		return id + ":" + version;

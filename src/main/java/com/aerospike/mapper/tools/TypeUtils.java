@@ -11,9 +11,9 @@ import java.util.Map;
 import com.aerospike.client.AerospikeException;
 import com.aerospike.mapper.annotations.AerospikeEmbed;
 import com.aerospike.mapper.annotations.AerospikeEmbed.EmbedType;
-import com.aerospike.mapper.annotations.AerospikeReference.ReferenceType;
 import com.aerospike.mapper.annotations.AerospikeRecord;
 import com.aerospike.mapper.annotations.AerospikeReference;
+import com.aerospike.mapper.annotations.AerospikeReference.ReferenceType;
 import com.aerospike.mapper.tools.mappers.ArrayMapper;
 import com.aerospike.mapper.tools.mappers.BooleanMapper;
 import com.aerospike.mapper.tools.mappers.ByteMapper;
@@ -23,6 +23,7 @@ import com.aerospike.mapper.tools.mappers.EnumMapper;
 import com.aerospike.mapper.tools.mappers.FloatMapper;
 import com.aerospike.mapper.tools.mappers.IntMapper;
 import com.aerospike.mapper.tools.mappers.ListMapper;
+import com.aerospike.mapper.tools.mappers.MapMapper;
 import com.aerospike.mapper.tools.mappers.ObjectEmbedMapper;
 import com.aerospike.mapper.tools.mappers.ObjectReferenceMapper;
 import com.aerospike.mapper.tools.mappers.ShortMapper;
@@ -32,6 +33,9 @@ public class TypeUtils {
 	
 	@SuppressWarnings("unchecked")
 	private static TypeMapper getMapper(Class<?> clazz, Type instanceType, Annotation[] annotations, AeroMapper mapper, boolean isForSubType) {
+		if (clazz == null) {
+			return null;
+		}
 		TypeMapper typeMapper = mappers.get(clazz);
 		boolean addToMap = true;
 		if (typeMapper == null) {
@@ -71,15 +75,19 @@ public class TypeUtils {
 				if (instanceType instanceof ParameterizedType) {
 					ParameterizedType paramType = (ParameterizedType)instanceType;
 					Type[] types = paramType.getActualTypeArguments();
-					System.out.println(instanceType);
-					for (int i = 0; i < types.length; i++) {
-						Class<?> clzz = (Class<?>)types[i];
-						System.out.printf("   %d - class = %s, typename = %s\n", i, clzz.getName(), types[i].getTypeName());
+					if (types.length != 2) {
+						throw new AerospikeException(String.format("Type %s is a parameterized type as expected, but has %d type parameters, not the expected 2", clazz.getName(), types.length));
 					}
 					
+					Class<?> keyClazz = (Class<?>)types[0];
+					Class<?> itemClazz = (Class<?>)types[1];
+					TypeMapper keyMapper = getMapper(keyClazz, instanceType, annotations, mapper, true);
+					TypeMapper itemMapper = getMapper(itemClazz, instanceType, annotations, mapper, true);
+					typeMapper = new MapMapper(clazz, keyClazz, itemClazz, keyMapper, itemMapper,  mapper);
+
 				}
 				else {
-					System.out.println("non parameterized map - " + instanceType);
+					typeMapper = new MapMapper(clazz, null, null, null, null, mapper);
 				}
 				addToMap = false;
 			}
@@ -96,7 +104,6 @@ public class TypeUtils {
 					typeMapper = new ListMapper(clazz, subClazz, subMapper,  mapper);
 				}
 				else {
-					System.out.println("non parameterized map - " + instanceType);
 					typeMapper = new ListMapper(clazz, null, null, mapper);
 				}
 				addToMap = false;
