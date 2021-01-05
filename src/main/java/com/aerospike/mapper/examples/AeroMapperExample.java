@@ -25,7 +25,7 @@ public class AeroMapperExample {
 		mapper.preLoadClass(Person.class);
 		mapper.preLoadClass(Product.class);
 
-		for (int i = 0; i < 1; i++) {
+		for (int i = 0; i < 100; i++) {
 		
 		Account a = new Account();
 		a.setBalance(100);

@@ -176,10 +176,10 @@ public static class Test {
 }
 ```
 
-This saves the record with 4 bins, a,c,d. If a field is marked with both @AerospikeExclude and @AerospikeBin, the bin will _not_ be mapped to the database.
+This saves the record with 3 bins, a,c,d. If a field is marked with both @AerospikeExclude and @AerospikeBin, the bin will _not_ be mapped to the database.
 
 ## Properties
-A pair of methods comprising a getter and setter can also be mapped to a field in the database. These should be annotated with @AerospikeGetter and @AerospikeSetter respectively and the name attribute of these annotations must be provided. The getter must take no arguments and return something, and the setter must return void and take 1 parameter of the same time as the getter return value. Both a setter and a getter must be provided, an exception will be thrown otherwise.
+A pair of methods comprising a getter and setter can also be mapped to a field in the database. These should be annotated with @AerospikeGetter and @AerospikeSetter respectively and the name attribute of these annotations must be provided. The getter must take no arguments and return something, and the setter must return void and take 1 parameter of the same type as the getter return value. Both a setter and a getter must be provided, an exception will be thrown otherwise.
 
 Let's look at an example:
 
@@ -200,8 +200,108 @@ This will create a bin in the database with the name "bob".
 The mapper has 2 ways of mapping child objects associated with parent objects: by reference, or embedding them.
 
 ### Associating by Reference
+A reference is used when the referenced object needs to exist as a separate entity to the referencing entity. For example, a person might have accounts, and the accounts are to be stored in their own set. They are not to be encapsulated into the person (as business logic might dictate actions are to occur on accounts irrespective of their owners).
 
-### Associating by Embedding
+To indicate that the second object is to be referenced, use the @AerospikeReference annotation:
+
+```java
+	@AerospikeRecord(namespace = "test", set = "account", mapAll = true)
+	public static class Account {
+		@AerospikeKey
+		public long id;
+		public String title;
+		public int balance;
+	}
+
+	@AerospikeRecord(namespace="test", set="people")
+	public static class Person {
+		
+	    @AerospikeKey
+	    @AerospikeBin(name="ssn")
+	    public String ssn; 
+	    @AerospikeBin
+	    public String firstName;
+	    
+	    @AerospikeBin(name="lastName")
+	    public String lastName;
+	    
+	    @AerospikeBin(name="age")
+	    public int age;
+
+		@AerospikeBin(name = "primAcc")
+		@AerospikeReference
+		public Account primaryAccount;
+	}
+	
+	Account account = new Account();
+	account.id = 103;
+	account.title = "Primary Savings Account";
+	account.balance = 137;
+	
+	Person person = new Person();
+	person.ssn = "123-456-7890";
+	person.firstName = "John";
+	person.lastName = "Doe";
+	person.age = 43;
+	person.primaryAccount = account;
+	
+	mapper.save(account);
+	mapper.save(person);
+```
+
+This code results in the following data in Aerospike:
+
+```
+aql> select * from test.account
+*************************** 1. row ***************************
+balance: 137
+id: 103
+title: "Primary Savings Account"
+
+aql> select * from test.people
+*************************** 1. row ***************************
+age: 43
+firstName: "John"
+lastName: "Doe"
+primAcc: 103
+ssn: "123-456-7890"
+```
+
+Note: the fields in this example are public for the sake of brevity. In reality, the class would have the fields private and appropriate accessors and mutators defined. But the annotations could still stay on the fields.
+
+Since the account is being saved externally to the person, it must be saved as a separate call to mapper.save(...).
+
+However, to load the data, only one call is necessary:
+
+```java
+	Person loadedPerson = mapper.read(Person.class, "123-456-7890");
+	System.out.printf("ssn = %s, name = %s %s, balance = %d",
+			loadedPerson.ssn, loadedPerson.firstName, loadedPerson.lastName,
+			loadedPerson.primaryAccount.balance);
+```
+
+which results in:
+
+```
+ssn = 123-456-7890, name = John Doe, balance = 137
+```
+
+All dependent objects which are @AerospikeRecord will be loaded, in an arbitrarily deep nested graph.
+
+If it is desired for the objects NOT to load dependent data, the reference can be marked with ```lazy = true```
+
+```java
+	@AerospikeBin(name="accts")
+	@AerospikeReference(lazy = true)
+	public List<Account> accounts;
+```
+
+in this case, when the person is loaded a the child data will NOT be loaded from the database. However, a child object (Account in this case) will be created with the id set to the value which would have been loaded. (ie ```loadedPerson.primaryAccount.id``` will be populate, but not other fields will be).
+
+
+
+
+### Aggregating by Embedding
 
 ### Versioning Links
 ## To finish
@@ -219,5 +319,8 @@ The mapper has 2 ways of mapping child objects associated with parent objects: b
 - Make all maps (esp Embedded ones) K_ORDERED
 - Add policies
 - Add interface to adaptiveMap, including changing EmbedType
+
+- Lists of references do not load children references
+- Make lists of references load the data via batch loads.
 
 
