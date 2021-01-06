@@ -13,7 +13,9 @@ import com.aerospike.mapper.annotations.AerospikeKey;
 import com.aerospike.mapper.annotations.AerospikeRecord;
 import com.aerospike.mapper.annotations.AerospikeReference;
 
-@AerospikeRecord(namespace="test", set="people")
+// The set name will read a system definition of people.set.name for the set name. If not set, it will use "people". For example:
+// -Dpeople.set.name=persons
+@AerospikeRecord(namespace="test", set="${people.set.name:people}")
 public class Person {
 	
     @AerospikeKey

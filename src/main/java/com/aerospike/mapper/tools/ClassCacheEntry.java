@@ -45,8 +45,8 @@ public class ClassCacheEntry {
 		}
 		this.clazz = clazz;
 		this.mapper = mapper;
-		this.namespace = recordDescription.namespace();
-		this.setName = recordDescription.set();
+		this.namespace = ParserUtils.getInstance().get(recordDescription.namespace());
+		this.setName = ParserUtils.getInstance().get(recordDescription.set());
 		this.ttl = recordDescription.ttl();
 		this.mapAll = recordDescription.mapAll();
 		this.version = recordDescription.version();
@@ -85,13 +85,13 @@ public class ClassCacheEntry {
 			}
 			if (thisMethod.isAnnotationPresent(AerospikeGetter.class)) {
 				AerospikeGetter getter = thisMethod.getAnnotation(AerospikeGetter.class);
-				PropertyDefinition thisProperty = getOrCreateProperty(getter.name(), properties);
+				PropertyDefinition thisProperty = getOrCreateProperty(ParserUtils.getInstance().get(ParserUtils.getInstance().get(getter.name())), properties);
 				thisProperty.setGetter(thisMethod);
 			}
 			
 			if (thisMethod.isAnnotationPresent(AerospikeSetter.class)) {
 				AerospikeSetter setter = thisMethod.getAnnotation(AerospikeSetter.class);
-				PropertyDefinition thisProperty = getOrCreateProperty(setter.name(), properties);
+				PropertyDefinition thisProperty = getOrCreateProperty(ParserUtils.getInstance().get(ParserUtils.getInstance().get(setter.name())), properties);
 				thisProperty.setSetter(thisMethod);
 			}
 		}
@@ -138,12 +138,13 @@ public class ClassCacheEntry {
 				// This field needs to be mapped
 				thisField.setAccessible(true);
 				AerospikeBin bin = thisField.getAnnotation(AerospikeBin.class);
+				String binName = bin == null ? null : ParserUtils.getInstance().get(bin.name()); 
 				String name;
-				if (bin == null || StringUtils.isBlank(bin.name())) {
+				if (bin == null || StringUtils.isBlank(binName)) {
 					name = thisField.getName();
 				}
 				else {
-					name = bin.name();
+					name = binName;
 				}
 				
 				if (this.values.get(name) != null) {

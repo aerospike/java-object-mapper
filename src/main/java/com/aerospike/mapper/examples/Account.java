@@ -12,7 +12,8 @@ import com.aerospike.mapper.annotations.AerospikeSetter;
 public class Account {
 	@AerospikeKey
 	private long id;
-	@AerospikeBin(name="t")
+	// Allow the "title" bin to be called something else by setting this environment variable. If not set, it will be "title"
+	@AerospikeBin(name="#{ACCOUNT_TITLE_BIN_NAME}")
 	private String title;
 	private int balance;
 	

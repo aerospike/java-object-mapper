@@ -168,6 +168,8 @@ public class TypeUtils {
 				Short.class.equals(clazz) ||
 				Byte.TYPE.equals(clazz) ||
 				Byte.class.equals(clazz) ||
+				Double.TYPE.equals(clazz) ||
+				Double.class.equals(clazz) ||
 				String.class.equals(clazz);
 	}
 }
