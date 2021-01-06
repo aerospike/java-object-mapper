@@ -353,7 +353,7 @@ product: MAP('{"productId":"SP-1", "name":"Sample Product", "createdDate":160989
 title: "Test Account"
 ```
 
-Note that the product definition is fully encapsulated inside the account with all the fields stored in a map. Since the product does not need to be selected in it's own right (it can only be accessed by reading it from the account) there is no need for the product to have an @AerospikeKey, nor was there any need to save the product in it's own right.
+Note that the product definition is fully encapsulated inside the account with all the fields stored in a map. Since the product does not need to be selected in it's own right (it can only be accessed by reading it from the account) there is no need for the product to have an @AerospikeKey, nor was there any need to save the product in it's own right. Hence this product definition as it stands would _not_ be suitable to be a reference, it must be embedded. To increase flexibility, it is recommended that all objects are given an @AerospikeKey, even if they are to be embedded.
 
 By default, embedding the child information is placed into a map, with the product bin names as the keys to the map and the values as the data in the product. This results in a very readable sub-record, but it's wasteful on space. If we have 1,000,000 accounts in our database each of which has this product, the strings "productId", "name", "createdDate" and "version" will be repeated 1,000,000 times.
 
