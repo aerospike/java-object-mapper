@@ -1,6 +1,7 @@
 package com.aerospike.mapper.tools;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 import org.junit.AfterClass;
@@ -11,6 +12,8 @@ import org.junit.Test;
 import com.aerospike.client.AerospikeClient;
 import com.aerospike.client.IAerospikeClient;
 import com.aerospike.mapper.annotations.AerospikeBin;
+import com.aerospike.mapper.annotations.AerospikeEmbed;
+import com.aerospike.mapper.annotations.AerospikeEmbed.EmbedType;
 import com.aerospike.mapper.annotations.AerospikeKey;
 import com.aerospike.mapper.annotations.AerospikeRecord;
 import com.aerospike.mapper.annotations.AerospikeReference;
@@ -30,14 +33,41 @@ public class AeroMapperDocExamples {
 		}
 	}
 	
+	@AerospikeRecord(namespace = "test", set = "product", mapAll = true) 
+	public static class Product {
+		public String productId;
+		public int version;
+		public String name;
+		public Date createdDate;
+	}
+	
 	@AerospikeRecord(namespace = "test", set = "account", mapAll = true)
 	public static class Account {
 		@AerospikeKey
 		public long id;
 		public String title;
 		public int balance;
+		@AerospikeEmbed(type = EmbedType.LIST)
+		public Product product;
 	}
 
+	
+	@Test
+	public void runEmbed() {
+		Product product = new Product();
+		product.createdDate = new Date();
+		product.name = "Sample Product";
+		product.productId = "SP-1";
+		product.version = 1;
+		
+		Account account = new Account();
+		account.id = 123;
+		account.title = "Test Account";
+		account.balance = 111;
+		account.product = product;
+		
+		mapper.save(account);
+	}
 	@AerospikeRecord(namespace="test", set="people")
 	public static class Person {
 		
@@ -70,7 +100,7 @@ public class AeroMapperDocExamples {
 		client.truncate(null, NAMESPACE, "account", null);
 	}
 	
-	@Test
+//	@Test
 	public void run() {
 		Account account = new Account();
 		account.id = 103;
