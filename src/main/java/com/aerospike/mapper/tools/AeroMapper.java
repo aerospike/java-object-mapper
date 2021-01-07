@@ -1,6 +1,9 @@
 package com.aerospike.mapper.tools;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Function;
 
 import javax.validation.constraints.NotNull;
@@ -18,20 +21,54 @@ import com.aerospike.client.query.RecordSet;
 import com.aerospike.client.query.Statement;
 import com.aerospike.mapper.annotations.AerospikeKey;
 import com.aerospike.mapper.annotations.AerospikeRecord;
+import com.aerospike.mapper.annotations.FromAerospike;
+import com.aerospike.mapper.annotations.ToAerospike;
 
 
 public class AeroMapper {
 
 	private IAerospikeClient mClient;
 	
-	public AeroMapper(@NotNull IAerospikeClient client) {
+	public static class Builder {
+		private AeroMapper mapper;
+		private List<Class<?>> classesToPreload = null;
+		public Builder(IAerospikeClient client) {
+			this.mapper = new AeroMapper(client);
+		}
+
+		/**
+		 * Add in a custom type converter. The converter must have methods which implement the ToAerospike and FromAerospike annotation
+		 * @param converter
+		 * @return this object
+		 */
+		public Builder addConverter(Object converter) {
+			GenericTypeMapper mapper = new GenericTypeMapper(converter);
+			TypeUtils.addTypeMapper(mapper.getMappedClass(), mapper);
+
+			return this;
+		}
+		
+		public Builder preLoadClass(Class<?> clazz) {
+			if (classesToPreload == null) {
+				classesToPreload = new ArrayList<>();
+			}
+			classesToPreload.add(clazz);
+			return this;
+		}
+
+		public AeroMapper build() {
+			if (classesToPreload != null) {
+				for (Class<?> clazz : classesToPreload) {
+					ClassCache.getInstance().loadClass(clazz, this.mapper);		
+				}
+			}
+			return this.mapper;
+		}
+	}
+	private AeroMapper(@NotNull IAerospikeClient client) {
 		this.mClient = client;
 	}
 	
-	public void preLoadClass(Class<?> clazz) {
-		ClassCache.getInstance().loadClass(clazz, this);
-	}
-
 	public void save(@NotNull Object object) throws AerospikeException {
 		this.save(null, object);
 	}

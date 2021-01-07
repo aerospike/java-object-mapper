@@ -18,13 +18,13 @@ public class AeroMapperExample {
 		
 		IAerospikeClient client = new AerospikeClient("localhost",3000);
 		
-		AeroMapper mapper = new AeroMapper(client);
+		AeroMapper mapper = new AeroMapper.Builder(client)
+				// The following lines are for performance reasons only, they are not required.
+				.preLoadClass(Account.class)
+				.preLoadClass(Person.class)
+				.preLoadClass(Product.class)
+				.build();
 		
-		// The following lines are for performance reasons only, they are not required.
-		mapper.preLoadClass(Account.class);
-		mapper.preLoadClass(Person.class);
-		mapper.preLoadClass(Product.class);
-
 		for (int i = 0; i < 100; i++) {
 		
 		Account a = new Account();

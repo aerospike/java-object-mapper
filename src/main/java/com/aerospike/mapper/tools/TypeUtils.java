@@ -1,6 +1,7 @@
 package com.aerospike.mapper.tools;
 
 import java.lang.annotation.Annotation;
+import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.Date;
@@ -30,6 +31,21 @@ import com.aerospike.mapper.tools.mappers.ShortMapper;
 
 public class TypeUtils {
 	private static Map<Class<?>, TypeMapper> mappers = new HashMap<>();
+	
+	// package visibility
+	/**
+	 * This method adds a new type mapper into the system. This type mapper will replace any other mappers
+	 * registered for the same class. If there was another mapper for the same type already registered,
+	 * the old mapper will be replaced with this mapper and the old mapper returned.
+	 * @param clazz
+	 * @param mapper
+	 * @return
+	 */
+	static TypeMapper addTypeMapper(Class<?> clazz, TypeMapper mapper) {
+		TypeMapper returnValue = mappers.get(clazz);
+		mappers.put(clazz, mapper);
+		return returnValue;
+	}
 	
 	@SuppressWarnings("unchecked")
 	private static TypeMapper getMapper(Class<?> clazz, Type instanceType, Annotation[] annotations, AeroMapper mapper, boolean isForSubType) {
@@ -143,7 +159,6 @@ public class TypeUtils {
 	public static TypeMapper getMapper(Class<?> clazz, Type instanceType, Annotation[] annotations, AeroMapper mapper) {
 		return getMapper(clazz, instanceType, annotations, mapper, false);
 	}
-
 
 	public static boolean isByteType(Class<?> clazz) {
 		return  Byte.class.equals(clazz) ||

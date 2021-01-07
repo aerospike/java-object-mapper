@@ -95,7 +95,7 @@ public class AeroMapperDocExamples {
 	private AeroMapper mapper;
 	@Before 
 	public void setup() {
-		mapper = new AeroMapper(client);
+		mapper = new AeroMapper.Builder(client).build();
 		client.truncate(null, NAMESPACE, "people", null);
 		client.truncate(null, NAMESPACE, "account", null);
 	}

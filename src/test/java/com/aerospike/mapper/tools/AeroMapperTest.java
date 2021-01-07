@@ -39,7 +39,7 @@ public class AeroMapperTest {
 	private AeroMapper mapper;
 	@Before 
 	public void setup() {
-		mapper = new AeroMapper(client);
+		mapper = new AeroMapper.Builder(client).build();
 		client.truncate(null, NAMESPACE, "people", null);
 		client.truncate(null, NAMESPACE, "account", null);
 		client.truncate(null, NAMESPACE, "product", null);
@@ -112,7 +112,7 @@ public class AeroMapperTest {
 	@Test
 	public void testDuplicateName() {
 		try {
-			mapper.preLoadClass(DuplicateKeyClass.class);
+			new AeroMapper.Builder(client).preLoadClass(DuplicateKeyClass.class).build();
 			fail();
 		}
 		catch (Exception e) {
@@ -121,7 +121,7 @@ public class AeroMapperTest {
 	@Test
 	public void testMissingSetter() {
 		try {
-			mapper.preLoadClass(PropertyWithNoSetter.class);
+			new AeroMapper.Builder(client).preLoadClass(PropertyWithNoSetter.class).build();
 			fail();
 		}
 		catch (Exception e) {
