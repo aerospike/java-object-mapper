@@ -1,5 +1,4 @@
-# aerospike-tools
-Tools for interacting with the Aerospike database
+# Aerospike Java Mapper
 
 # Aerospike Annotations
 
