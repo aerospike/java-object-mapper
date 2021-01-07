@@ -126,18 +126,30 @@ public class TypeUtils {
 			}
 			else if (clazz.isAnnotationPresent(AerospikeRecord.class)) {
 				for (Annotation annotation : annotations) {
+					boolean throwError = false;
 					if (annotation.annotationType().equals(AerospikeReference.class)) {
-						AerospikeReference ref = (AerospikeReference)annotation;
-						typeMapper = new ObjectReferenceMapper(clazz, ref.lazy(), ref.type(), mapper);
-						addToMap = false;
-						break;
+						if (typeMapper != null) {
+							throwError = true;
+						}
+						else {
+							AerospikeReference ref = (AerospikeReference)annotation;
+							typeMapper = new ObjectReferenceMapper(clazz, ref.lazy(), ref.type(), mapper);
+							addToMap = false;
+						}
 					}
 					if (annotation.annotationType().equals(AerospikeEmbed.class)) {
 						AerospikeEmbed embed = (AerospikeEmbed)annotation;
-						EmbedType type = isForSubType ? embed.elementType() : embed.type();
-						typeMapper = new ObjectEmbedMapper(clazz, type, mapper);
-						addToMap = false;
-						break;
+						if (typeMapper != null) {
+							throwError = true;
+						}
+						else {
+							EmbedType type = isForSubType ? embed.elementType() : embed.type();
+							typeMapper = new ObjectEmbedMapper(clazz, type, mapper);
+							addToMap = false;
+						}
+					}
+					if (throwError) {
+						throw new AerospikeException(String.format("A class with a reference to %s specifies multiple annotations for storing the reference", clazz.getName()));
 					}
 				}
 				if (typeMapper == null) {

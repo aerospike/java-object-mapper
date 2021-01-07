@@ -423,17 +423,15 @@ In this case, if the environment variable ``ACCOUNT_TITLE_BIN_NAME`` is set, tha
 - maps of embedded objects
 - lists of referenced objects
 - maps of referenced objects
-- Check arrays of scalars map to the database correctly
+- Check arrays of scalars map to the database correctly and back
 - If a class is only used for embedding, it does not need a set attribute or namespace attribute
 - Add in a method to add an entry to a collection, get a range from a collection, delete from a collection
 - Add a "Save(instance, String ...)" which will perform an update on the desired fields rather than a full replace
 - Add in a Update(instance, String ...) method to retrieve on selected properties. The update should be applied to the passed instance and the instance returned.
 - Validate some of the limits, eg bin name length, set name length, etc.
-- Custom type mappers -- called first before standard ones, no annotations needed
 - Make all maps (esp Embedded ones) K_ORDERED
-- Add policies
+- Add policies. Maybe drive via annotations? Certainly need a "sendKey" annotation property.
 - Add interface to adaptiveMap, including changing EmbedType
-
 - Lists of references do not load children references
 - Make lists of references load the data via batch loads.
 
