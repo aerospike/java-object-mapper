@@ -1,4 +1,4 @@
-# Aerospike Java Mapper
+# Aerospike Java Object Mapper
 
 # Aerospike Annotations
 
