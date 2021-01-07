@@ -387,6 +387,36 @@ This is far more compact and wastes less space, but has an issue: How do you add
 
 #### Versioning Links
 
+## Advanced Features
+### Placeholder replacement
+Sometimes it is desirable to have the parameters to the annotations not being hard coded. For example, it might be desirable to have different namespaces for dev, test, staging and production. Annotations in Java must have constant parameters, so they cannot be pulled from environment variables, system properties, etc.
+
+To work around this, the parameters to annotations which are strings can be driven by environment variables or system properties using a special syntax. This is particularly prevalent for namespace names, set names and bin names.
+
+For an environment variable the syntax is: ``"#{ENV_VAR_NAME}"`` or ``#{ENV_VAR_NAME:default_value}``. For system properties, the syntax is ``${system.property.name}"`` or ``${system.property.name:default_value}"``.
+
+For example:
+
+```java
+@AerospikeRecord(namespace="test", set="${people.set.name:people}")
+public class Person {
+```
+
+In this case, if the ``people.set.name`` system parameter is set, that value will be used for the set name. If it is not set, ``people`` will be used as the set name. The system property can be set on the command line in this case using syntax similar to:
+
+```
+-Dpeople.set.name=person
+```
+
+An example using an environment variable:
+
+```java
+@AerospikeBin(name="#{ACCOUNT_TITLE_BIN_NAME}")
+private String title;
+```
+
+In this case, if the environment variable ``ACCOUNT_TITLE_BIN_NAME`` is set, that will be the name of the bin which is used. If it is not set, it will be like the annotation does not specify the ``name`` paramteter at all, which means that the field name (``title``) will be used for the bin name.
+
 
 ## To finish
 - lists of embedded objects
