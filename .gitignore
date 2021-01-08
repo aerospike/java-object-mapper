@@ -1,7 +1,18 @@
-.classpath
+## Maven
+target/
+
+## Eclipse
+.settings/
 .project
+.classpath
+
+## IntelliJ
+out/
+.idea/
+.idea_modules/
+*.iml
+*.ipr
+*.iws
+
+## OS X
 .DS_Store
-/bin/
-org.eclipse.jdt.core.prefs
-target
-org.eclipse.m2e.core.prefs
