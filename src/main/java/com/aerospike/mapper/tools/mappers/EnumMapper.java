@@ -5,14 +5,14 @@ import com.aerospike.mapper.tools.TypeMapper;
 
 public class EnumMapper implements TypeMapper {
 
-	private Class<? extends Enum<?>> clazz;
+	private final Class<? extends Enum<?>> clazz;
 	
 	public EnumMapper(Class<? extends Enum<?>> clazz) {
 		this.clazz = clazz;
 	}
 	@Override
 	public Object toAerospikeFormat(Object value) {
-		return ((Enum<?>)value).toString();
+		return value.toString();
 	}
 
 	@Override
