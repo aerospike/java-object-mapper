@@ -37,7 +37,7 @@
 		<dependency>
 		    <groupId>com.aerospike</groupId>
 		    <artifactId>aerospike-client</artifactId>
-		    <version>4.4.10</version>
+		    <version>5.0.2</version>
 		</dependency>
 		
 		
@@ -80,7 +80,7 @@
 					<archive>
 						<manifest>
 							<addClasspath>true</addClasspath>
-							<mainClass>com.aerospike.mapper.examples.AeroMapperExample</mainClass>
+							<mainClass>com.aerospike.mapper.AeroMapperExample</mainClass>
 						</manifest>
 					</archive>
 					<finalName>${project.artifactId}-${project.version}-full</finalName>
