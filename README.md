@@ -1,30 +1,20 @@
 # Aerospike Java Object Mapper
 
-# Aerospike Annotations
+[Aerospike](https://www.aerospike.com) is one of, if not the fastest, NoSQL database in the world. It presents a Java API which is comprehensive and powerful, but requires a measure of boilder plate code to map the data from Java POJOs to the database. The aim of this repository is to lower the amount of code required when mapping POJOs to Aerospike and back as well as reducing some of the brittleness of the code.
 
-Annotations simplify reading and writing objects to the Aerospike database. For example, consider the code below that saves a Person object to Aerospike.
+Consider a simple class:
 
 ```java
-@AerospikeRecord(namespace="test", set="people")
 public class Person {
-	
-    @AerospikeKey
-    @AerospikeBin(name="ssn")
-    private String ssn; 
-
-    @AerospikeBin(name="firstName")
+	private String ssn;
     private String firstName;
-    
-    @AerospikeBin(name="lastName")
     private String lastName;
-    
-    @AerospikeBin(name="age")
-    private long age;
+    private int age;
+    private Date dob;
     
     public String getSsn() {
 	return ssn;
     }
-
     public void setSsn(String ssn) {
 	this.ssn = ssn;
     }
@@ -32,7 +22,6 @@ public class Person {
     public String getFirstName() {
 	return firstName;
     }
-
     public void setFirstName(String firstName) {
 	this.firstName = firstName;
     }
@@ -40,18 +29,110 @@ public class Person {
     public String getLastName() {
 	return lastName;
     }
-
     public void setLastName(String lastName) {
 	this.lastName = lastName;
     }
 
-    public long getAge() {
+    public int getAge() {
 	return age;
     }
+    public void setAge(int age) {
+	this.age = age;
+    }
+    
+    public Date getDob() {
+    return dob;
+    }
+    public void setDob(Date dob) {
+    this.dob = dob;
+    }
+}	
+```
+ 
+To store an instance of this class into Aerospike requires code similar to:
 
+```java
+public void save(Person person, IAerospikeClient client) {
+	long dobAsLong = (person.dob == null) ? 0 : person.dob.getTime();
+	client.put( null, new Key("test", "people", person.ssn,
+		new Bin("ssn", Value.get(person.getSsn())),
+		new Bin("lstNme", Value.get(person.getLastName())),
+		new Bin("frstNme", Value.get(person.getFirstName())),
+		new Bin("age", Value.get(person.getAge())),
+		new Bin("dob", Value.get(dobAsLong)));
+}		
+```
+
+Similarly, reading an object requires significant code:
+
+```java
+public Person get(String ssn, IAerospikeClient client) {
+	Record record = client.get(null, new Key("test", "people", ssn);
+	Person person = new Person();
+	person.setSsn(ssn);
+	person.setFirstName(record.getString("frstNme"));
+	person.setLastName(record.getString("lstNme"));
+	person.setAge(record.getInt("age");
+	long dobAsLong = record.getLong("dob");
+	person.setDoB(dobAsLong == 0 ? null : new Date(dobAsLong));
+	return person;
+}
+```
+
+This code is brittle. It has information such as the namespace name, the set name, and the names of the bins in multiple places. These should all be extracted as constants so they're only referenced once, but this adds more boilerplate code. 
+
+Additionally, there is complexity not shown in this simple example. Aerospike does not natively support all of Java types. Mapping a ``java.util.Date`` to the database requires additional code to convert to an Aerospike representation and back for example. Sub-objects which also need to be stored in the database must be handled separately. Changing the representation of the information between the database and the POJO requires additional work, such as storing a String representation of a date in Aerospike instead of a numeric representation.  
+
+This repository aims to overcome these issues and more by relying on annotations on the POJOs to describe how to map the data to Aerospike and back. For example, the same functionality is provided by this code:
+
+```java
+@AerospikeRecord(namespace="test", set="people", mapAll = true)
+public class Person {
+	
+    @AerospikeKey
+    private String ssn; 
+    @AerospikeBin(name="frstNme")
+    private String firstName;
+    
+    @AerospikeBin(name="lstNme")
+    private String lastName;
+    private int age;
+    private Date dob;
+    
+    public String getSsn() {
+	return ssn;
+    }
+    public void setSsn(String ssn) {
+	this.ssn = ssn;
+    }
+
+    public String getFirstName() {
+	return firstName;
+    }
+    public void setFirstName(String firstName) {
+	this.firstName = firstName;
+    }
+
+    public String getLastName() {
+	return lastName;
+    }
+    public void setLastName(String lastName) {
+	this.lastName = lastName;
+    }
+
+    public int getAge() {
+	return age;
+    }
     public void setAge(int age) {
 	this.age = age;
     }	
+    
+    public Date getDob() {
+    return dob;
+    }
+    public void setDob(Date dob) {
+    this.dob = dob;
+    }
 }
 ```
 
@@ -66,7 +147,7 @@ p.setAge(17);
 
 AerospikeClient client = new AerospikeClient("aerospike hostname",3000);
 AeroMapper mapper = new AeroMapper(client);
-mapper.save("test",p);
+mapper.save(p);
 ```
  
 To read:
@@ -78,7 +159,7 @@ Person person = mapper.read(Person.class, "123456789");
 To delete:
  
 ```java
- mapper.delete(person);
+mapper.delete(person);
 ```
  
 To find:
