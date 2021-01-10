@@ -1,11 +1,14 @@
 package com.aerospike.mapper.tools;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 
 import javax.validation.constraints.NotNull;
@@ -19,6 +22,7 @@ import com.aerospike.mapper.annotations.AerospikeBin;
 import com.aerospike.mapper.annotations.AerospikeExclude;
 import com.aerospike.mapper.annotations.AerospikeGetter;
 import com.aerospike.mapper.annotations.AerospikeKey;
+import com.aerospike.mapper.annotations.AerospikeOrdinal;
 import com.aerospike.mapper.annotations.AerospikeRecord;
 import com.aerospike.mapper.annotations.AerospikeSetter;
 
@@ -37,6 +41,8 @@ public class ClassCacheEntry {
 	private final int binCount;
 	private final AeroMapper mapper;
 	private final int version;
+	private Map<Integer, String> ordinals = null;
+	private Set<String> fieldsWithOrdinals = null;
 	
 	public ClassCacheEntry(@NotNull Class<?> clazz, AeroMapper mapper) {
 		AerospikeRecord recordDescription = clazz.getAnnotation(AerospikeRecord.class);
@@ -55,6 +61,37 @@ public class ClassCacheEntry {
 		this.loadPropertiesFromClass(clazz);
 		this.superClazz = ClassCache.getInstance().loadClass(this.clazz.getSuperclass(), this.mapper);
 		this.binCount = this.values.size() + (superClazz != null ? superClazz.binCount : 0);
+		this.formOrdinalsFromValues();
+		System.out.println(clazz.getTypeName());
+	}
+	
+	private void formOrdinalsFromValues() {
+		for (String thisValueName : this.values.keySet()) {
+			ValueType thisValue = this.values.get(thisValueName);
+			for (Annotation thisAnnotation : thisValue.getAnnotations()) {
+				if (thisAnnotation instanceof AerospikeOrdinal) {
+					AerospikeOrdinal ordinal = (AerospikeOrdinal) thisAnnotation;
+					if (ordinals == null) {
+						ordinals = new HashMap<>();
+						fieldsWithOrdinals = new HashSet<>();
+					}
+					if (ordinals.containsKey(ordinal.value())) {
+						throw new AerospikeException(String.format("Class %s has multiple values with the ordinal of %d", clazz.getSimpleName(), ordinal.value()));
+					}
+					ordinals.put(ordinal.value(), thisValueName);
+					fieldsWithOrdinals.add(thisValueName);
+				}
+			}
+		}
+		if (ordinals != null) {
+			// The ordinals need to be valued from 1..<numOrdinals>
+			for (int i = 1; i <= ordinals.size(); i++) {
+				if (!ordinals.containsKey(i)) {
+					throw new AerospikeException(String.format("Class %s has %d values specifying ordinals. These should be 1..%d, but %d is missing",
+							clazz.getSimpleName(), ordinals.size(), ordinals.size(), i));
+				}
+			}
+		}
 	}
 	
 	private PropertyDefinition getOrCreateProperty(String name, Map<String, PropertyDefinition> properties) {
@@ -251,24 +288,37 @@ public class ClassCacheEntry {
 		}
 	}
 	
+	private void addDataFromValueName(String name, Object instance, ClassCacheEntry thisClass, List<Object> results) throws ReflectiveOperationException {
+		ValueType value = this.values.get(name);
+		if (value.getMinimumVersion() <= thisClass.version && thisClass.version <= value.getMaximumVersion()) {
+			Object javaValue = value.get(instance);
+			Object aerospikeValue = value.getTypeMapper().toAerospikeFormat(javaValue);
+			results.add(aerospikeValue);
+		}
+	}
+	
 	public List<Object> getList(Object instance) {
 		try {
 			List<Object> results = new ArrayList<>();
+			List<Object> versionsToAdd = new ArrayList<>();
 			ClassCacheEntry thisClass = this;
 			while (thisClass != null) {
 				if (thisClass.version > 1) {
-					results.add(VERSION_PREFIX + thisClass.version);
+					versionsToAdd.add(0, VERSION_PREFIX + thisClass.version);
+				}
+				if (ordinals != null) {
+					for (int i = 1; i <= ordinals.size(); i++) {
+						addDataFromValueName(ordinals.get(i), instance, thisClass, results);
+					}
 				}
 				for (String name : this.values.keySet()) {
-					ValueType value = this.values.get(name);
-					if (value.getMinimumVersion() <= thisClass.version && thisClass.version <= value.getMaximumVersion()) {
-						Object javaValue = value.get(instance);
-						Object aerospikeValue = value.getTypeMapper().toAerospikeFormat(javaValue);
-						results.add(aerospikeValue);
+					if (fieldsWithOrdinals == null || !fieldsWithOrdinals.contains(name)) {
+						addDataFromValueName(name, instance, thisClass, results);
 					}
 				}
 				thisClass = thisClass.superClazz;
 			}
+			results.addAll(versionsToAdd);
 			return results;
 		}
 		catch (ReflectiveOperationException ref) {
@@ -301,35 +351,48 @@ public class ClassCacheEntry {
 		}
 	}
 	
+	private int setValueByField(String name, int objectVersion, int recordVersion, Object instance, int index, List<Object> list) throws ReflectiveOperationException {
+		ValueType value = this.values.get(name);
+		TypeMapper typeMapper = value.getTypeMapper();
+		// If the version of this value does not exist on this object, simply skip it. For example, V1 contains {a,b,c} but V2 contains {a,c}, skip field B
+		if (!(value.getMinimumVersion() <= objectVersion && objectVersion <= value.getMaximumVersion())) {
+			// If the version of this record in the database also contained this value, skip over the value as well as the field
+			if (value.getMinimumVersion() <= recordVersion && recordVersion <= value.getMaximumVersion()) {
+				index++;
+			}
+			return index;
+		}
+		// Otherwise only map the value if it should exist on the record in the database. 
+		if (value.getMinimumVersion() <= recordVersion && recordVersion <= value.getMaximumVersion() && index < list.size()) {
+			Object aerospikeValue = list.get(index++);
+			Object javaValue = aerospikeValue == null ? null : typeMapper.fromAerospikeFormat(aerospikeValue);
+			value.set(instance, javaValue);
+		}
+		return index;
+	}
+	
 	public void hydrateFromList(List<Object> list, Object instance) {
 		try {
 			int index = 0;
+			int endIndex = list.size();
 			ClassCacheEntry thisClass = this;
 			while (thisClass != null) {
-				if (index < list.size()) {
-					Object firstValue = list.get(index);
+				if (index < endIndex) {
+					Object lastValue = list.get(endIndex-1);
 					int recordVersion = 1;
-					if ((firstValue instanceof String) && (((String)firstValue).startsWith(VERSION_PREFIX))) {
-						recordVersion = Integer.valueOf(((String)firstValue).substring(2));
-						index++;
+					if ((lastValue instanceof String) && (((String)lastValue).startsWith(VERSION_PREFIX))) {
+						recordVersion = Integer.valueOf(((String)lastValue).substring(2));
+						endIndex--;
 					}
 					int objectVersion = thisClass.version;
-					for (String name : this.values.keySet()) {
-						ValueType value = this.values.get(name);
-						TypeMapper typeMapper = value.getTypeMapper();
-						// If the version of this value does not exist on this object, simply skip it. For example, V1 contains {a,b,c} but V2 contains {a,c}, skip field B
-						if (!(value.getMinimumVersion() <= objectVersion && objectVersion <= value.getMaximumVersion())) {
-							// If the version of this record in the database also contained this value, skip over the value as well as the field
-							if (value.getMinimumVersion() <= recordVersion && recordVersion <= value.getMaximumVersion()) {
-								index++;
-							}
-							continue;
+					if (ordinals != null) {
+						for (int i = 1; i <= ordinals.size(); i++) {
+							index = setValueByField(ordinals.get(i), objectVersion, recordVersion, instance, index, list);
 						}
-						// Otherwise only map the value if it should exist on the record in the database. 
-						if (value.getMinimumVersion() <= recordVersion && recordVersion <= value.getMaximumVersion() && index < list.size()) {
-							Object aerospikeValue = list.get(index++);
-							Object javaValue = aerospikeValue == null ? null : typeMapper.fromAerospikeFormat(aerospikeValue);
-							value.set(instance, javaValue);
+					}
+					for (String name : this.values.keySet()) {
+						if (this.fieldsWithOrdinals == null || !thisClass.fieldsWithOrdinals.contains(name)) {
+							index = setValueByField(name, objectVersion, recordVersion, instance, index, list);
 						}
 					}
 					thisClass = thisClass.superClazz;
