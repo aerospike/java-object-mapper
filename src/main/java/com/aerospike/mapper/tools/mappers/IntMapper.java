@@ -14,7 +14,6 @@ public class IntMapper implements TypeMapper {
 		if (value == null) {
 			return Integer.valueOf(0);
 		}
-		long longValue = (Long)value;
-		return Integer.valueOf((int)longValue);
+		return Integer.valueOf(((Number)value).intValue());
 	}
 }

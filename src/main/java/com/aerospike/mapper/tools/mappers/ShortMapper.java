@@ -14,7 +14,6 @@ public class ShortMapper implements TypeMapper {
 		if (value == null) {
 			return Short.valueOf((short)0);
 		}
-		long longValue = (Long)value;
-		return Short.valueOf((short)longValue);
+		return Short.valueOf(((Number)value).shortValue());
 	}
 }

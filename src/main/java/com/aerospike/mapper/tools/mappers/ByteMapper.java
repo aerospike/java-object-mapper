@@ -14,7 +14,6 @@ public class ByteMapper implements TypeMapper {
 		if (value == null) {
 			return Byte.valueOf((byte)0);
 		}
-		long longValue = (Long)value;
-		return Byte.valueOf((byte)longValue);
+		return Byte.valueOf(((Number)value).byteValue());
 	}
 }

@@ -14,7 +14,6 @@ public class FloatMapper implements TypeMapper {
 		if (value == null) {
 			return Float.valueOf(0f);
 		}
-		double doubleValue = (Double)value;
-		return Float.valueOf((float)doubleValue);
+		return Float.valueOf(((Number)value).floatValue());
 	}
 }

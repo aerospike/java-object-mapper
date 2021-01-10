@@ -2,6 +2,8 @@ package com.aerospike.mapper;
 
 import static org.junit.Assert.assertEquals;
 
+import java.util.List;
+
 import org.junit.Before;
 import org.junit.Test;
 
@@ -212,5 +214,27 @@ public class AeroMapperListTest extends AeroMapperBaseTest {
         assertEquals(4, container2.value.g);
     }
 
+    @Test
+    public void testConvenienceMethods() {
+        TestV1 value = new TestV1();
+        value.a = 1;
+        value.b = 2;
+        value.c = 3;
+        value.d = 4;
+    	List<Object> list = mapper.convertToList(value);
+    	assertEquals(4, list.size());
+    	// Note that "b" is ordinal 1, so it should be first in the list, then a, c, d
+    	assertEquals(2, list.get(0));
+    	assertEquals(1, list.get(1));
+    	assertEquals(3, list.get(2));
+    	assertEquals(4, list.get(3));
+    	
+    	TestV1 value2 = mapper.convertToObject(TestV1.class, list);
+    	assertEquals(value.a, value2.a);
+    	assertEquals(value.b, value2.b);
+    	assertEquals(value.c, value2.c);
+    	assertEquals(value.d, value2.d);
+    	
+    }
 
 }

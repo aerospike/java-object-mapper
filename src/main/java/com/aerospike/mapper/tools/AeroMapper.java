@@ -1,19 +1,26 @@
 package com.aerospike.mapper.tools;
 
-import com.aerospike.client.*;
+import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+
+import javax.validation.constraints.NotNull;
+
+import org.apache.commons.lang3.StringUtils;
+
+import com.aerospike.client.AerospikeException;
+import com.aerospike.client.Bin;
+import com.aerospike.client.IAerospikeClient;
+import com.aerospike.client.Key;
 import com.aerospike.client.Record;
+import com.aerospike.client.Value;
 import com.aerospike.client.policy.WritePolicy;
 import com.aerospike.client.query.RecordSet;
 import com.aerospike.client.query.Statement;
 import com.aerospike.mapper.annotations.AerospikeKey;
 import com.aerospike.mapper.annotations.AerospikeRecord;
-import org.apache.commons.lang3.StringUtils;
-
-import javax.validation.constraints.NotNull;
-import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.function.Function;
 
 public class AeroMapper {
 
@@ -119,7 +126,7 @@ public class AeroMapper {
             return null;
         } else {
             try {
-                T result = convertRecord(clazz, record, entry);
+                T result = convertToObject(clazz, record, entry);
                 return result;
             } catch (ReflectiveOperationException e) {
                 throw new AerospikeException(e);
@@ -272,16 +279,66 @@ public class AeroMapper {
 
     }
 
-    public <T> T convertRecord(Class<T> clazz, Record record) throws ReflectiveOperationException {
-        return convertRecord(clazz, record, null);
+    // --------------------------------------------------------------------------------------------------
+    // The following are convenience methods to convert objects to / from lists / maps / records in case
+    // it is needed to perform this operation manually. They will not be needed in most use cases.
+    // --------------------------------------------------------------------------------------------------
+    /**
+     * Given a record loaded from Aerospike and a class type, attempt to convert the record to 
+     * an instance of the passed class.
+     * @param <T>
+     * @param clazz
+     * @param record
+     * @return
+     * @throws ReflectiveOperationException
+     */
+    public <T> T convertToObject(Class<T> clazz, Record record) {
+    	try {
+    		return convertToObject(clazz, record, null);
+		} catch (ReflectiveOperationException e) {
+			throw new AerospikeException(e);
+		}    		
     }
 
-    public <T> T convertRecord(Class<T> clazz, Record record, ClassCacheEntry entry) throws ReflectiveOperationException {
+    public <T> T convertToObject(Class<T> clazz, Record record, ClassCacheEntry entry) throws ReflectiveOperationException {
         if (entry == null) {
             entry = ClassCache.getInstance().loadClass(clazz, this);
         }
         T result = clazz.getConstructor().newInstance();
         entry.hydrateFromRecord(record, result);
         return result;
+    }
+
+    public <T> T convertToObject(Class<T> clazz, List<Object> record)  {
+		try {
+	        ClassCacheEntry entry = ClassCache.getInstance().loadClass(clazz, this);
+	        T result;
+			result = clazz.getConstructor().newInstance();
+			entry.hydrateFromList(record, result);
+			return result;
+		} catch (ReflectiveOperationException e) {
+			throw new AerospikeException(e);
+		}
+    }
+
+    public <T> List<Object> convertToList(@NotNull T instance) {
+    	ClassCacheEntry entry = ClassCache.getInstance().loadClass(instance.getClass(), this);
+    	return entry.getList(instance);
+    }
+
+    public <T> T convertToObject(Class<T> clazz, Map<String,Object> record) {
+    	try {
+	        ClassCacheEntry entry = ClassCache.getInstance().loadClass(clazz, this);
+	        T result = clazz.getConstructor().newInstance();
+	        entry.hydrateFromMap(record, result);
+	        return result;
+		} catch (ReflectiveOperationException e) {
+			throw new AerospikeException(e);
+		}
+    }
+
+    public <T> Map<String, Object> convertToMap(@NotNull T instance) {
+    	ClassCacheEntry entry = ClassCache.getInstance().loadClass(instance.getClass(), this);
+    	return entry.getMap(instance);
     }
 }

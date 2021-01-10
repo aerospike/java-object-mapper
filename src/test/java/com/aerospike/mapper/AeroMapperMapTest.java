@@ -2,13 +2,14 @@ package com.aerospike.mapper;
 
 import static org.junit.Assert.assertEquals;
 
+import java.util.Map;
+
 import org.junit.Before;
 import org.junit.Test;
 
 import com.aerospike.mapper.annotations.AerospikeEmbed;
 import com.aerospike.mapper.annotations.AerospikeEmbed.EmbedType;
 import com.aerospike.mapper.annotations.AerospikeKey;
-import com.aerospike.mapper.annotations.AerospikeOrdinal;
 import com.aerospike.mapper.annotations.AerospikeRecord;
 import com.aerospike.mapper.tools.AeroMapper;
 
@@ -183,5 +184,27 @@ public class AeroMapperMapTest extends AeroMapperBaseTest {
         assertEquals(2, container2.value.d);
         assertEquals(3, container2.value.f);
         assertEquals(4, container2.value.g);
+    }
+    
+    @Test
+    public void testConvenienceMethods() {
+        TestV1 value = new TestV1();
+        value.a = 1;
+        value.b = 2;
+        value.c = 3;
+        value.d = 4;
+    	Map<String, Object> map = mapper.convertToMap(value);
+    	assertEquals(4, map.size());
+    	assertEquals(1, map.get("a"));
+    	assertEquals(2, map.get("b"));
+    	assertEquals(3, map.get("c"));
+    	assertEquals(4, map.get("d"));
+    	
+    	TestV1 value2 = mapper.convertToObject(TestV1.class, map);
+    	assertEquals(value.a, value2.a);
+    	assertEquals(value.b, value2.b);
+    	assertEquals(value.c, value2.c);
+    	assertEquals(value.d, value2.d);
+    	
     }
 }
