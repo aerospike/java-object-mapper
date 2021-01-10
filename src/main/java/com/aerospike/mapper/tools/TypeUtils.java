@@ -3,6 +3,7 @@ package com.aerospike.mapper.tools;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.time.Instant;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -21,6 +22,7 @@ import com.aerospike.mapper.tools.mappers.DateMapper;
 import com.aerospike.mapper.tools.mappers.DefaultMapper;
 import com.aerospike.mapper.tools.mappers.EnumMapper;
 import com.aerospike.mapper.tools.mappers.FloatMapper;
+import com.aerospike.mapper.tools.mappers.InstantMapper;
 import com.aerospike.mapper.tools.mappers.IntMapper;
 import com.aerospike.mapper.tools.mappers.ListMapper;
 import com.aerospike.mapper.tools.mappers.MapMapper;
@@ -56,6 +58,9 @@ public class TypeUtils {
 		if (typeMapper == null) {
 			if (Date.class.isAssignableFrom(clazz)) {
 				typeMapper = new DateMapper();
+			}
+			if (Instant.class.isAssignableFrom(clazz)) {
+				typeMapper = new InstantMapper();
 			}
 			else if (Byte.class.isAssignableFrom(clazz) || Byte.TYPE.isAssignableFrom(clazz)) {
 				typeMapper = new ByteMapper();
@@ -190,10 +195,6 @@ public class TypeUtils {
 				Integer.class.equals(clazz) ||
 				Long.TYPE.equals(clazz) ||
 				Long.class.equals(clazz) ||
-				Short.TYPE.equals(clazz) ||
-				Short.class.equals(clazz) ||
-				Byte.TYPE.equals(clazz) ||
-				Byte.class.equals(clazz) ||
 				Double.TYPE.equals(clazz) ||
 				Double.class.equals(clazz) ||
 				String.class.equals(clazz);

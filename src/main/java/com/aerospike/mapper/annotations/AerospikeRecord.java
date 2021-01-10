@@ -17,4 +17,6 @@ public @interface AerospikeRecord {
 	 */
 	boolean mapAll() default false;
 	int version() default 1;
+	boolean sendKey() default false;
+	boolean durableDelete() default false;
 }

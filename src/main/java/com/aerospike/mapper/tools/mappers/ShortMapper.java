@@ -6,7 +6,7 @@ public class ShortMapper implements TypeMapper {
 
 	@Override
 	public Object toAerospikeFormat(Object value) {
-		return value;
+		return Long.valueOf(((Number)value).longValue());
 	}
 
 	@Override

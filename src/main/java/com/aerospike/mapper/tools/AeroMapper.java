@@ -86,6 +86,7 @@ public class AeroMapper {
 
         String set = entry.getSetName();
         int ttl = entry.getTtl();
+        boolean sendKey = entry.getSendKey();
 
         long now = System.nanoTime();
         Key key = new Key(namespace, set, Value.get(entry.getKey(object)));
@@ -94,12 +95,13 @@ public class AeroMapper {
         System.out.printf("Convert to bins in %,.3fms\n", ((System.nanoTime() - now) / 1_000_000.0));
 
         WritePolicy writePolicy = null;
-        if (ttl != 0) {
+        if (ttl != 0 || sendKey) {
             writePolicy = new WritePolicy();
             writePolicy.expiration = ttl;
+            writePolicy.sendKey = sendKey;
         }
         now = System.nanoTime();
-        mClient.put(null, key, bins);
+        mClient.put(writePolicy, key, bins);
         System.out.printf("Saved to database in %,.3fms\n", ((System.nanoTime() - now) / 1_000_000.0));
     }
 
@@ -110,7 +112,6 @@ public class AeroMapper {
     public <T> T read(@NotNull Class<T> clazz, String namespace, @NotNull Object userKey) throws AerospikeException {
 
         ClassCacheEntry entry = ClassCache.getInstance().loadClass(clazz, this);
-
         if (StringUtils.isBlank(namespace)) {
             namespace = entry.getNamespace();
             if (StringUtils.isBlank(namespace)) {
@@ -119,7 +120,7 @@ public class AeroMapper {
         }
 
         String set = entry.getSetName();
-        Key key = new Key(namespace, set, Value.get(userKey));
+        Key key = new Key(namespace, set, Value.get(entry.translateKeyToAerospikeKey(userKey)));
         Record record = mClient.get(null, key);
 
         if (record == null) {
@@ -135,109 +136,31 @@ public class AeroMapper {
     }
 
     public boolean delete(@NotNull Class<?> clazz, @NotNull Object userKey) throws AerospikeException {
+        ClassCacheEntry entry = ClassCache.getInstance().loadClass(clazz, this);
+        Object asKey = entry.translateKeyToAerospikeKey(userKey);
+        Key key = new Key(entry.getNamespace(), entry.getSetName(), Value.get(asKey));
 
-        if (clazz.isAnnotationPresent(AerospikeRecord.class)) {
-            AerospikeRecord recordAnnotation = clazz.getAnnotation(AerospikeRecord.class);
-
-            String namespace = recordAnnotation.namespace();
-            if (StringUtils.isBlank(namespace)) {
-                throw new AerospikeException("Namespace not specified in annotation.");
-            }
-            String set = recordAnnotation.set();
-
-            Key key = new Key(namespace, set, Value.get(userKey));
-            return mClient.delete(null, key);
-        } else {
-            throw new AerospikeException("No annotations specified");
+        WritePolicy writePolicy = null;
+        if (entry.getDurableDelete()) {
+            writePolicy = new WritePolicy();
+            writePolicy.durableDelete = entry.getDurableDelete();
         }
-    }
 
-    public boolean delete(@NotNull Class<?> clazz, @NotNull String namespace, @NotNull Object userKey) throws AerospikeException {
-
-        if (clazz.isAnnotationPresent(AerospikeRecord.class)) {
-            AerospikeRecord recordAnnotation = clazz.getAnnotation(AerospikeRecord.class);
-
-            if (StringUtils.isBlank(namespace)) {
-                throw new AerospikeException("Namespace not specified in annotation.");
-            }
-            String set = recordAnnotation.set();
-
-            Key key = new Key(namespace, set, Value.get(userKey));
-            return mClient.delete(null, key);
-        } else {
-            throw new AerospikeException("No annotations specified");
-        }
+        return mClient.delete(writePolicy, key);
     }
 
     public boolean delete(@NotNull Object object) throws AerospikeException {
-
         Class<?> clazz = object.getClass();
-        if (clazz.isAnnotationPresent(AerospikeRecord.class)) {
-            AerospikeRecord recordAnnotation = clazz.getAnnotation(AerospikeRecord.class);
+        ClassCacheEntry entry = ClassCache.getInstance().loadClass(clazz, this);
 
-            String namespace = recordAnnotation.namespace();
-            if (StringUtils.isBlank(namespace)) {
-                throw new AerospikeException("Namespace not specified in annotation.");
-            }
+        Key key = new Key(entry.getNamespace(), entry.getSetName(), Value.get(entry.getKey(object)));
 
-            String set = recordAnnotation.set();
-
-            Key key = null;
-            try {
-                for (Field field : clazz.getDeclaredFields()) {
-                    field.setAccessible(true);
-
-                    if (field.isAnnotationPresent(AerospikeKey.class)) {
-                        key = new Key(namespace, set, Value.get(field.get(object)));
-                    }
-                }
-            } catch (IllegalAccessException e) {
-                throw new AerospikeException(e);
-            }
-
-            if (key == null) {
-                throw new AerospikeException("Null key from annotated object.");
-            } else {
-                return mClient.delete(null, key);
-            }
-        } else {
-            throw new AerospikeException("No annotations specified");
+        WritePolicy writePolicy = null;
+        if (entry.getDurableDelete()) {
+            writePolicy = new WritePolicy();
+            writePolicy.durableDelete = entry.getDurableDelete();
         }
-    }
-
-    public boolean delete(@NotNull String namespace, @NotNull Object object) throws AerospikeException {
-
-        Class<?> clazz = object.getClass();
-        if (clazz.isAnnotationPresent(AerospikeRecord.class)) {
-            AerospikeRecord recordAnnotation = clazz.getAnnotation(AerospikeRecord.class);
-
-            if (StringUtils.isBlank(namespace)) {
-                throw new AerospikeException("Namespace not specified in annotation.");
-            }
-
-            String set = recordAnnotation.set();
-
-            Key key = null;
-            try {
-                for (Field field : clazz.getDeclaredFields()) {
-                    field.setAccessible(true);
-
-                    if (field.isAnnotationPresent(AerospikeKey.class)) {
-                        key = new Key(namespace, set, Value.get(field.get(object)));
-                    }
-                }
-            } catch (IllegalAccessException e) {
-                throw new AerospikeException(e);
-            }
-
-            if (key == null) {
-                throw new AerospikeException("Null key from annotated object.");
-            } else {
-                return mClient.delete(null, key);
-            }
-        } else {
-            throw new AerospikeException("No annotations specified");
-        }
+        return mClient.delete(writePolicy, key);
     }
 
     public <T> void find(@NotNull Class<T> clazz, Function<T, Boolean> function) throws AerospikeException {

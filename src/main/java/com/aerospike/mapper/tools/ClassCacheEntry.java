@@ -34,6 +34,9 @@ public class ClassCacheEntry {
 	private final String setName;
 	private final int ttl;
 	private final boolean mapAll;
+	private final boolean sendKey;
+	private final boolean durableDelete;
+	
 	private final Class<?> clazz;
 	private ValueType key;
 	private final TreeMap<String, ValueType> values = new TreeMap<>();
@@ -56,6 +59,8 @@ public class ClassCacheEntry {
 		this.ttl = recordDescription.ttl();
 		this.mapAll = recordDescription.mapAll();
 		this.version = recordDescription.version();
+		this.sendKey = recordDescription.sendKey();
+		this.durableDelete = recordDescription.durableDelete();
 		
 		this.loadFieldsFromClass(clazz, this.mapAll);
 		this.loadPropertiesFromClass(clazz);
@@ -194,9 +199,13 @@ public class ClassCacheEntry {
 		}
 	}
 	
+	public Object translateKeyToAerospikeKey(Object key) {
+		return this.key.getTypeMapper().toAerospikeFormat(key);
+	}
+	
 	private Object _getKey(Object object) throws ReflectiveOperationException {
 		if (this.key != null) {
-			return this.key.get(object);
+			return this.translateKeyToAerospikeKey(this.key.get(object));
 		}
 		else if (superClazz != null) {
 			return this.superClazz._getKey(object);
@@ -219,7 +228,7 @@ public class ClassCacheEntry {
 	
 	private void _setKey(Object object, Object value) throws ReflectiveOperationException {
 		if (this.key != null) {
-			this.key.set(object, value);
+			this.key.set(object, this.key.getTypeMapper().fromAerospikeFormat(value));
 		}
 		else if (superClazz != null) {
 			this.superClazz._setKey(object, value);
@@ -245,6 +254,14 @@ public class ClassCacheEntry {
 	
 	public int getTtl() {
 		return ttl;
+	}
+	
+	public boolean getSendKey() {
+		return sendKey;
+	}
+	
+	public boolean getDurableDelete() {
+		return durableDelete;
 	}
 	
 	public Bin[] getBins(Object instance) {
