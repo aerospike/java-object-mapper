@@ -18,6 +18,7 @@ import com.aerospike.mapper.annotations.AerospikeReference.ReferenceType;
 import com.aerospike.mapper.tools.mappers.ArrayMapper;
 import com.aerospike.mapper.tools.mappers.BooleanMapper;
 import com.aerospike.mapper.tools.mappers.ByteMapper;
+import com.aerospike.mapper.tools.mappers.CharacterMapper;
 import com.aerospike.mapper.tools.mappers.DateMapper;
 import com.aerospike.mapper.tools.mappers.DefaultMapper;
 import com.aerospike.mapper.tools.mappers.EnumMapper;
@@ -64,6 +65,9 @@ public class TypeUtils {
 			}
 			else if (Byte.class.isAssignableFrom(clazz) || Byte.TYPE.isAssignableFrom(clazz)) {
 				typeMapper = new ByteMapper();
+			}
+			else if (Character.class.isAssignableFrom(clazz) || Character.TYPE.isAssignableFrom(clazz)) {
+				typeMapper = new CharacterMapper();
 			}
 			else if (Short.class.isAssignableFrom(clazz) || Short.TYPE.isAssignableFrom(clazz)) {
 				typeMapper = new ShortMapper();
@@ -191,8 +195,7 @@ public class TypeUtils {
 		if (clazz == null) {
 			return false;
 		}
-		return Integer.TYPE.equals(clazz) ||
-				Integer.class.equals(clazz) ||
+		return 
 				Long.TYPE.equals(clazz) ||
 				Long.class.equals(clazz) ||
 				Double.TYPE.equals(clazz) ||

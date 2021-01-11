@@ -1,5 +1,7 @@
 package com.aerospike.mapper;
 
+import static org.junit.Assert.assertEquals;
+
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
@@ -51,10 +53,24 @@ public class AeroMapperComplexClassTest extends AeroMapperBaseTest {
 		complex.meid = "ME11";
 		complex.byte4Fields = Arrays.asList(new Integer[] {1,2,3,4,5});
 		complex.byte2Fields = Arrays.asList(new Short[] {1,2,3,4,5,6,7});
-		complex.byte1Fields = Arrays.asList(new Byte[] {1,2,3});
+		complex.byte1Fields = Arrays.asList(new Byte[] {1,2,3,-1,-2,127,-128,0});
+		complex.charFields = Arrays.asList(new Character[] {9,8,7,6,0,255,245,128,127});
         mapper.save(complex);
         
         ComplexClass complex2 = mapper.read(ComplexClass.class, complex.trts);
+        for (int i= 0; i < complex.charFields.size(); i++) {
+        	assertEquals(complex.charFields.get(i), complex2.charFields.get(i));
+        }
+        for (int i= 0; i < complex.byte1Fields.size(); i++) {
+        	assertEquals(complex.byte1Fields.get(i), complex2.byte1Fields.get(i));
+        }
+        for (int i= 0; i < complex.byte2Fields.size(); i++) {
+        	assertEquals(complex.byte2Fields.get(i), complex2.byte2Fields.get(i));
+        }
+        for (int i= 0; i < complex.byte4Fields.size(); i++) {
+        	assertEquals(complex.byte4Fields.get(i), complex2.byte4Fields.get(i));
+        }
+        assertEquals(complex.trts, complex2.trts);
         System.out.println("Complex2 loaded");
 	}
 }
