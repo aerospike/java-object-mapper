@@ -1,5 +1,12 @@
 package com.aerospike.mapper;
 
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+
 import com.aerospike.client.AerospikeClient;
 import com.aerospike.client.IAerospikeClient;
 import com.aerospike.client.Key;
@@ -8,9 +15,6 @@ import com.aerospike.mapper.model.Person;
 import com.aerospike.mapper.model.Product;
 import com.aerospike.mapper.model.ProductType;
 import com.aerospike.mapper.tools.AeroMapper;
-
-import java.util.*;
-import java.util.function.Function;
 
 public class AeroMapperExample {
 

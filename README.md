@@ -440,7 +440,7 @@ By default, embedding the child information is placed into a map, with the produ
 So the other way embedded data can be stored in Aerospike is using a list. Simply change the @AerospikeEmbed annotation to be:
 
 ```java
-public static class Account {
+public class Account {
 	@AerospikeKey
 	public long id;
 	public String title;
@@ -467,6 +467,244 @@ This is far more compact and wastes less space, but has an issue: How do you add
 
 #### Versioning Links
 
+Maps and Aerospike records are self-describing -- each value has a name, so it is obvious how to map the data to the database and back. For example, if we have a class
+
+```java
+@AerospikeRecord(namespace = "test", set = "testSet", mapAll = true)
+public class IntContainer {
+	public int a;
+	public int b;
+	public int c;
+}
+```
+
+this will be stored in a map as:
+
+```
+MAP('{"a":1, "b":2, "c":3}')
+```
+
+If we later change the `IntContainer` class to remove the field `a` and add in `d` we get the class:
+
+```java
+@AerospikeRecord(namespace = "test", set = "testSet", mapAll = true)
+public class IntContainer {
+	public int a;
+	public int b;
+	public int c;
+}
+```
+
+which is stored as
+
+```
+MAP('{"b":2, "c":3, "d":4}')
+```
+
+If we had records in the database which were written with the original version of the class and read with the new version of the class, the value of field `a` in the database will be ignored and the value `d` which is not present in the database will be set to 0. So we end up with:
+
+```
+b = 2
+c = 3
+d = 0
+```
+
+However, if we store the sub-object as a list, the record in the database will be stored as:
+
+```
+LIST('[1, 2, 3]')
+```
+
+There is no information in the record to describe which field in the list maps to the values in the Aerospike POJO. So when we upgrade the object to the second version and try to read the record, we end up with
+
+```
+b = 1
+c = 2
+d = 3
+```
+ 
+This is obviously sub-optimal. Changing the underlying object has effectively invalidated the existing data in the database. Given that application maintenance in normal development lifecycles will result in changes to the object model, there has a better way to store the data.
+
+The first thing that is needed is to tell the AerospikeMapper that the data has been versioned. This can be done with the `version` attribute on the @AerospikeNamespace. If this is not specified it will default to 1. When it is changed, it should be incremented by one, and never reduced.
+
+For example, version 1 (implicitly) is:
+
+```java 
+@AerospikeRecord(namespace = "test", set = "testSet", mapAll = true)
+public static class IntContainer {
+	public int a;
+	public int b;
+	public int c;
+}
+```
+
+and version 2 is:
+
+```java 
+@AerospikeRecord(namespace = "test", set = "testSet", mapAll = true, version = 2)
+public static class IntContainer {
+	public int b;
+	public int c;
+	public int d;
+}
+```
+
+This still doesn't give us useful information to be able to map prior versions of the record. Hence, there needs to be further information which defines which fields exist in which versions of the object:
+
+```java 
+@AerospikeRecord(namespace = "test", set = "testSet", mapAll = true, version = 2)
+public static class IntContainer {
+    	@AerospikeVersion(max = 1)
+    	public int a;
+    	public int b;
+    	public int c;
+    	@AerospikeVersion(min = 2)
+    	public int d;
+}
+```
+
+Now this object can be stored in the database. As the version is 2, any information stored in field `a` with a maximum version of 1 will not be saved. The record saved in the database will look like:
+
+```
+LIST('[2, 3, 4, "@V2"]')
+```
+
+Note that a new element has been written which describes the version of the record which was written. When the record is read, this version will tell us which data maps to which fields. Let's say there are 2 records in the database, one written with version 1 and one written with version 2:
+
+```
+*************************** 1. row ***************************
+container: LIST('[1, 2, 3]')
+id: 1
+*************************** 2. row ***************************
+container: LIST('[2, 3, 4, "@V2"]')
+id: 2
+```
+
+When reading these records, the results would look like:
+
+```
+1: 
+   a = 0
+   b = 2
+   c = 3
+   d = 0
+   
+2:
+   a = 0
+   b = 2
+   c = 3
+   d = 4
+```
+
+The first object (with key `1`) has `d` = 0 since `d` was not written to the database. `a` is also 0 even though it was written to the database in the original record because version 2 of the object should not have field `a`. (The current version of the object is 2 and `a` has a maximum version of 1). The second object (with key `2`) again has `a` being 0 as it was not written to the database as well as not being valid for this version of the object.
+
+Note: This versioning assumes that the application version of the object will never regress. So, for example, it is not possible to read a version 2 database record with a version 1 application object.
+  
+
+#### List Ordinals
+
+The order of the elements in a list can be controlled. By default, all the elements in the list are ordered by the name of the fields, but -- unlike maps and bins -- sometimes there is value in changing the order of values in a list. Consider for example a financial services company who stores credit card transactions, with the transactions embedded in the account that owns them. They may be embedded in a map with the transaction id as a key, and the transaction details as a list. For example:
+
+```java
+public static enum AccountType {
+	SAVINGS, CHEQUING
+}
+@AerospikeRecord(namespace = "test", set = "accounts", mapAll = true) 
+public static class Accounts {
+	@AerospikeKey
+	public int id;
+	public String name;
+	public AccountType type;
+	@AerospikeEmbed(elementType = EmbedType.LIST)
+	public Map<String, Transactions> transactions;
+	
+	public Accounts() {
+		this.transactions = new HashMap<>();
+	}
+	public Accounts(int id, String name, AccountType type) {
+		this();
+		this.id = id;
+		this.name = name;
+		this.type = type;
+	}
+}
+
+@AerospikeRecord(namespace = "test", set = "txns", mapAll = true)
+public static class Transactions {
+	public String txnId;
+	public Instant date;
+	public double amt;
+	public String merchant;
+	public Transactions() {}
+	public Transactions(String txnId, Instant date, double amt, String merchant) {
+		super();
+		this.txnId = txnId;
+		this.date = date;
+		this.amt = amt;
+		this.merchant = merchant;
+	}
+}
+
+@Test
+public void testAccounts() {
+	Accounts account = new Accounts(1, "Savings Account", AccountType.SAVINGS);
+	Transactions txn1 = new Transactions("Txn1", Instant.now(), 100.0, "Bob's store");
+	Transactions txn2 = new Transactions("Txn2", Instant.now().minus(Duration.ofHours(8)), 134.99, "Kim's store");
+	Transactions txn3 = new Transactions("Txn3", Instant.now().minus(Duration.ofHours(20)), 75.43, "Sue's store");
+	
+	account.transactions.put(txn1.txnId, txn1);
+	account.transactions.put(txn2.txnId, txn2);
+	account.transactions.put(txn3.txnId, txn3);
+	
+	mapper.save(account);
+}
+```
+
+This gets saved in the database as:
+
+```
+id: 1
+name: "Savings Account"
+transactions: MAP('{"Txn1":[100, 1610478132904000000, "Bob's store", "Txn1"], "Txn2":[134.99, 1610449332904000000, "Kim's store", "Txn2"], "Txn3":[75.43000000000001, 1610406132907000000, "Sue's store", "Txn3"]}')
+type: "SAVINGS"
+```
+
+Here the transaction time is the second attribute in each list, and the amount is the first attribute. However, a common request is to be able to extract transaction by time. For example, in fraud detection systems, there may be a need to load the N most recent transactions. If the transactions were to be stored with the transaction time as the first element in the list, efficient CDT perations in Aerospike such as `getByValueRange(...)` can be used.
+
+This ordering can be controlled by the @AerospikeOrdinal annotation:
+
+```java
+@AerospikeRecord(namespace = "test", set = "txns", mapAll = true)
+public static class Transactions {
+	public String txnId;
+	@AerospikeOrdinal(value = 1)
+	public Instant date;
+	public double amt;
+	public String merchant;
+	public Transactions() {}
+	public Transactions(String txnId, Instant date, double amt, String merchant) {
+		super();
+		this.txnId = txnId;
+		this.date = date;
+		this.amt = amt;
+		this.merchant = merchant;
+	}
+}
+```
+
+Now the data will be saved in a different format with the transaction time the first element in the list:
+
+``` 
+id: 1
+name: "Savings Account"
+transactions: MAP('{"Txn1":[1610478716965000000, 100, "Bob's store", "Txn1"], "Txn2":[1610449916965000000, 134.99, "Kim's store", "Txn2"], "Txn3":[1610406716967000000, 75.43000000000001, "Sue's store", "Txn3"]}')
+type: "SAVINGS"
+```
+
+Multiple ordinals can be specified for a single class, but these must be sequential. So if it is desired to have the first 3 fields in a list specified, they must have @AerospikeOrdinal values of 1,2 and 3.
+
+**Note**: Ordinal fields cannot be versioned.
+  
 ## Advanced Features
 ### Placeholder replacement
 Sometimes it is desirable to have the parameters to the annotations not being hard coded. For example, it might be desirable to have different namespaces for dev, test, staging and production. Annotations in Java must have constant parameters, so they cannot be pulled from environment variables, system properties, etc.
@@ -514,5 +752,6 @@ In this case, if the environment variable ``ACCOUNT_TITLE_BIN_NAME`` is set, tha
 - Add interface to adaptiveMap, including changing EmbedType
 - Lists of references do not load children references
 - Make lists of references load the data via batch loads.
+- If an AerospikeRecord class maps to no values, throw an Exception
 
 
