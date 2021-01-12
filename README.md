@@ -752,6 +752,5 @@ In this case, if the environment variable ``ACCOUNT_TITLE_BIN_NAME`` is set, tha
 - Add interface to adaptiveMap, including changing EmbedType
 - Lists of references do not load children references
 - Make lists of references load the data via batch loads.
-- If an AerospikeRecord class maps to no values, throw an Exception
 
 

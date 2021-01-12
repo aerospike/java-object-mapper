@@ -66,6 +66,9 @@ public class ClassCacheEntry {
 		this.loadPropertiesFromClass(clazz);
 		this.superClazz = ClassCache.getInstance().loadClass(this.clazz.getSuperclass(), this.mapper);
 		this.binCount = this.values.size() + (superClazz != null ? superClazz.binCount : 0);
+		if (this.binCount == 0) {
+			throw new AerospikeException("Class " + clazz.getSimpleName() + " %s has no values defined to be stored in the database");
+		}
 		this.formOrdinalsFromValues();
 		System.out.println(clazz.getTypeName());
 	}
