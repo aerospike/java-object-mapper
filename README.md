@@ -878,6 +878,204 @@ private String title;
 
 In this case, if the environment variable ``ACCOUNT_TITLE_BIN_NAME`` is set, that will be the name of the bin which is used. If it is not set, it will be like the annotation does not specify the ``name`` paramteter at all, which means that the field name (``title``) will be used for the bin name.
 
+### Custom Mappers
+Sometimes, the representation of the data in Aerospike and the representation in Java should be very different. Consider a class which represents a playing card and another class which represents a poker hand:
+
+```java
+public enum Suit {
+    CLUBS, DIAMONDS, HEARTS, SPADES;
+}
+
+@AerospikeRecord(namespace = NAMESPACE, set = "card", mapAll = true)
+public class Card {
+    public char rank;
+    public Suit suit;
+
+    public Card() {}
+    public Card(char rank, Suit suit) {
+        super();
+        this.rank = rank;
+        this.suit = suit;
+    }
+}
+
+@AerospikeRecord(namespace = NAMESPACE, set = "poker", mapAll = true)
+public class PokerHand {
+    	@AerospikeEmbed
+    public Card playerCard1;
+    	@AerospikeEmbed
+    public Card playerCard2;
+    	@AerospikeEmbed
+    public List<Card> tableCards;
+    @AerospikeKey
+    public String id;
+
+    public PokerHand(String id, Card playerCard1, Card playerCard2, List<Card> tableCards) {
+		super();
+		this.playerCard1 = playerCard1;
+		this.playerCard2 = playerCard2;
+		this.tableCards = tableCards;
+		this.id = id;
+	}
+    
+    public PokerHand() {}
+}
+```
+
+The program to create and save a poker hand might look like:
+
+```java 
+PokerHand blackjackHand = new PokerHand(
+        "1",
+        new Card('6', Suit.SPADES),
+        new Card('9', Suit.HEARTS),
+        Arrays.asList(new Card('4', Suit.CLUBS), new Card('A', Suit.HEARTS)));
+
+AeroMapper mapper = new AeroMapper.Builder(client)
+        .build();
+
+mapper.save(blackjackHand);
+```
+
+This works, but creates a fairly verbose representation of the card in the database:
+
+```
+id: "1"
+playerCard1: MAP('{"rank":54, "suit":"SPADES"}')
+playerCard2: MAP('{"rank":57, "suit":"HEARTS"}')
+tableCards: LIST('[{"rank":52, "suit":"CLUBS"}, {"rank":65, "suit":"HEARTS"}]')
+```
+
+Why not store the whole class as a simple 2 character string, one character which is the rank, and the second is the suit?
+
+In this case, we have to create a custom mapper:
+
+```java
+public static class CardConverter {
+    @ToAerospike
+    public String toAerospike(Card card) {
+        return card.rank + card.suit.name().substring(0, 1);
+    }
+
+    @FromAerospike
+    public Card fromAerospike(String card) {
+        if (card.length() != 2) throw new AerospikeException("Unknown card: " + card);
+
+        char rank = card.charAt(0);
+        switch (card.charAt(1)) {
+            case 'C': return new Card(rank, Suit.CLUBS);
+            case 'D': return new Card(rank, Suit.DIAMONDS);
+            case 'H': return new Card(rank, Suit.HEARTS);
+            case 'S': return new Card(rank, Suit.SPADES);
+            default:
+                throw new AerospikeException("unknown suit: " + card);
+        }
+    }
+}
+```
+
+The custom converter must have a method annotated with @ToAerospike and another with @FromAerospike. The @ToAerospike method takes 1 parameter which is the representation of the card in POJO format (the `Card` type in the case) and returns the representation used to store the data in Aerospike (`String` in this case). The @FromAerospike similarly takes the Aerospike representation and returns the POJO representation. The return type of the @FromAerospike method must match the parameter type of the @ToAerospike method and vice versa. When determining how to convert a type, the AeroMapper will see if it matches the parameter to the @ToAerospike method and invoke this method.
+
+Note that custom converters take priority over in-built converters. So if it is preferred to store a java.util.Date in the database as a String instead of a number for example, this can be done using a custom type converter.
+
+Before the AeroMapper can use the custom converter, it must be told about it. This is done in the the builder:
+
+```java
+mapper = new AeroMapper.Builder(client)
+        .addConverter(new CardConverter())
+        .build();
+```
+
+Now when the object is stored in Aerospike, it is stored in a far more concise format:
+
+```
+*************************** 1. row ***************************
+id: "1"
+playerCard1: "6S"
+playerCard2: "9H"
+tableCards: LIST('["4C", "AH"]')
+```
+
+It should be noted that since the inbuilt converter system in the AeroMapper no longer needs to know about the structure of the card, the card object itself can be simplified. Instead of:
+
+```java
+@AerospikeRecord(namespace = NAMESPACE, set = "card", mapAll = true)
+public static class Card {
+    public char rank;
+    public Suit suit;
+
+    public Card() {}
+    public Card(char rank, Suit suit) {
+        super();
+        this.rank = rank;
+        this.suit = suit;
+    }
+}
+```
+
+it can now become:
+
+```java
+public static class Card {
+    public char rank;
+    public Suit suit;
+
+    public Card(char rank, Suit suit) {
+        super();
+        this.rank = rank;
+        this.suit = suit;
+    }
+}
+```
+
+Notice the removal of the annotation and the no-argument constructor. The referencing type can now become simpler too, as the Card class is seen as a primitive type, not an associated object. Instead of
+
+```java
+@AerospikeRecord(namespace = NAMESPACE, set = "poker", mapAll = true)
+public static class PokerHand {
+	@AerospikeEmbed
+    public Card playerCard1;
+	@AerospikeEmbed
+    public Card playerCard2;
+	@AerospikeEmbed
+    public List<Card> tableCards;
+    @AerospikeKey
+    public String id;
+
+    public PokerHand(String id, Card playerCard1, Card playerCard2, List<Card> tableCards) {
+		super();
+		this.playerCard1 = playerCard1;
+		this.playerCard2 = playerCard2;
+		this.tableCards = tableCards;
+		this.id = id;
+	}
+    
+    public PokerHand() {}
+}
+```
+
+It can simply become:
+
+```java
+@AerospikeRecord(namespace = NAMESPACE, set = "poker", mapAll = true)
+public static class PokerHand {
+    public Card playerCard1;
+    public Card playerCard2;
+    public List<Card> tableCards;
+    @AerospikeKey
+    public String id;
+
+    public PokerHand(String id, Card playerCard1, Card playerCard2, List<Card> tableCards) {
+		super();
+		this.playerCard1 = playerCard1;
+		this.playerCard2 = playerCard2;
+		this.tableCards = tableCards;
+		this.id = id;
+	}
+    
+    public PokerHand() {}
+}
+```
 
 ## To finish
 - lists of embedded objects
@@ -895,5 +1093,8 @@ In this case, if the environment variable ``ACCOUNT_TITLE_BIN_NAME`` is set, tha
 - Add interface to adaptiveMap, including changing EmbedType
 - Lists of references do not load children references
 - Make lists of references load the data via batch loads.
-- Consider if mapAll should default to TRUE and not FALSE
+- Make mapAll default to TRUE and not FALSE and update documentation
+- Document all parameters to annotations and examples of types
+- Document enums, dates, instants.
+- Validate that all AerospikeRecord objects have a no-arg constructor
 

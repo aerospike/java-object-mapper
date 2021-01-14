@@ -1,20 +1,22 @@
 package com.aerospike.mapper;
 
+import static org.junit.Assert.assertEquals;
+
+import java.util.Arrays;
+import java.util.List;
+
+import org.junit.Before;
+import org.junit.Test;
+
 import com.aerospike.client.AerospikeException;
 import com.aerospike.client.Key;
 import com.aerospike.client.Record;
+import com.aerospike.mapper.annotations.AerospikeEmbed;
 import com.aerospike.mapper.annotations.AerospikeKey;
 import com.aerospike.mapper.annotations.AerospikeRecord;
 import com.aerospike.mapper.annotations.FromAerospike;
 import com.aerospike.mapper.annotations.ToAerospike;
 import com.aerospike.mapper.tools.AeroMapper;
-import org.junit.Before;
-import org.junit.Test;
-
-import java.util.Arrays;
-import java.util.List;
-
-import static org.junit.Assert.assertEquals;
 
 public class AeroMapperCustomConverterTest extends AeroMapperBaseTest {
 
@@ -23,52 +25,19 @@ public class AeroMapperCustomConverterTest extends AeroMapperBaseTest {
     @Before
     public void setup() {
         mapper = new AeroMapper.Builder(client).build();
-        client.truncate(null, NAMESPACE, "testSet", null);
+        client.truncate(null, NAMESPACE, "poker", null);
     }
 
     public static enum Suit {
         CLUBS, DIAMONDS, HEARTS, SPADES;
     }
 
-    @AerospikeRecord(namespace = NAMESPACE, set = "blackjack", mapAll = true)
-    public static class BlackjackHand {
-        public Card hidden_card;
-        public List<Card> visible_cards;
-        @AerospikeKey
-        public String id;
-
-        public BlackjackHand(String id, Card hidden_card, List<Card> visible_cards) {
-            super();
-            this.id = id;
-            this.hidden_card = hidden_card;
-            this.visible_cards = visible_cards;
-        }
-
-        public BlackjackHand() {
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            BlackjackHand hand = (BlackjackHand) obj;
-            if (!this.hidden_card.equals(hand.hidden_card)) {
-                return false;
-            }
-            if (this.visible_cards.size() != hand.visible_cards.size()) {
-                return false;
-            }
-            for (int i = 0; i < this.visible_cards.size(); i++) {
-                if (!this.visible_cards.get(i).equals(hand.visible_cards.get(i))) {
-                    return false;
-                }
-            }
-            return true;
-        }
-    }
-
+    @AerospikeRecord(namespace = NAMESPACE, set = "card", mapAll = true)
     public static class Card {
-        public final char rank;
-        public final Suit suit;
+        public char rank;
+        public Suit suit;
 
+        public Card() {}
         public Card(char rank, Suit suit) {
             super();
             this.rank = rank;
@@ -82,6 +51,47 @@ public class AeroMapperCustomConverterTest extends AeroMapperBaseTest {
         }
     }
 
+    @AerospikeRecord(namespace = NAMESPACE, set = "poker", mapAll = true)
+    public static class PokerHand {
+        public Card playerCard1;
+        public Card playerCard2;
+        public List<Card> tableCards;
+        @AerospikeKey
+        public String id;
+
+        public PokerHand(String id, Card playerCard1, Card playerCard2, List<Card> tableCards) {
+			super();
+			this.playerCard1 = playerCard1;
+			this.playerCard2 = playerCard2;
+			this.tableCards = tableCards;
+			this.id = id;
+		}
+        
+        public PokerHand() {
+		}
+
+        @Override
+        public boolean equals(Object obj) {
+        	PokerHand hand = (PokerHand) obj;
+            if (!this.playerCard1.equals(hand.playerCard1)) {
+                return false;
+            }
+            if (!this.playerCard2.equals(hand.playerCard2)) {
+                return false;
+            }
+            if (this.tableCards.size() != hand.tableCards.size()) {
+                return false;
+            }
+            for (int i = 0; i < this.tableCards.size(); i++) {
+                if (!this.tableCards.get(i).equals(hand.tableCards.get(i))) {
+                    return false;
+                }
+            }
+            return true;
+        }
+    }
+
+
     public static class CardConverter {
         @ToAerospike
         public String toAerospike(Card card) {
@@ -94,39 +104,38 @@ public class AeroMapperCustomConverterTest extends AeroMapperBaseTest {
 
             char rank = card.charAt(0);
             switch (card.charAt(1)) {
-                case 'C':
-                    return new Card(rank, Suit.CLUBS);
-                case 'D':
-                    return new Card(rank, Suit.DIAMONDS);
-                case 'H':
-                    return new Card(rank, Suit.HEARTS);
-                case 'S':
-                    return new Card(rank, Suit.SPADES);
+                case 'C': return new Card(rank, Suit.CLUBS);
+                case 'D': return new Card(rank, Suit.DIAMONDS);
+                case 'H': return new Card(rank, Suit.HEARTS);
+                case 'S': return new Card(rank, Suit.SPADES);
                 default:
                     throw new AerospikeException("unknown suit: " + card);
             }
-
         }
     }
 
     @Test
     public void testSave() {
-        BlackjackHand blackjackHand = new BlackjackHand(
+    	PokerHand blackjackHand = new PokerHand(
                 "1",
                 new Card('6', Suit.SPADES),
+                new Card('9', Suit.HEARTS),
                 Arrays.asList(new Card('4', Suit.CLUBS), new Card('A', Suit.HEARTS)));
+    	
         mapper = new AeroMapper.Builder(client)
                 .addConverter(new CardConverter())
                 .build();
 
         mapper.save(blackjackHand);
 
-        BlackjackHand hand2 = mapper.read(blackjackHand.getClass(), blackjackHand.id);
+        PokerHand hand2 = mapper.read(blackjackHand.getClass(), blackjackHand.id);
         assertEquals(blackjackHand, hand2);
 
-        Record record = client.get(null, new Key(NAMESPACE, "blackjack", "1"));
-        assertEquals("6S", record.getString("hidden_card"));
-        assertEquals("4C", record.getList("visible_cards").get(0));
-        assertEquals("AH", record.getList("visible_cards").get(1));
+        Record record = client.get(null, new Key(NAMESPACE, "poker", "1"));
+        assertEquals("6S", record.getString("playerCard1"));
+        assertEquals("9H", record.getString("playerCard2"));
+        assertEquals(2,record.getList("tableCards").size());
+        assertEquals("4C", record.getList("tableCards").get(0));
+        assertEquals("AH", record.getList("tableCards").get(1));
     }
 }
