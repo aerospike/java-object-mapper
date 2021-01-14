@@ -25,6 +25,10 @@ public class ObjectReferenceMapper implements TypeMapper {
 		this.type = type;
 		AerospikeRecord record = clazz.getAnnotation(AerospikeRecord.class);
 		this.elementSetName = record.set();
+		
+		if (ReferenceType.DIGEST.equals(this.type) && this.lazy) {
+			throw new AerospikeException("An object reference to a " + clazz.getSimpleName() + " cannot be both lazy and map to a digest");
+		}
 	}
 	
 	@Override
@@ -43,8 +47,6 @@ public class ObjectReferenceMapper implements TypeMapper {
 
 	@Override
 	public Object fromAerospikeFormat(Object value) {
-		// TODO: map back from the Digest form?
-		
 		// The object should be the primary key of the referencing object
 		if (value == null) {
 			return null;
@@ -61,7 +63,12 @@ public class ObjectReferenceMapper implements TypeMapper {
 			}
 		}
 		else {
-			return mapper.read(referencedClass, value);
+			if (ReferenceType.DIGEST.equals(type)) {
+				return mapper.readFromDigest(referencedClass, (byte[]) value);
+			}
+			else {
+				return mapper.read(referencedClass, value);
+			}
 		}
 	}
 

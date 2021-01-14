@@ -277,7 +277,93 @@ public int getCrazyness() {
 This will create a bin in the database with the name "bob".
 
 ## References to other objects
-The mapper has 2 ways of mapping child objects associated with parent objects: by reference, or embedding them.
+The mapper has 2 ways of mapping child objects associated with parent objects: by reference, or embedding them. Further, embedded objects can be stored either as lists or maps. All of this is controlled by annotations on the owning (parent) class.
+
+Let's see this with and example. Let's define 2 classes, `Parent` and `Child`:
+
+```java
+@AerospikeRecord(namespace = "test", set = "parent", mapAll = true)
+public static class Parent {
+	@AerospikeKey
+	int id;
+	String name;
+	
+	@AerospikeEmbed(type = EmbedType.MAP)
+	public Child mapEmbedChild;
+	
+	@AerospikeEmbed(type = EmbedType.LIST)
+	public Child listEmbedChild;
+
+	@AerospikeReference
+	public Child refChild;
+
+	public Parent(int id, String name, Child child) {
+		super();
+		this.id = id;
+		this.name = name;
+		this.mapEmbedChild = child;
+		this.listEmbedChild = child;
+		this.refChild = child;
+	}
+}
+
+@AerospikeRecord(namespace = "test", set = "child", mapAll = true)
+public static class Child {
+	@AerospikeKey
+	int id;
+	String name;
+	Date date;
+
+	public Child(int id, String name, Date date) {
+		super();
+		this.id = id;
+		this.name = name;
+		this.date = date;
+	}
+}
+```
+
+This is obviously a contrived example -- we're storing 3 copies of the same `Child` in 3 different ways. The only difference in the way the child is referenced is the annotation: `@AerospikeEmbed(type = EmbedType.MAP)` will store the child in a map as part of the parent, `@AerospikeEmbed(type = EmbedType.LIST)` will store this child as a list, and `@AerospikeReference` will not store the child at all, but rather the key of the child so it can be loaded when needed.
+
+To make use of these definitions, we create a parent and a child:
+
+```java
+Child child = new Child(123, "child", new Date());
+Parent parent = new Parent(10, "parent", child);
+mapper.save(parent);
+
+// Since the child is referenced, it needs to be saved explicitly in the database
+// If it were only embedded, it would not be necessary to save explicitly.
+mapper.save(child);
+```
+
+The object is now saved in Aerospike. Looking at the objects in the database, we see:
+
+```
+aql> select * from test.child
+*************************** 1. row ***************************
+date: 1610640142173
+id: 1
+name: "child"
+
+1 row in set (0.791 secs)
+
+OK
+
+aql> select * from test.parent
+*************************** 1. row ***************************
+id: 10
+listEmbedChild: LIST('[1610640142173, 1, "child"]')
+mapEmbedChild: MAP('{"name":"child", "date":1610640142173, "id":1}')
+name: "parent"
+refChild: 123
+
+1 row in set (0.785 secs)
+
+OK
+```
+
+Let's dig into these further.
 
 ### Associating by Reference
 A reference is used when the referenced object needs to exist as a separate entity to the referencing entity. For example, a person might have accounts, and the accounts are to be stored in their own set. They are not to be encapsulated into the person (as business logic might dictate actions are to occur on accounts irrespective of their owners).
@@ -366,21 +452,78 @@ which results in:
 ssn = 123-456-7890, name = John Doe, balance = 137
 ```
 
+and an object graph of
+
+```
+loadedPerson : Person
+-  firstName : "John"
+-  LastName : "Doe"
+-  PrimaryAccount : Account
+  - balance : 137
+  - id : 103
+  - title : "Primary Savings Account" 
+```
+
 All dependent objects which are @AerospikeRecord will be loaded, in an arbitrarily deep nested graph.
 
 If it is desired for the objects NOT to load dependent data, the reference can be marked with ```lazy = true```
 
 ```java
-@AerospikeBin(name="accts")
+@AerospikeBin(name = "primAcc")
 @AerospikeReference(lazy = true)
-public List<Account> accounts;
+public Account primaryAccount;
 ```
 
-in this case, when the person is loaded a the child data will NOT be loaded from the database. However, a child object (Account in this case) will be created with the id set to the value which would have been loaded. (ie ```loadedPerson.primaryAccount.id``` will be populate, but not other fields will be).
+in this case, when the person is loaded a the child data will NOT be loaded from the database. However, a child object (Account in this case) will be created with the id set to the value which would have been loaded. (ie ```loadedPerson.primaryAccount.id``` will be populate, but not other fields will be). So the Person and Account objects in Java would look like
+
+```
+loadedPerson : Person
+-  firstName : "John"
+-  LastName : "Doe"
+-  PrimaryAccount : Account
+  - balance : 0
+  - id : 103
+  - title : null 
+```
 
 Note that if a reference to an AerospikeRecord annotated object exists, but the reference has neither @AerospikeReference nor @AerospikeEmbed (see below), then it is assumed it will be @AerospikeReference(lazy = false).
 
+There are times when it makes sense to store the digest of the child record as the reference rather than it's primary key. For example, if the native primary key is of significant length then storing a fixed 20-byte digest makes sense. This can be accomplished by adding `type = ReferenceType.DIGEST` to the @AeropikeReference. For example:
 
+```java
+@AerospikeRecord(namespace = "test", set = "people", mapAll = true)
+public static class Person {
+    @AerospikeKey
+    public String ssn;
+    public String firstName;
+    public String lastName;
+    public int age;
+
+    @AerospikeBin(name = "primAcc")
+    @AerospikeReference(type = ReferenceType.DIGEST)
+    public Account primaryAccount;
+} 
+```
+
+This is will store the digest of the primary account in the database instead of the id:
+
+```
+*************************** 1. row ***************************
+accts: LIST('[101, 102]')
+age: 43
+firstName: "John"
+lastName: "Doe"
+primAcc: 03 A7 08 92 E3 77 BC 2A 12 68 0F A8 55 7D 41 BA 42 6C 04 69
+ssn: "123-456-7890"
+```
+
+Note that storing the digest as the referencing key is not compatible with lazy loading of records as the object mapper has nowhere in the object model to store the referenced id in the lazy-loaded object. Hence
+
+```java
+@AerospikeReference(type = ReferenceType.DIGEST, lazy = true)
+```
+
+will throw an exception at runtime.
 ### Aggregating by Embedding
 The other way object relationships can be modeled is by embedding the child object(s) inside the parent object. For example, in some banking systems, Accounts are based off Products. The Products are typically versioned but can have changes made to them by banking officers. Hence the product is effectively specific to a particular account, even though it is derived from a global product. In this case, it makes sense to encapsulate the product into the account object.
 
@@ -489,9 +632,9 @@ If we later change the `IntContainer` class to remove the field `a` and add in `
 ```java
 @AerospikeRecord(namespace = "test", set = "testSet", mapAll = true)
 public class IntContainer {
-	public int a;
 	public int b;
 	public int c;
+	public int d;
 }
 ```
 
@@ -752,5 +895,5 @@ In this case, if the environment variable ``ACCOUNT_TITLE_BIN_NAME`` is set, tha
 - Add interface to adaptiveMap, including changing EmbedType
 - Lists of references do not load children references
 - Make lists of references load the data via batch loads.
-
+- Consider if mapAll should default to TRUE and not FALSE
 

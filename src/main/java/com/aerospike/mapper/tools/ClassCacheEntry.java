@@ -70,7 +70,6 @@ public class ClassCacheEntry {
 			throw new AerospikeException("Class " + clazz.getSimpleName() + " %s has no values defined to be stored in the database");
 		}
 		this.formOrdinalsFromValues();
-		System.out.println(clazz.getTypeName());
 	}
 	
 	private void formOrdinalsFromValues() {

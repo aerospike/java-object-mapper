@@ -105,22 +105,31 @@ public class AeroMapper {
         System.out.printf("Saved to database in %,.3fms\n", ((System.nanoTime() - now) / 1_000_000.0));
     }
 
-    public <T> T read(@NotNull Class<T> clazz, @NotNull Object userKey) throws AerospikeException {
-        return read(clazz, null, userKey);
+    public <T> T readFromDigest(@NotNull Class<T> clazz, @NotNull byte[] digest) throws AerospikeException {
+        ClassCacheEntry entry = ClassCache.getInstance().loadClass(clazz, this);
+        String namespace = entry.getNamespace();
+        if (StringUtils.isBlank(namespace)) {
+            throw new AerospikeException("Namespace not specified in annotation.");
+        }
+
+        Key key = new Key(namespace, digest, entry.getSetName(), null);
+        return this.read(clazz, key, entry);
     }
 
-    public <T> T read(@NotNull Class<T> clazz, String namespace, @NotNull Object userKey) throws AerospikeException {
+    public <T> T read(@NotNull Class<T> clazz, @NotNull Object userKey) throws AerospikeException {
 
         ClassCacheEntry entry = ClassCache.getInstance().loadClass(clazz, this);
+        String namespace = entry.getNamespace();
         if (StringUtils.isBlank(namespace)) {
-            namespace = entry.getNamespace();
-            if (StringUtils.isBlank(namespace)) {
-                throw new AerospikeException("Namespace not specified in annotation.");
-            }
+            throw new AerospikeException("Namespace not specified in annotation.");
         }
 
         String set = entry.getSetName();
         Key key = new Key(namespace, set, Value.get(entry.translateKeyToAerospikeKey(userKey)));
+        return read(clazz, key, entry);
+    }
+
+    private <T> T read(@NotNull Class<T> clazz, @NotNull Key key, @NotNull ClassCacheEntry entry) {
         Record record = mClient.get(null, key);
 
         if (record == null) {

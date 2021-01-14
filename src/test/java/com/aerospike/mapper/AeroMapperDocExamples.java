@@ -18,6 +18,7 @@ import com.aerospike.mapper.annotations.AerospikeKey;
 import com.aerospike.mapper.annotations.AerospikeOrdinal;
 import com.aerospike.mapper.annotations.AerospikeRecord;
 import com.aerospike.mapper.annotations.AerospikeReference;
+import com.aerospike.mapper.annotations.AerospikeReference.ReferenceType;
 import com.aerospike.mapper.annotations.AerospikeVersion;
 import com.aerospike.mapper.tools.AeroMapper;
 
@@ -75,7 +76,7 @@ public class AeroMapperDocExamples extends AeroMapperBaseTest {
         public int age;
 
         @AerospikeBin(name = "primAcc")
-        @AerospikeReference(lazy = true)
+        @AerospikeReference(type = ReferenceType.DIGEST)
         public Account primaryAccount;
 
         @AerospikeBin(name = "accts")
@@ -92,7 +93,7 @@ public class AeroMapperDocExamples extends AeroMapperBaseTest {
         client.truncate(null, NAMESPACE, "account", null);
     }
 
-    //	@Test
+    @Test
     public void run() {
         Account account = new Account();
         account.id = 103;
@@ -244,6 +245,58 @@ public class AeroMapperDocExamples extends AeroMapperBaseTest {
     	account.transactions.put(txn3.txnId, txn3);
     	
     	mapper.save(account);
+    	System.out.println("done");
+    }
+    
+    @AerospikeRecord(namespace = "test", set = "parent", mapAll = true)
+    public static class Parent {
+    	@AerospikeKey
+    	int id;
+    	String name;
+    	
+    	@AerospikeEmbed(type = EmbedType.MAP)
+    	public Child mapEmbedChild;
+    	
+    	@AerospikeEmbed(type = EmbedType.LIST)
+    	public Child listEmbedChild;
+
+    	@AerospikeReference(type = ReferenceType.DIGEST, lazy = true)
+    	public Child refChild;
+
+		public Parent(int id, String name, Child child) {
+			super();
+			this.id = id;
+			this.name = name;
+			this.mapEmbedChild = child;
+			this.listEmbedChild = child;
+			this.refChild = child;
+		}
+    }
+    
+    @AerospikeRecord(namespace = "test", set = "child", mapAll = true)
+    public static class Child {
+    	@AerospikeKey
+    	int id;
+    	String name;
+    	Date date;
+
+    	public Child(int id, String name, Date date) {
+			super();
+			this.id = id;
+			this.name = name;
+			this.date = date;
+		}
+    }
+    
+    @Test
+    public void showParentWithChildren() {
+    	Child child = new Child(1, "child", new Date());
+    	Parent parent = new Parent(10, "parent", child);
+    	mapper.save(parent);
+    	
+    	// Since the child is referenced, it needs to be saved explicitly in the database
+    	// If it were only embedded, it would not be necessary to save explicitly.
+    	mapper.save(child);
     	System.out.println("done");
     }
 }
