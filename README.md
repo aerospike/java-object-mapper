@@ -5,46 +5,46 @@
 Consider a simple class:
 
 ```java
-public class Person {
-	private String ssn;
+public class Person { 
+    private String ssn;
     private String firstName;
     private String lastName;
     private int age;
     private Date dob;
     
-    public String getSsn() {
-	return ssn;
+    public String getSsn() { 
+        return ssn;
     }
-    public void setSsn(String ssn) {
-	this.ssn = ssn;
-    }
-
-    public String getFirstName() {
-	return firstName;
-    }
-    public void setFirstName(String firstName) {
-	this.firstName = firstName;
+    public void setSsn(String ssn) { 
+        this.ssn = ssn;
     }
 
-    public String getLastName() {
-	return lastName;
+    public String getFirstName() { 
+        return firstName;
     }
-    public void setLastName(String lastName) {
-	this.lastName = lastName;
+    public void setFirstName(String firstName) { 
+        this.firstName = firstName;
     }
 
-    public int getAge() {
-	return age;
+    public String getLastName() { 
+        return lastName;
     }
-    public void setAge(int age) {
-	this.age = age;
+    public void setLastName(String lastName) { 
+        this.lastName = lastName;
+    }
+
+    public int getAge() { 
+        return age;
+    }
+    public void setAge(int age) { 
+        this.age = age;
     }
     
-    public Date getDob() {
-    return dob;
+    public Date getDob() { 
+        return dob;
     }
-    public void setDob(Date dob) {
-    this.dob = dob;
+    public void setDob(Date dob) { 
+        this.dob = dob;
     }
 }	
 ```
@@ -99,39 +99,39 @@ public class Person {
     private int age;
     private Date dob;
     
-    public String getSsn() {
-	return ssn;
+    public String getSsn() { 
+        return ssn;
     }
-    public void setSsn(String ssn) {
-	this.ssn = ssn;
-    }
-
-    public String getFirstName() {
-	return firstName;
-    }
-    public void setFirstName(String firstName) {
-	this.firstName = firstName;
+    public void setSsn(String ssn) { 
+        this.ssn = ssn;
     }
 
-    public String getLastName() {
-	return lastName;
+    public String getFirstName() { 
+        return firstName;
     }
-    public void setLastName(String lastName) {
-	this.lastName = lastName;
+    public void setFirstName(String firstName) { 
+        this.firstName = firstName;
     }
 
-    public int getAge() {
-	return age;
+    public String getLastName() { 
+        return lastName;
     }
-    public void setAge(int age) {
-	this.age = age;
+    public void setLastName(String lastName) { 
+        this.lastName = lastName;
+    }
+
+    public int getAge() { 
+        return age;
+    }
+    public void setAge(int age) { 
+        this.age = age;
     }	
     
-    public Date getDob() {
-    return dob;
+    public Date getDob() { 
+        return dob;
     }
-    public void setDob(Date dob) {
-    this.dob = dob;
+    public void setDob(Date dob) { 
+        this.dob = dob;
     }
 }
 ```
@@ -766,6 +766,7 @@ The order of the elements in a list can be controlled. By default, all the eleme
 public static enum AccountType {
 	SAVINGS, CHEQUING
 }
+
 @AerospikeRecord(namespace = "test", set = "accounts") 
 public static class Accounts {
 	@AerospikeKey
@@ -915,22 +916,22 @@ public class Card {
 
 @AerospikeRecord(namespace = NAMESPACE, set = "poker")
 public class PokerHand {
-    	@AerospikeEmbed
+    @AerospikeEmbed
     public Card playerCard1;
-    	@AerospikeEmbed
+    @AerospikeEmbed
     public Card playerCard2;
-    	@AerospikeEmbed
+    @AerospikeEmbed
     public List<Card> tableCards;
     @AerospikeKey
     public String id;
 
     public PokerHand(String id, Card playerCard1, Card playerCard2, List<Card> tableCards) {
-		super();
-		this.playerCard1 = playerCard1;
-		this.playerCard2 = playerCard2;
-		this.tableCards = tableCards;
-		this.id = id;
-	}
+        super();
+        this.playerCard1 = playerCard1;
+        this.playerCard2 = playerCard2;
+        this.tableCards = tableCards;
+        this.id = id;
+    }
     
     public PokerHand() {}
 }
@@ -1046,23 +1047,23 @@ Notice the removal of the annotation and the no-argument constructor. The refere
 
 ```java
 @AerospikeRecord(namespace = NAMESPACE, set = "poker")
-public static class PokerHand {
-	@AerospikeEmbed
+public static class PokerHand { 
+    @AerospikeEmbed
     public Card playerCard1;
-	@AerospikeEmbed
+    @AerospikeEmbed
     public Card playerCard2;
-	@AerospikeEmbed
+    @AerospikeEmbed
     public List<Card> tableCards;
     @AerospikeKey
     public String id;
 
     public PokerHand(String id, Card playerCard1, Card playerCard2, List<Card> tableCards) {
-		super();
-		this.playerCard1 = playerCard1;
-		this.playerCard2 = playerCard2;
-		this.tableCards = tableCards;
-		this.id = id;
-	}
+        super();
+        this.playerCard1 = playerCard1;
+        this.playerCard2 = playerCard2;
+        this.tableCards = tableCards;
+        this.id = id;
+    }
     
     public PokerHand() {}
 }
@@ -1080,12 +1081,12 @@ public static class PokerHand {
     public String id;
 
     public PokerHand(String id, Card playerCard1, Card playerCard2, List<Card> tableCards) {
-		super();
-		this.playerCard1 = playerCard1;
-		this.playerCard2 = playerCard2;
-		this.tableCards = tableCards;
-		this.id = id;
-	}
+        super();
+        this.playerCard1 = playerCard1;
+        this.playerCard2 = playerCard2;
+        this.tableCards = tableCards;
+        this.id = id;
+    }
     
     public PokerHand() {}
 }
