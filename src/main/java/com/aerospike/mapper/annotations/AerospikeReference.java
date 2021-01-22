@@ -5,8 +5,6 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-import com.aerospike.mapper.annotations.AerospikeEmbed.EmbedType;
-
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.FIELD)
 /**

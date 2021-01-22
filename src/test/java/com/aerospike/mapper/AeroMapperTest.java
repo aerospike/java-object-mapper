@@ -74,7 +74,7 @@ public class AeroMapperTest extends AeroMapperBaseTest {
         assertEquals(record.getInt("a"), p.getAge());
     }
 
-    @AerospikeRecord(namespace = "test", set = "none")
+    @AerospikeRecord(namespace = "test", set = "none", mapAll = false)
     public static class PropertyWithNoSetter {
         @AerospikeBin(name = "dummy")
         private int f1;
@@ -88,7 +88,7 @@ public class AeroMapperTest extends AeroMapperBaseTest {
         }
     }
 
-    @AerospikeRecord(namespace = "test", set = "none")
+    @AerospikeRecord(namespace = "test", set = "none", mapAll = false)
     public static class DuplicateKeyClass {
         @AerospikeBin(name = "dummy")
         private int f1;

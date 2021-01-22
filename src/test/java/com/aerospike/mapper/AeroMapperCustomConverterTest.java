@@ -31,7 +31,7 @@ public class AeroMapperCustomConverterTest extends AeroMapperBaseTest {
         CLUBS, DIAMONDS, HEARTS, SPADES;
     }
 
-    @AerospikeRecord(namespace = NAMESPACE, set = "card", mapAll = true)
+    @AerospikeRecord(namespace = NAMESPACE, set = "card")
     public static class Card {
         public char rank;
         public Suit suit;
@@ -50,7 +50,7 @@ public class AeroMapperCustomConverterTest extends AeroMapperBaseTest {
         }
     }
 
-    @AerospikeRecord(namespace = NAMESPACE, set = "poker", mapAll = true)
+    @AerospikeRecord(namespace = NAMESPACE, set = "poker")
     public static class PokerHand {
         public Card playerCard1;
         public Card playerCard2;

@@ -10,7 +10,7 @@ import com.aerospike.mapper.tools.ClassCache;
 import com.aerospike.mapper.tools.ClassCacheEntry;
 import com.aerospike.mapper.tools.TypeMapper;
 
-public class ObjectEmbedMapper implements TypeMapper {
+public class ObjectEmbedMapper extends ObjectMapper implements TypeMapper {
 
 	private final Class<?> referencedClass;
 	private final AeroMapper mapper;
@@ -30,9 +30,11 @@ public class ObjectEmbedMapper implements TypeMapper {
 		// In this case we want to store a reference to the object.
 		ClassCacheEntry entry = ClassCache.getInstance().loadClass(referencedClass, this.mapper);
 		switch (type) {
-		case LIST:	return entry.getList(value);
-		case MAP:	return entry.getMap(value);
-		default: 	throw new AerospikeException("Unspecified EmbedType");
+		case LIST:		return entry.getList(value);
+		case MAP:		// Fall through
+		// If unspecified, default to a MAP for embedded objects
+		case DEFAULT:	return entry.getMap(value);
+		default: 		throw new AerospikeException("Unspecified EmbedType");
 		}
 	}
 
@@ -50,7 +52,8 @@ public class ObjectEmbedMapper implements TypeMapper {
 			case LIST:
 				entry.hydrateFromList((List<Object>)value, instance);
 				break;
-			case MAP:
+			case MAP:	// Fall through
+			case DEFAULT:
 				entry.hydrateFromMap((Map<String,Object>)value, instance);
 				break;
 			default:

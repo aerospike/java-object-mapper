@@ -13,9 +13,10 @@ import java.lang.annotation.Target;
 public @interface AerospikeEmbed {
 	public static enum EmbedType {
 		LIST,
-		MAP
+		MAP,
+		DEFAULT
 	}
-	EmbedType type() default EmbedType.MAP;
+	EmbedType type() default EmbedType.DEFAULT;
 	/**
 	 * The elementType is used for sub-elements. For example, if there is:
 	 * <pre>
@@ -27,5 +28,5 @@ public @interface AerospikeEmbed {
 	 * 
 	 * @return
 	 */
-	EmbedType elementType() default EmbedType.MAP;
+	EmbedType elementType() default EmbedType.DEFAULT;
 }

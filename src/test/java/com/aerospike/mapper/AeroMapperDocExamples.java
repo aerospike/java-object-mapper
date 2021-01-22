@@ -1,5 +1,7 @@
 package com.aerospike.mapper;
 
+import static org.junit.Assert.fail;
+
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -11,6 +13,7 @@ import java.util.Map;
 import org.junit.Before;
 import org.junit.Test;
 
+import com.aerospike.client.AerospikeException;
 import com.aerospike.mapper.annotations.AerospikeBin;
 import com.aerospike.mapper.annotations.AerospikeEmbed;
 import com.aerospike.mapper.annotations.AerospikeEmbed.EmbedType;
@@ -24,7 +27,7 @@ import com.aerospike.mapper.tools.AeroMapper;
 
 public class AeroMapperDocExamples extends AeroMapperBaseTest {
 
-    @AerospikeRecord(namespace = "test", set = "product", mapAll = true)
+    @AerospikeRecord(namespace = "test", set = "product")
     public static class Product {
         public String productId;
         public int version;
@@ -32,7 +35,7 @@ public class AeroMapperDocExamples extends AeroMapperBaseTest {
         public Date createdDate;
     }
 
-    @AerospikeRecord(namespace = "test", set = "account", mapAll = true)
+    @AerospikeRecord(namespace = "test", set = "account")
     public static class Account {
         @AerospikeKey
         public long id;
@@ -60,7 +63,7 @@ public class AeroMapperDocExamples extends AeroMapperBaseTest {
         mapper.save(account);
     }
 
-    @AerospikeRecord(namespace = "test", set = "people")
+    @AerospikeRecord(namespace = "test", set = "people", mapAll = false)
     public static class Person {
 
         @AerospikeKey
@@ -131,14 +134,14 @@ public class AeroMapperDocExamples extends AeroMapperBaseTest {
 
     }
     
-    @AerospikeRecord(namespace = "test", set = "testSet", mapAll = true)
+    @AerospikeRecord(namespace = "test", set = "testSet")
     public static class IntContainer {
     	public int a;
     	public int b;
     	public int c;
     }
     
-    @AerospikeRecord(namespace = "test", set = "testSet", mapAll = true) 
+    @AerospikeRecord(namespace = "test", set = "testSet") 
     public static class IntMapper {
     	@AerospikeKey
     	public int id;
@@ -146,7 +149,7 @@ public class AeroMapperDocExamples extends AeroMapperBaseTest {
     	public IntContainer container;
     }
 
-    @AerospikeRecord(namespace = "test", set = "testSet", mapAll = true, version = 2)
+    @AerospikeRecord(namespace = "test", set = "testSet", version = 2)
     public static class IntContainerV2 {
     	@AerospikeVersion(max = 1)
     	public int a;
@@ -156,7 +159,7 @@ public class AeroMapperDocExamples extends AeroMapperBaseTest {
     	public int d;
     }
     
-    @AerospikeRecord(namespace = "test", set = "testSet", mapAll = true) 
+    @AerospikeRecord(namespace = "test", set = "testSet") 
     public static class IntMapperV2 {
     	@AerospikeKey
     	public int id;
@@ -196,7 +199,7 @@ public class AeroMapperDocExamples extends AeroMapperBaseTest {
     public static enum AccountType {
     	SAVINGS, CHEQUING
     }
-    @AerospikeRecord(namespace = "test", set = "accounts", mapAll = true) 
+    @AerospikeRecord(namespace = "test", set = "accounts") 
     public static class Accounts {
     	@AerospikeKey
     	public int id;
@@ -216,7 +219,7 @@ public class AeroMapperDocExamples extends AeroMapperBaseTest {
 		}
     }
     
-    @AerospikeRecord(namespace = "test", set = "txns", mapAll = true)
+    @AerospikeRecord(namespace = "test", set = "txns")
     public static class Transactions {
     	public String txnId;
     	@AerospikeOrdinal(value = 1)
@@ -248,8 +251,34 @@ public class AeroMapperDocExamples extends AeroMapperBaseTest {
     	System.out.println("done");
     }
     
-    @AerospikeRecord(namespace = "test", set = "parent", mapAll = true)
+    
+    @AerospikeRecord(namespace = "test", set = "parent")
     public static class Parent {
+    	@AerospikeKey
+    	int id;
+    	String name;
+    	
+    	@AerospikeEmbed(type = EmbedType.MAP)
+    	public Child mapEmbedChild;
+    	
+    	@AerospikeEmbed(type = EmbedType.LIST)
+    	public Child listEmbedChild;
+
+    	@AerospikeReference(type = ReferenceType.DIGEST)
+    	public Child refChild;
+
+		public Parent(int id, String name, Child child) {
+			super();
+			this.id = id;
+			this.name = name;
+			this.mapEmbedChild = child;
+			this.listEmbedChild = child;
+			this.refChild = child;
+		}
+    }
+    
+    @AerospikeRecord(namespace = "test", set = "parent")
+    public static class ParentWithBadChild {
     	@AerospikeKey
     	int id;
     	String name;
@@ -263,7 +292,7 @@ public class AeroMapperDocExamples extends AeroMapperBaseTest {
     	@AerospikeReference(type = ReferenceType.DIGEST, lazy = true)
     	public Child refChild;
 
-		public Parent(int id, String name, Child child) {
+		public ParentWithBadChild(int id, String name, Child child) {
 			super();
 			this.id = id;
 			this.name = name;
@@ -273,7 +302,7 @@ public class AeroMapperDocExamples extends AeroMapperBaseTest {
 		}
     }
     
-    @AerospikeRecord(namespace = "test", set = "child", mapAll = true)
+    @AerospikeRecord(namespace = "test", set = "child")
     public static class Child {
     	@AerospikeKey
     	int id;
@@ -294,9 +323,19 @@ public class AeroMapperDocExamples extends AeroMapperBaseTest {
     	Parent parent = new Parent(10, "parent", child);
     	mapper.save(parent);
     	
+    	ParentWithBadChild parent2 = new ParentWithBadChild(11, "parent2", child);
+    	try {
+    		mapper.save(parent2);
+    		fail();
+    	}
+    	catch (AerospikeException ae) {
+    		// Expected 
+    	}
+    	
     	// Since the child is referenced, it needs to be saved explicitly in the database
     	// If it were only embedded, it would not be necessary to save explicitly.
     	mapper.save(child);
+    	// TODO: Validate the results
     	System.out.println("done");
     }
 }

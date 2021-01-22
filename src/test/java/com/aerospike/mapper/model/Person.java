@@ -10,58 +10,32 @@ import java.util.*;
 public class Person {
 
     @AerospikeKey
-    @AerospikeBin(name = "ssn")
     private String ssn;
 
-    @AerospikeBin
     private String firstName;
-
-    @AerospikeBin(name = "lastName")
     private String lastName;
-
-    @AerospikeBin(name = "age")
     private int age;
-
-    @AerospikeBin
     private Date dateOfBirth;
-
-    @AerospikeBin
     private boolean isValid;
-
-    @AerospikeBin
     private float balance;
-
-    @AerospikeBin
     private double height;
-
-    @AerospikeBin
     private byte[] photo;
-
-    @AerospikeBin
     private long[] longData;
 
-    @AerospikeBin
     @AerospikeEmbed(elementType = AerospikeEmbed.EmbedType.MAP)
     private Account[] accountArray;
-
-    @AerospikeBin
+    
     private List<String> stringList;
-
-    @AerospikeBin
     private String[] stringArray;
 
-    @AerospikeBin
     @AerospikeEmbed(elementType = AerospikeEmbed.EmbedType.LIST)
     private List<Account> accounts;
 
-    @AerospikeBin
     @AerospikeEmbed(elementType = AerospikeEmbed.EmbedType.LIST)
     private Map<String, Product> productMap;
 
-    @AerospikeBin
     private Map<Integer, String> testMap;
 
-    @AerospikeBin
     @AerospikeEmbed(type = AerospikeEmbed.EmbedType.LIST)
     private Account primaryAccount;
 

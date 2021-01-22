@@ -116,6 +116,13 @@ public class TypeUtils {
 				addToMap = false;
 			}
 			else if (List.class.isAssignableFrom(clazz)) {
+				EmbedType embedType = EmbedType.DEFAULT;
+				for (Annotation annotation : annotations) {
+					if (annotation.annotationType().equals(AerospikeEmbed.class)) {
+						AerospikeEmbed embed = (AerospikeEmbed)annotation;
+						embedType = embed.type();
+					}
+				}
 				if (instanceType instanceof ParameterizedType) {
 					ParameterizedType paramType = (ParameterizedType)instanceType;
 					Type[] types = paramType.getActualTypeArguments();
@@ -125,10 +132,10 @@ public class TypeUtils {
 					
 					Class<?> subClazz = (Class<?>)types[0];
 					TypeMapper subMapper = getMapper(subClazz, instanceType, annotations, mapper, true);
-					typeMapper = new ListMapper(clazz, subClazz, subMapper,  mapper);
+					typeMapper = new ListMapper(clazz, subClazz, subMapper,  mapper, embedType);
 				}
 				else {
-					typeMapper = new ListMapper(clazz, null, null, mapper);
+					typeMapper = new ListMapper(clazz, null, null, mapper, embedType);
 				}
 				addToMap = false;
 			}

@@ -15,7 +15,7 @@ import com.aerospike.mapper.tools.AeroMapper;
 
 public class AeroMapperComplexClassTest extends AeroMapperBaseTest {
 
-	@AerospikeRecord(namespace = "test", set = "testSet", mapAll = true, sendKey = true)
+	@AerospikeRecord(namespace = "test", set = "testSet", sendKey = true)
 	public static class ComplexClass {
 		private long trid;
 		private String cnid;

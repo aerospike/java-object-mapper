@@ -24,22 +24,11 @@ public class PersonDifferentNames {
     @AerospikeBin(name = "a")
     private int age;
 
-    @AerospikeBin
     private Date dateOfBirth;
-
-    @AerospikeBin
     private boolean isValid;
-
-    @AerospikeBin
     private float balance;
-
-    @AerospikeBin
     private double height;
-
-    @AerospikeBin
     private byte[] photo;
-
-    @AerospikeBin
     private List<String> list;
 
     public PersonDifferentNames() {

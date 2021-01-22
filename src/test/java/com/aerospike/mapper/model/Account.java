@@ -2,7 +2,7 @@ package com.aerospike.mapper.model;
 
 import com.aerospike.mapper.annotations.*;
 
-@AerospikeRecord(namespace = "test", set = "account", mapAll = true, version = 2)
+@AerospikeRecord(namespace = "test", set = "account", version = 2)
 public class Account {
     @AerospikeKey
     private long id;

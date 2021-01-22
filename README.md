@@ -86,7 +86,7 @@ Additionally, there is complexity not shown in this simple example. Aerospike do
 This repository aims to overcome these issues and more by relying on annotations on the POJOs to describe how to map the data to Aerospike and back. For example, the same functionality is provided by this code:
 
 ```java
-@AerospikeRecord(namespace="test", set="people", mapAll = true)
+@AerospikeRecord(namespace="test", set="people")
 public class Person {
 	
     @AerospikeKey
@@ -215,10 +215,10 @@ private int age;
 
 This will appear in Aerospike as the `age` bin.
 
-If all fields should be mapped to Aerospike with the default name, the `mapAll = true` property can be set on the class @AerospikeRecord annotation and the other annotations omitted:
+By default, all fields will be mapped to the database. Fields can be excluded with the @AerospikeExclude annotation, and renamed with the @AerospikeBin annotation. If it is desired to save only bins annotated with @AerospikeBin, use `mapAll = false` on the @AerospikeRecord. For example:
 
 ```java
-@AerospikeRecord(namespace = NAMESPACE, set = "testSet", mapAll = true)
+@AerospikeRecord(namespace = NAMESPACE, set = "testSet")
 public static class Test {
 	public int a;
 	public int b;
@@ -227,12 +227,40 @@ public static class Test {
 }
 ```
 
-This saves the record with 4 bins, a,b,c,d.
+This saves the record with 4 bins, a,b,c,d. To save only fields a,b,c you can do either:
+
+```java
+@AerospikeRecord(namespace = NAMESPACE, set = "testSet")
+public static class Test {
+	public int a;
+	public int b;
+	public int c;
+	@AerospikeExclude
+	public int d;
+}
+```
+
+or
+
+```java
+@AerospikeRecord(namespace = NAMESPACE, set = "testSet", mapAll = false)
+public static class Test {
+	@AerospikeBin
+	public int a;
+	@AerospikeBin
+	public int b;
+	@AerospikeBin
+	public int c;
+	public int d;
+}
+```
+
+If a field is marked with both @AerospikeExclude and @AerospikeBin, the bin will _not_ be mapped to the database.
 
 You can force the name of a particular bin or bins by specifying them in an AerospikeBin:
 
 ```java
-@AerospikeRecord(namespace = NAMESPACE, set = "testSet", mapAll = true)
+@AerospikeRecord(namespace = NAMESPACE, set = "testSet")
 public static class Test {
 	public int a;
 	public int b;
@@ -243,20 +271,6 @@ public static class Test {
 ```
 This will save 4 fields in the database, a, b, longCname, d.
 
-Fields can also be omitted with the @AerospikeExclude annotation:
-
-```java
-@AerospikeRecord(namespace = NAMESPACE, set = "testSet", mapAll = true)
-public static class Test {
-	public int a;
-	@AerospikeExclude
-	public int b;
-	public int c;
-	public int d;
-}
-```
-
-This saves the record with 3 bins, a,c,d. If a field is marked with both @AerospikeExclude and @AerospikeBin, the bin will _not_ be mapped to the database.
 
 ## Properties
 A pair of methods comprising a getter and setter can also be mapped to a field in the database. These should be annotated with @AerospikeGetter and @AerospikeSetter respectively and the name attribute of these annotations must be provided. The getter must take no arguments and return something, and the setter must return void and take 1 parameter of the same type as the getter return value. Both a setter and a getter must be provided, an exception will be thrown otherwise.
@@ -282,7 +296,7 @@ The mapper has 2 ways of mapping child objects associated with parent objects: b
 Let's see this with and example. Let's define 2 classes, `Parent` and `Child`:
 
 ```java
-@AerospikeRecord(namespace = "test", set = "parent", mapAll = true)
+@AerospikeRecord(namespace = "test", set = "parent")
 public static class Parent {
 	@AerospikeKey
 	int id;
@@ -307,7 +321,7 @@ public static class Parent {
 	}
 }
 
-@AerospikeRecord(namespace = "test", set = "child", mapAll = true)
+@AerospikeRecord(namespace = "test", set = "child")
 public static class Child {
 	@AerospikeKey
 	int id;
@@ -371,7 +385,7 @@ A reference is used when the referenced object needs to exist as a separate enti
 To indicate that the second object is to be referenced, use the @AerospikeReference annotation:
 
 ```java
-@AerospikeRecord(namespace = "test", set = "account", mapAll = true)
+@AerospikeRecord(namespace = "test", set = "account")
 public class Account {
 	@AerospikeKey
 	public long id;
@@ -379,7 +393,7 @@ public class Account {
 	public int balance;
 }
 
-@AerospikeRecord(namespace="test", set="people")
+@AerospikeRecord(namespace="test", set="people", mapAll = false)
 public class Person {
 	
 	@AerospikeKey
@@ -491,7 +505,7 @@ Note that if a reference to an AerospikeRecord annotated object exists, but the 
 There are times when it makes sense to store the digest of the child record as the reference rather than it's primary key. For example, if the native primary key is of significant length then storing a fixed 20-byte digest makes sense. This can be accomplished by adding `type = ReferenceType.DIGEST` to the @AeropikeReference. For example:
 
 ```java
-@AerospikeRecord(namespace = "test", set = "people", mapAll = true)
+@AerospikeRecord(namespace = "test", set = "people")
 public static class Person {
     @AerospikeKey
     public String ssn;
@@ -532,7 +546,7 @@ Since Aerospike records can have bins (columns) which are lists and maps, we can
 Consider a simple account and product:
 
 ```java 
-@AerospikeRecord(namespace = "test", set = "product", mapAll = true) 
+@AerospikeRecord(namespace = "test", set = "product") 
 public static class Product {
 	public String productId;
 	public int version;
@@ -540,7 +554,7 @@ public static class Product {
 	public Date createdDate;
 }
 
-@AerospikeRecord(namespace = "test", set = "account", mapAll = true)
+@AerospikeRecord(namespace = "test", set = "account")
 public static class Account {
 	@AerospikeKey
 	public long id;
@@ -613,7 +627,7 @@ This is far more compact and wastes less space, but has an issue: How do you add
 Maps and Aerospike records are self-describing -- each value has a name, so it is obvious how to map the data to the database and back. For example, if we have a class
 
 ```java
-@AerospikeRecord(namespace = "test", set = "testSet", mapAll = true)
+@AerospikeRecord(namespace = "test", set = "testSet")
 public class IntContainer {
 	public int a;
 	public int b;
@@ -630,7 +644,7 @@ MAP('{"a":1, "b":2, "c":3}')
 If we later change the `IntContainer` class to remove the field `a` and add in `d` we get the class:
 
 ```java
-@AerospikeRecord(namespace = "test", set = "testSet", mapAll = true)
+@AerospikeRecord(namespace = "test", set = "testSet")
 public class IntContainer {
 	public int b;
 	public int c;
@@ -673,7 +687,7 @@ The first thing that is needed is to tell the AerospikeMapper that the data has 
 For example, version 1 (implicitly) is:
 
 ```java 
-@AerospikeRecord(namespace = "test", set = "testSet", mapAll = true)
+@AerospikeRecord(namespace = "test", set = "testSet")
 public static class IntContainer {
 	public int a;
 	public int b;
@@ -684,7 +698,7 @@ public static class IntContainer {
 and version 2 is:
 
 ```java 
-@AerospikeRecord(namespace = "test", set = "testSet", mapAll = true, version = 2)
+@AerospikeRecord(namespace = "test", set = "testSet", version = 2)
 public static class IntContainer {
 	public int b;
 	public int c;
@@ -695,7 +709,7 @@ public static class IntContainer {
 This still doesn't give us useful information to be able to map prior versions of the record. Hence, there needs to be further information which defines which fields exist in which versions of the object:
 
 ```java 
-@AerospikeRecord(namespace = "test", set = "testSet", mapAll = true, version = 2)
+@AerospikeRecord(namespace = "test", set = "testSet", version = 2)
 public static class IntContainer {
     	@AerospikeVersion(max = 1)
     	public int a;
@@ -752,7 +766,7 @@ The order of the elements in a list can be controlled. By default, all the eleme
 public static enum AccountType {
 	SAVINGS, CHEQUING
 }
-@AerospikeRecord(namespace = "test", set = "accounts", mapAll = true) 
+@AerospikeRecord(namespace = "test", set = "accounts") 
 public static class Accounts {
 	@AerospikeKey
 	public int id;
@@ -772,7 +786,7 @@ public static class Accounts {
 	}
 }
 
-@AerospikeRecord(namespace = "test", set = "txns", mapAll = true)
+@AerospikeRecord(namespace = "test", set = "txns")
 public static class Transactions {
 	public String txnId;
 	public Instant date;
@@ -817,7 +831,7 @@ Here the transaction time is the second attribute in each list, and the amount i
 This ordering can be controlled by the @AerospikeOrdinal annotation:
 
 ```java
-@AerospikeRecord(namespace = "test", set = "txns", mapAll = true)
+@AerospikeRecord(namespace = "test", set = "txns")
 public static class Transactions {
 	public String txnId;
 	@AerospikeOrdinal(value = 1)
@@ -886,7 +900,7 @@ public enum Suit {
     CLUBS, DIAMONDS, HEARTS, SPADES;
 }
 
-@AerospikeRecord(namespace = NAMESPACE, set = "card", mapAll = true)
+@AerospikeRecord(namespace = NAMESPACE, set = "card")
 public class Card {
     public char rank;
     public Suit suit;
@@ -899,7 +913,7 @@ public class Card {
     }
 }
 
-@AerospikeRecord(namespace = NAMESPACE, set = "poker", mapAll = true)
+@AerospikeRecord(namespace = NAMESPACE, set = "poker")
 public class PokerHand {
     	@AerospikeEmbed
     public Card playerCard1;
@@ -999,7 +1013,7 @@ tableCards: LIST('["4C", "AH"]')
 It should be noted that since the inbuilt converter system in the AeroMapper no longer needs to know about the structure of the card, the card object itself can be simplified. Instead of:
 
 ```java
-@AerospikeRecord(namespace = NAMESPACE, set = "card", mapAll = true)
+@AerospikeRecord(namespace = NAMESPACE, set = "card")
 public static class Card {
     public char rank;
     public Suit suit;
@@ -1031,7 +1045,7 @@ public static class Card {
 Notice the removal of the annotation and the no-argument constructor. The referencing type can now become simpler too, as the Card class is seen as a primitive type, not an associated object. Instead of
 
 ```java
-@AerospikeRecord(namespace = NAMESPACE, set = "poker", mapAll = true)
+@AerospikeRecord(namespace = NAMESPACE, set = "poker")
 public static class PokerHand {
 	@AerospikeEmbed
     public Card playerCard1;
@@ -1057,7 +1071,7 @@ public static class PokerHand {
 It can simply become:
 
 ```java
-@AerospikeRecord(namespace = NAMESPACE, set = "poker", mapAll = true)
+@AerospikeRecord(namespace = NAMESPACE, set = "poker")
 public static class PokerHand {
     public Card playerCard1;
     public Card playerCard2;
@@ -1093,8 +1107,8 @@ public static class PokerHand {
 - Add interface to adaptiveMap, including changing EmbedType
 - Lists of references do not load children references
 - Make lists of references load the data via batch loads.
-- Make mapAll default to TRUE and not FALSE and update documentation
 - Document all parameters to annotations and examples of types
 - Document enums, dates, instants.
 - Validate that all AerospikeRecord objects have a no-arg constructor
+- Test to ensure List<AerospikeRecord> / Map<AerospikeRecord> cannot have both an embed and reference annotations / multiple annotations.
 

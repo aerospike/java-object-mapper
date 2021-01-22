@@ -10,7 +10,7 @@ import com.aerospike.mapper.tools.ClassCache;
 import com.aerospike.mapper.tools.ClassCacheEntry;
 import com.aerospike.mapper.tools.TypeMapper;
 
-public class ObjectReferenceMapper implements TypeMapper {
+public class ObjectReferenceMapper extends ObjectMapper implements TypeMapper {
 
 	private final Class<?> referencedClass;
 	private final AeroMapper mapper;

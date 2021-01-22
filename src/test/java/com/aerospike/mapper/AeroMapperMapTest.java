@@ -22,7 +22,7 @@ public class AeroMapperMapTest extends AeroMapperBaseTest {
         client.truncate(null, NAMESPACE, "testSet", null);
     }
 
-    @AerospikeRecord(namespace = NAMESPACE, set = "testSet", mapAll = true)
+    @AerospikeRecord(namespace = NAMESPACE, set = "testSet")
     public static class TestV1 {
         public int a;
         public int b;
@@ -31,7 +31,7 @@ public class AeroMapperMapTest extends AeroMapperBaseTest {
     }
 
     // Version 2 of the test record removes c from the database and adds e, leaving a, b, d, e persisted
-    @AerospikeRecord(namespace = NAMESPACE, set = "testSet", mapAll = true, version = 2)
+    @AerospikeRecord(namespace = NAMESPACE, set = "testSet", version = 2)
     public static class TestV2 {
         public int a;
         public int b;
@@ -40,7 +40,7 @@ public class AeroMapperMapTest extends AeroMapperBaseTest {
     }
 
     // Version 3 of the test record removes a, e, from the database and adds f, g, leaving b, d, g, f persisted
-    @AerospikeRecord(namespace = NAMESPACE, set = "testSet", mapAll = true, version = 3)
+    @AerospikeRecord(namespace = NAMESPACE, set = "testSet", version = 3)
     public static class TestV3 {
         public int b;
         public int d;
@@ -48,7 +48,7 @@ public class AeroMapperMapTest extends AeroMapperBaseTest {
         public int g;
     }
 
-    @AerospikeRecord(namespace = NAMESPACE, set = "testSet", mapAll = true)
+    @AerospikeRecord(namespace = NAMESPACE, set = "testSet")
     public static class TestV1Container {
         @AerospikeKey
         public int id;
@@ -56,7 +56,7 @@ public class AeroMapperMapTest extends AeroMapperBaseTest {
         public TestV1 value;
     }
 
-    @AerospikeRecord(namespace = NAMESPACE, set = "testSet", mapAll = true)
+    @AerospikeRecord(namespace = NAMESPACE, set = "testSet")
     public static class TestV2Container {
         @AerospikeKey
         public int id;
@@ -64,7 +64,7 @@ public class AeroMapperMapTest extends AeroMapperBaseTest {
         public TestV2 value;
     }
 
-    @AerospikeRecord(namespace = NAMESPACE, set = "testSet", mapAll = true)
+    @AerospikeRecord(namespace = NAMESPACE, set = "testSet")
     public static class TestV3Container {
         @AerospikeKey
         public int id;
@@ -207,4 +207,5 @@ public class AeroMapperMapTest extends AeroMapperBaseTest {
     	assertEquals(value.d, value2.d);
     	
     }
+    
 }
