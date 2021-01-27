@@ -15,11 +15,13 @@ public class ObjectEmbedMapper extends ObjectMapper implements TypeMapper {
 	private final Class<?> referencedClass;
 	private final AeroMapper mapper;
 	private final EmbedType type;
+	private final boolean isForSubType;
 	
-	public ObjectEmbedMapper(final Class<?> clazz, final EmbedType type, final AeroMapper mapper) {
+	public ObjectEmbedMapper(final Class<?> clazz, final EmbedType type, final AeroMapper mapper, boolean isForSubType) {
 		this.referencedClass = clazz;
 		this.mapper = mapper;
 		this.type = type;
+		this.isForSubType = isForSubType;
 	}
 	
 	@Override
@@ -30,7 +32,7 @@ public class ObjectEmbedMapper extends ObjectMapper implements TypeMapper {
 		// In this case we want to store a reference to the object.
 		ClassCacheEntry entry = ClassCache.getInstance().loadClass(referencedClass, this.mapper);
 		switch (type) {
-		case LIST:		return entry.getList(value);
+		case LIST:		return entry.getList(value, isForSubType);
 		case MAP:		// Fall through
 		// If unspecified, default to a MAP for embedded objects
 		case DEFAULT:	return entry.getMap(value);
@@ -50,7 +52,7 @@ public class ObjectEmbedMapper extends ObjectMapper implements TypeMapper {
 			
 			switch (type) {
 			case LIST:
-				entry.hydrateFromList((List<Object>)value, instance);
+				entry.hydrateFromList((List<Object>)value, instance, isForSubType);
 				break;
 			case MAP:	// Fall through
 			case DEFAULT:

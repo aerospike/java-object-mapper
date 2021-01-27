@@ -29,4 +29,12 @@ public @interface AerospikeEmbed {
 	 * @return
 	 */
 	EmbedType elementType() default EmbedType.DEFAULT;
+	
+	/**
+	 * Determine whether the key should be saved in the sub-object. Normally this is desirable, but in some cases the key should not
+	 * be saved. For example, imagine a list of objects stored in a map. The key in the map would be the key of the object, so there 
+	 * is no point saving the key in the list too -- it is already in the object.
+	 * @return
+	 */
+	boolean saveKey() default true;
 }

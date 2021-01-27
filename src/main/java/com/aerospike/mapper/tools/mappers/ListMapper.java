@@ -23,13 +23,16 @@ public class ListMapper implements TypeMapper {
 	private final TypeMapper instanceClassMapper;
 	private final EmbedType embedType;
 	private final ClassCacheEntry subTypeEntry;
+	private final boolean saveKey;
 	
-	public ListMapper(final Class<?> clazz, final Class<?> instanceClass, final TypeMapper instanceClassMapper, final AeroMapper mapper, final EmbedType embedType) {
+	public ListMapper(final Class<?> clazz, final Class<?> instanceClass, final TypeMapper instanceClassMapper, final AeroMapper mapper, final EmbedType embedType, final boolean saveKey) {
 		this.referencedClass = clazz;
 		this.mapper = mapper;
 		this.instanceClass = instanceClass;
 		this.supportedWithoutTranslation = TypeUtils.isAerospikeNativeType(instanceClass);
 		this.instanceClassMapper = instanceClassMapper;
+		this.saveKey = saveKey;
+		
 		if (embedType == EmbedType.DEFAULT) {
 			this.embedType = EmbedType.LIST;
 		}

@@ -48,6 +48,14 @@
 			<version>3.7</version>
 		</dependency>
 
+		<!-- https://mvnrepository.com/artifact/com.fasterxml.jackson.dataformat/jackson-dataformat-yaml -->
+		<!-- Needed to parse the options file -->
+		<dependency>
+		    <groupId>com.fasterxml.jackson.dataformat</groupId>
+		    <artifactId>jackson-dataformat-yaml</artifactId>
+		    <version>2.12.1</version>
+		</dependency>
+
 	</dependencies>
 	<build>
 		<plugins>

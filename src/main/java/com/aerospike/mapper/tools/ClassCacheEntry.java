@@ -39,6 +39,7 @@ public class ClassCacheEntry {
 	
 	private final Class<?> clazz;
 	private ValueType key;
+	private String keyName = null;
 	private final TreeMap<String, ValueType> values = new TreeMap<>();
 	private final ClassCacheEntry superClazz;
 	private final int binCount;
@@ -115,6 +116,7 @@ public class ClassCacheEntry {
 		PropertyDefinition keyProperty = null;
 		for (Method thisMethod : clazz.getDeclaredMethods()) {
 			
+			boolean isKey = false;
 			if (thisMethod.isAnnotationPresent(AerospikeKey.class)) {
 				AerospikeKey key = thisMethod.getAnnotation(AerospikeKey.class);
 				if (keyProperty == null) {
@@ -126,11 +128,16 @@ public class ClassCacheEntry {
 				else {
 					keyProperty.setGetter(thisMethod);
 				}
+				isKey = true;
 			}
 			if (thisMethod.isAnnotationPresent(AerospikeGetter.class)) {
 				AerospikeGetter getter = thisMethod.getAnnotation(AerospikeGetter.class);
-				PropertyDefinition thisProperty = getOrCreateProperty(ParserUtils.getInstance().get(ParserUtils.getInstance().get(getter.name())), properties);
+				String name = ParserUtils.getInstance().get(ParserUtils.getInstance().get(getter.name()));
+				PropertyDefinition thisProperty = getOrCreateProperty(name, properties);
 				thisProperty.setGetter(thisMethod);
+				if (isKey) {
+					keyName = name;
+				}
 			}
 			
 			if (thisMethod.isAnnotationPresent(AerospikeSetter.class)) {
@@ -162,6 +169,7 @@ public class ClassCacheEntry {
 
 	private void loadFieldsFromClass(Class<?> clazz, boolean mapAll) {
 		for (Field thisField : clazz.getDeclaredFields()) {
+			boolean isKey = false;
 			if (thisField.isAnnotationPresent(AerospikeKey.class)) {
 				if (thisField.isAnnotationPresent(AerospikeExclude.class)) {
 					throw new AerospikeException("Class " + clazz.getName() + " cannot have a field which is both a key and excluded.");
@@ -171,6 +179,7 @@ public class ClassCacheEntry {
 				}
 				TypeMapper typeMapper = TypeUtils.getMapper(thisField.getType(), thisField.getGenericType(), thisField.getAnnotations(), this.mapper);
 				this.key = new ValueType.FieldValue(thisField, typeMapper);
+				isKey = true;
 			}
 
 			if (thisField.isAnnotationPresent(AerospikeExclude.class)) {
@@ -189,6 +198,9 @@ public class ClassCacheEntry {
 				}
 				else {
 					name = binName;
+				}
+				if (isKey) {
+					this.keyName = name;
 				}
 				
 				if (this.values.get(name) != null) {
@@ -316,7 +328,11 @@ public class ClassCacheEntry {
 		}
 	}
 	
-	public List<Object> getList(Object instance) {
+	private boolean isKeyField(String name) {
+		return name != null && keyName != null && keyName.equals(name);
+	}
+	
+	public List<Object> getList(Object instance, boolean skipKey) {
 		try {
 			List<Object> results = new ArrayList<>();
 			List<Object> versionsToAdd = new ArrayList<>();
@@ -327,12 +343,17 @@ public class ClassCacheEntry {
 				}
 				if (ordinals != null) {
 					for (int i = 1; i <= ordinals.size(); i++) {
-						addDataFromValueName(ordinals.get(i), instance, thisClass, results);
+						String name = ordinals.get(i);
+						if (!skipKey || !isKeyField(name)) {
+							addDataFromValueName(name, instance, thisClass, results);
+						}
 					}
 				}
 				for (String name : this.values.keySet()) {
 					if (fieldsWithOrdinals == null || !fieldsWithOrdinals.contains(name)) {
-						addDataFromValueName(name, instance, thisClass, results);
+						if (!skipKey || !isKeyField(name)) {
+							addDataFromValueName(name, instance, thisClass, results);
+						}
 					}
 				}
 				thisClass = thisClass.superClazz;
@@ -391,6 +412,10 @@ public class ClassCacheEntry {
 	}
 	
 	public void hydrateFromList(List<Object> list, Object instance) {
+		this.hydrateFromList(list, instance, false);
+	}
+	
+	public void hydrateFromList(List<Object> list, Object instance, boolean skipKey) {
 		try {
 			int index = 0;
 			int endIndex = list.size();
@@ -406,12 +431,17 @@ public class ClassCacheEntry {
 					int objectVersion = thisClass.version;
 					if (ordinals != null) {
 						for (int i = 1; i <= ordinals.size(); i++) {
-							index = setValueByField(ordinals.get(i), objectVersion, recordVersion, instance, index, list);
+							String name = ordinals.get(i);
+							if (!skipKey || !isKeyField(name)) {
+								index = setValueByField(name, objectVersion, recordVersion, instance, index, list);
+							}
 						}
 					}
 					for (String name : this.values.keySet()) {
 						if (this.fieldsWithOrdinals == null || !thisClass.fieldsWithOrdinals.contains(name)) {
-							index = setValueByField(name, objectVersion, recordVersion, instance, index, list);
+							if (!skipKey || !isKeyField(name)) {
+								index = setValueByField(name, objectVersion, recordVersion, instance, index, list);
+							}
 						}
 					}
 					thisClass = thisClass.superClazz;
