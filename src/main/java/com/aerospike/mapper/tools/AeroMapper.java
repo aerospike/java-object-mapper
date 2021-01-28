@@ -1,6 +1,7 @@
 package com.aerospike.mapper.tools;
 
-import java.lang.reflect.Field;
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -19,8 +20,13 @@ import com.aerospike.client.Value;
 import com.aerospike.client.policy.WritePolicy;
 import com.aerospike.client.query.RecordSet;
 import com.aerospike.client.query.Statement;
-import com.aerospike.mapper.annotations.AerospikeKey;
-import com.aerospike.mapper.annotations.AerospikeRecord;
+import com.aerospike.mapper.tools.configuration.ClassConfig;
+import com.aerospike.mapper.tools.configuration.Configuration;
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 
 public class AeroMapper {
 
@@ -54,7 +60,37 @@ public class AeroMapper {
             classesToPreload.add(clazz);
             return this;
         }
+        
+        public Builder withConfigurationFile(File file) throws JsonParseException, JsonMappingException, IOException {
+        	ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory());
+        	Configuration configuration = objectMapper.readValue(file, Configuration.class);
+        	this.loadConfiguration(configuration);
+        	return this;
+        }
+        
+        public Builder withConfiguration(String configurationYaml) throws JsonMappingException, JsonProcessingException {
+        	ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory());
+        	Configuration configuration = objectMapper.readValue(configurationYaml, Configuration.class);
+        	this.loadConfiguration(configuration);
+        	return this;
+        }
 
+        private void loadConfiguration(@NotNull Configuration configuration) {
+        	for (ClassConfig config : configuration.getClasses()) {
+        		String name = config.getClassName();
+        		if (StringUtils.isBlank(name)) {
+        			System.err.println("Ignoring class with blank name in configuration file");
+        		}
+        		else {
+        			try {
+						ClassCache.getInstance().loadClass(this.mapper, config);
+					} catch (ClassNotFoundException e) {
+						System.err.printf("Ignoring unknown class %s in configuration file", name);
+					}
+        		}
+        	}
+        }
+        
         public AeroMapper build() {
             if (classesToPreload != null) {
                 for (Class<?> clazz : classesToPreload) {

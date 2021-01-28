@@ -1112,4 +1112,6 @@ public static class PokerHand {
 - Document enums, dates, instants.
 - Validate that all AerospikeRecord objects have a no-arg constructor
 - Test to ensure List<AerospikeRecord> / Map<AerospikeRecord> cannot have both an embed and reference annotations / multiple annotations.
+- If a class is not annoated with @AerospikeRecord, CacheEntry returns null, which causes AeroMapper.save() to throw an NPE
+- Configuration file via YAML which overrides any annotation, but only the parts specified. (Eg override namespace name, TTL should still be preserved)
 

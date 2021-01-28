@@ -141,7 +141,7 @@ public class TypeUtils {
 				}
 				addToMap = false;
 			}
-			else if (clazz.isAnnotationPresent(AerospikeRecord.class)) {
+			else if (clazz.isAnnotationPresent(AerospikeRecord.class) || ClassCache.getInstance().hasClass(clazz)) {
 				for (Annotation annotation : annotations) {
 					boolean throwError = false;
 					if (annotation.annotationType().equals(AerospikeReference.class)) {
@@ -150,7 +150,7 @@ public class TypeUtils {
 						}
 						else {
 							AerospikeReference ref = (AerospikeReference)annotation;
-							typeMapper = new ObjectReferenceMapper(clazz, ref.lazy(), ref.type(), mapper);
+							typeMapper = new ObjectReferenceMapper(ClassCache.getInstance().loadClass(clazz, mapper), ref.lazy(), ref.type(), mapper);
 							addToMap = false;
 						}
 					}
@@ -161,7 +161,8 @@ public class TypeUtils {
 						}
 						else {
 							EmbedType type = isForSubType ? embed.elementType() : embed.type();
-							typeMapper = new ObjectEmbedMapper(clazz, type, mapper, isForSubType);
+							boolean skipKey = isForSubType && (embed.type() == EmbedType.MAP && embed.elementType() == EmbedType.LIST && (!embed.saveKey()));
+							typeMapper = new ObjectEmbedMapper(clazz, type, mapper, skipKey);
 							addToMap = false;
 						}
 					}
@@ -171,7 +172,7 @@ public class TypeUtils {
 				}
 				if (typeMapper == null) {
 					// No annotations were specified, so use the ObjectReferenceMapper with non-lazy references
-					typeMapper = new ObjectReferenceMapper(clazz, false, ReferenceType.ID, mapper);
+					typeMapper = new ObjectReferenceMapper(ClassCache.getInstance().loadClass(clazz, mapper), false, ReferenceType.ID, mapper);
 					addToMap = false;
 				}
 			}

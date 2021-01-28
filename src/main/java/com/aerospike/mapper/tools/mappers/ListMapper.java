@@ -84,7 +84,6 @@ public class ListMapper implements TypeMapper {
 			Map<Object, Object> results = new TreeMap<>();
 			for (Object obj : list) {
 				// TODO: Handle subclasses of the objects
-				// TODO: The key will potentially get stored twice here, once as the key and once in the object. Optimise this.
 				Object key = subTypeEntry.getKey(obj);
 				Object item = this.instanceClassMapper.toAerospikeFormat(obj);
 				results.put(key, item);

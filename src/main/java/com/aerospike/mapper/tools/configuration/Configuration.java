@@ -1,0 +1,16 @@
+package com.aerospike.mapper.tools.configuration;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class Configuration {
+	private List<ClassConfig> classes;
+	
+	public Configuration() {
+		this.classes = new ArrayList<>();
+	}
+	
+	public List<ClassConfig> getClasses() {
+		return classes;
+	}
+}

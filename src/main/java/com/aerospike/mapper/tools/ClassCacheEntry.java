@@ -18,6 +18,7 @@ import org.apache.commons.lang3.StringUtils;
 import com.aerospike.client.AerospikeException;
 import com.aerospike.client.Bin;
 import com.aerospike.client.Record;
+import com.aerospike.client.cdt.MapOrder;
 import com.aerospike.mapper.annotations.AerospikeBin;
 import com.aerospike.mapper.annotations.AerospikeExclude;
 import com.aerospike.mapper.annotations.AerospikeGetter;
@@ -25,18 +26,20 @@ import com.aerospike.mapper.annotations.AerospikeKey;
 import com.aerospike.mapper.annotations.AerospikeOrdinal;
 import com.aerospike.mapper.annotations.AerospikeRecord;
 import com.aerospike.mapper.annotations.AerospikeSetter;
+import com.aerospike.mapper.tools.configuration.ClassConfig;
 
 public class ClassCacheEntry {
 	
 	public static final String VERSION_PREFIX = "@V";
 	
-	private final String namespace;
-	private final String setName;
-	private final int ttl;
-	private final boolean mapAll;
-	private final boolean sendKey;
-	private final boolean durableDelete;
-	
+	private String namespace;
+	private String setName;
+	private int ttl = 0;
+	private boolean mapAll = true;
+	private boolean sendKey = false;
+	private boolean durableDelete = false;
+	private int version = 1;
+
 	private final Class<?> clazz;
 	private ValueType key;
 	private String keyName = null;
@@ -44,33 +47,67 @@ public class ClassCacheEntry {
 	private final ClassCacheEntry superClazz;
 	private final int binCount;
 	private final AeroMapper mapper;
-	private final int version;
 	private Map<Integer, String> ordinals = null;
 	private Set<String> fieldsWithOrdinals = null;
 	
-	public ClassCacheEntry(@NotNull Class<?> clazz, AeroMapper mapper) {
-		AerospikeRecord recordDescription = clazz.getAnnotation(AerospikeRecord.class);
-		if (recordDescription == null) {
-			throw new IllegalArgumentException("Class " + clazz.getName() + " is not augmented by the @AerospikeRecord annotation");
-		}
+	public ClassCacheEntry(@NotNull Class<?> clazz, AeroMapper mapper, ClassConfig config) {
 		this.clazz = clazz;
 		this.mapper = mapper;
-		this.namespace = ParserUtils.getInstance().get(recordDescription.namespace());
-		this.setName = ParserUtils.getInstance().get(recordDescription.set());
-		this.ttl = recordDescription.ttl();
-		this.mapAll = recordDescription.mapAll();
-		this.version = recordDescription.version();
-		this.sendKey = recordDescription.sendKey();
-		this.durableDelete = recordDescription.durableDelete();
+
+		AerospikeRecord recordDescription = clazz.getAnnotation(AerospikeRecord.class);
+		if (recordDescription == null && config == null) {
+			throw new IllegalArgumentException("Class " + clazz.getName() + " is not augmented by the @AerospikeRecord annotation");
+		}
+		else if (recordDescription != null) {
+			this.namespace = ParserUtils.getInstance().get(recordDescription.namespace());
+			this.setName = ParserUtils.getInstance().get(recordDescription.set());
+			this.ttl = recordDescription.ttl();
+			this.mapAll = recordDescription.mapAll();
+			this.version = recordDescription.version();
+			this.sendKey = recordDescription.sendKey();
+			this.durableDelete = recordDescription.durableDelete();
+		}
+		
+		if (config != null) {
+			this.overrideSettings(config);
+		}
 		
 		this.loadFieldsFromClass(clazz, this.mapAll);
 		this.loadPropertiesFromClass(clazz);
 		this.superClazz = ClassCache.getInstance().loadClass(this.clazz.getSuperclass(), this.mapper);
 		this.binCount = this.values.size() + (superClazz != null ? superClazz.binCount : 0);
 		if (this.binCount == 0) {
-			throw new AerospikeException("Class " + clazz.getSimpleName() + " %s has no values defined to be stored in the database");
+			throw new AerospikeException("Class " + clazz.getSimpleName() + " has no values defined to be stored in the database");
 		}
 		this.formOrdinalsFromValues();
+	}
+	
+	public Class<?> getUnderlyingClass() {
+		return this.clazz;
+	}
+	
+	private void overrideSettings(ClassConfig config) {
+		if (!StringUtils.isBlank(config.getNamespace())) {
+			this.namespace = config.getNamespace();
+		}
+		if (!StringUtils.isBlank(config.getSet())) {
+			this.setName = config.getSet();
+		}
+		if (config.getTtl() != null) {
+			this.ttl = config.getTtl();
+		}
+		if (config.getVersion() != null) {
+			this.version = config.getVersion();
+		}
+		if (config.getDurableDelete() != null) {
+			this.durableDelete = config.getDurableDelete();
+		}
+		if (config.getMapAll() != null) {
+			this.mapAll = config.getMapAll();
+		}
+		if (config.getSendKey() != null) {
+			this.mapAll = config.getSendKey();
+		}
 	}
 	
 	private void formOrdinalsFromValues() {
@@ -231,7 +268,7 @@ public class ClassCacheEntry {
 		try {
 			Object key = this._getKey(object);
 			if (key == null) {
-	    		throw new AerospikeException("Null key from annotated object. Did you forget an @AerospikeKey annotation?");
+	    		throw new AerospikeException("Null key from annotated object of class " + this.clazz.getSimpleName() + ". Did you forget an @AerospikeKey annotation?");
 			}
 			return key;
 		}
@@ -278,6 +315,7 @@ public class ClassCacheEntry {
 		return durableDelete;
 	}
 	
+	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public Bin[] getBins(Object instance) {
 		try {
 			Bin[] bins = new Bin[this.binCount];
@@ -288,7 +326,13 @@ public class ClassCacheEntry {
 					ValueType value = this.values.get(name);
 					Object javaValue = value.get(instance);
 					Object aerospikeValue = value.getTypeMapper().toAerospikeFormat(javaValue);
-					bins[index++] = new Bin(name, aerospikeValue);
+					if (aerospikeValue instanceof TreeMap<?, ?>) {
+						TreeMap<?,?> treeMap = (TreeMap<?,?>)aerospikeValue;
+						bins[index++] = new Bin(name, new ArrayList(treeMap.entrySet()), MapOrder.KEY_ORDERED);
+					}
+					else {
+						bins[index++] = new Bin(name, aerospikeValue);
+					}
 				}
 				thisClass = thisClass.superClazz;
 			}
