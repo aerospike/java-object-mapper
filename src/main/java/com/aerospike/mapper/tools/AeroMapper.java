@@ -60,33 +60,51 @@ public class AeroMapper {
             classesToPreload.add(clazz);
             return this;
         }
-        
+
         public Builder withConfigurationFile(File file) throws JsonParseException, JsonMappingException, IOException {
-        	ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory());
-        	Configuration configuration = objectMapper.readValue(file, Configuration.class);
-        	this.loadConfiguration(configuration);
-        	return this;
+        	return this.withConfigurationFile(file, false);
         }
         
-        public Builder withConfiguration(String configurationYaml) throws JsonMappingException, JsonProcessingException {
+        public Builder withConfigurationFile(File file, boolean allowsInvalid) throws JsonParseException, JsonMappingException, IOException {
         	ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory());
-        	Configuration configuration = objectMapper.readValue(configurationYaml, Configuration.class);
-        	this.loadConfiguration(configuration);
+        	Configuration configuration = objectMapper.readValue(file, Configuration.class);
+        	this.loadConfiguration(configuration, allowsInvalid);
         	return this;
         }
 
-        private void loadConfiguration(@NotNull Configuration configuration) {
+        public Builder withConfiguration(String configurationYaml) throws JsonMappingException, JsonProcessingException {
+        	return this.withConfiguration(configurationYaml, false);
+        }
+        
+        public Builder withConfiguration(String configurationYaml, boolean allowsInvalid) throws JsonMappingException, JsonProcessingException {
+        	ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory());
+        	Configuration configuration = objectMapper.readValue(configurationYaml, Configuration.class);
+        	this.loadConfiguration(configuration, allowsInvalid);
+        	return this;
+        }
+
+        private void loadConfiguration(@NotNull Configuration configuration, boolean allowsInvalid) {
         	for (ClassConfig config : configuration.getClasses()) {
-        		String name = config.getClassName();
-        		if (StringUtils.isBlank(name)) {
-        			System.err.println("Ignoring class with blank name in configuration file");
+        		try {
+	        		String name = config.getClassName();
+	        		if (StringUtils.isBlank(name)) {
+	        			throw new AerospikeException("Class with blank name in configuration file");
+	        		}
+	        		else {
+	        			try {
+							ClassCache.getInstance().loadClass(this.mapper, config);
+						} catch (ClassNotFoundException e) {
+							throw new AerospikeException("Canot find a class with name " + name);
+						}
+	        		}
         		}
-        		else {
-        			try {
-						ClassCache.getInstance().loadClass(this.mapper, config);
-					} catch (ClassNotFoundException e) {
-						System.err.printf("Ignoring unknown class %s in configuration file", name);
-					}
+        		catch (RuntimeException re) {
+        			if (allowsInvalid) {
+        				System.err.println("Ignoring issue with configuration: " + re.getMessage());
+        			}
+        			else {
+        				throw re;
+        			}
         		}
         	}
         }

@@ -26,7 +26,9 @@ import com.aerospike.mapper.annotations.AerospikeKey;
 import com.aerospike.mapper.annotations.AerospikeOrdinal;
 import com.aerospike.mapper.annotations.AerospikeRecord;
 import com.aerospike.mapper.annotations.AerospikeSetter;
+import com.aerospike.mapper.tools.configuration.BinConfig;
 import com.aerospike.mapper.tools.configuration.ClassConfig;
+import com.aerospike.mapper.tools.configuration.KeyConfig;
 
 public class ClassCacheEntry {
 	
@@ -49,10 +51,12 @@ public class ClassCacheEntry {
 	private final AeroMapper mapper;
 	private Map<Integer, String> ordinals = null;
 	private Set<String> fieldsWithOrdinals = null;
+	private final ClassConfig classConfig;
 	
 	public ClassCacheEntry(@NotNull Class<?> clazz, AeroMapper mapper, ClassConfig config) {
 		this.clazz = clazz;
 		this.mapper = mapper;
+		this.classConfig = config;
 
 		AerospikeRecord recordDescription = clazz.getAnnotation(AerospikeRecord.class);
 		if (recordDescription == null && config == null) {
@@ -69,11 +73,12 @@ public class ClassCacheEntry {
 		}
 		
 		if (config != null) {
+			config.validate();
 			this.overrideSettings(config);
 		}
 		
-		this.loadFieldsFromClass(clazz, this.mapAll);
-		this.loadPropertiesFromClass(clazz);
+		this.loadFieldsFromClass(clazz, this.mapAll, config);
+		this.loadPropertiesFromClass(clazz, config);
 		this.superClazz = ClassCache.getInstance().loadClass(this.clazz.getSuperclass(), this.mapper);
 		this.binCount = this.values.size() + (superClazz != null ? superClazz.binCount : 0);
 		if (this.binCount == 0) {
@@ -110,24 +115,58 @@ public class ClassCacheEntry {
 		}
 	}
 	
+	private BinConfig getBinFromName(String name) {
+		if (this.classConfig == null || this.classConfig.getBins() == null) {
+			return null;
+		}
+		for (BinConfig thisBin: this.classConfig.getBins()) {
+			if (thisBin.getDerivedName().equals(name)) {
+				return thisBin;
+			}
+		}
+		return null;
+	}
+	
+	private BinConfig getBinFromField(Field field) {
+		if (this.classConfig == null || this.classConfig.getBins() == null) {
+			return null;
+		}
+		for (BinConfig thisBin: this.classConfig.getBins()) {
+			if (thisBin.getField().equals(field.getName())) {
+				return thisBin;
+			}
+		}
+		return null;
+	}
+	
 	private void formOrdinalsFromValues() {
 		for (String thisValueName : this.values.keySet()) {
 			ValueType thisValue = this.values.get(thisValueName);
-			for (Annotation thisAnnotation : thisValue.getAnnotations()) {
-				if (thisAnnotation instanceof AerospikeOrdinal) {
-					AerospikeOrdinal ordinal = (AerospikeOrdinal) thisAnnotation;
-					if (ordinals == null) {
-						ordinals = new HashMap<>();
-						fieldsWithOrdinals = new HashSet<>();
+			
+			BinConfig binConfig = getBinFromName(thisValueName);
+			Integer ordinal = binConfig == null ? null : binConfig.getOrdinal();
+
+			if (ordinal == null) {
+				for (Annotation thisAnnotation : thisValue.getAnnotations()) {
+					if (thisAnnotation instanceof AerospikeOrdinal) {
+						ordinal = ((AerospikeOrdinal)thisAnnotation).value();
 					}
-					if (ordinals.containsKey(ordinal.value())) {
-						throw new AerospikeException(String.format("Class %s has multiple values with the ordinal of %d", clazz.getSimpleName(), ordinal.value()));
-					}
-					ordinals.put(ordinal.value(), thisValueName);
-					fieldsWithOrdinals.add(thisValueName);
+					break;
 				}
 			}
+			if (ordinal != null) {
+				if (ordinals == null) {
+					ordinals = new HashMap<>();
+					fieldsWithOrdinals = new HashSet<>();
+				}
+				if (ordinals.containsKey(ordinal)) {
+					throw new AerospikeException(String.format("Class %s has multiple values with the ordinal of %d", clazz.getSimpleName(), ordinal));
+				}
+				ordinals.put(ordinal, thisValueName);
+				fieldsWithOrdinals.add(thisValueName);
+			}
 		}
+		
 		if (ordinals != null) {
 			// The ordinals need to be valued from 1..<numOrdinals>
 			for (int i = 1; i <= ordinals.size(); i++) {
@@ -148,7 +187,7 @@ public class ClassCacheEntry {
 		return thisProperty;
 	}
 	
-	private void loadPropertiesFromClass(@NotNull Class<?> clazz) {
+	private void loadPropertiesFromClass(@NotNull Class<?> clazz, ClassConfig config) {
 		Map<String, PropertyDefinition> properties = new HashMap<>();
 		PropertyDefinition keyProperty = null;
 		for (Method thisMethod : clazz.getDeclaredMethods()) {
@@ -204,11 +243,14 @@ public class ClassCacheEntry {
 		}
 	}
 
-	private void loadFieldsFromClass(Class<?> clazz, boolean mapAll) {
+	private void loadFieldsFromClass(Class<?> clazz, boolean mapAll, ClassConfig config) {
+		KeyConfig keyConfig = config.getKey();
+		String keyField = keyConfig == null ? null : keyConfig.getField();
 		for (Field thisField : clazz.getDeclaredFields()) {
 			boolean isKey = false;
-			if (thisField.isAnnotationPresent(AerospikeKey.class)) {
-				if (thisField.isAnnotationPresent(AerospikeExclude.class)) {
+			BinConfig thisBin = getBinFromField(thisField);
+			if (thisField.isAnnotationPresent(AerospikeKey.class) || (!StringUtils.isBlank(keyField) && keyField.equals(thisField.getName()))) {
+				if (thisField.isAnnotationPresent(AerospikeExclude.class) || (thisBin != null && thisBin.isExcluded())) {
 					throw new AerospikeException("Class " + clazz.getName() + " cannot have a field which is both a key and excluded.");
 				}
 				if (key != null) {
@@ -219,18 +261,21 @@ public class ClassCacheEntry {
 				isKey = true;
 			}
 
-			if (thisField.isAnnotationPresent(AerospikeExclude.class)) {
+			if (thisField.isAnnotationPresent(AerospikeExclude.class) || (thisBin != null && thisBin.isExcluded() != null && thisBin.isExcluded().booleanValue())) {
 				// This field should be excluded from being stored in the database. Even keys must be stored
 				continue;
 			}
 			
-			if (this.mapAll || thisField.isAnnotationPresent(AerospikeBin.class)) {
+			if (this.mapAll || thisField.isAnnotationPresent(AerospikeBin.class) || thisBin != null) {
 				// This field needs to be mapped
 				thisField.setAccessible(true);
 				AerospikeBin bin = thisField.getAnnotation(AerospikeBin.class);
-				String binName = bin == null ? null : ParserUtils.getInstance().get(bin.name()); 
+				String binName = bin == null ? null : ParserUtils.getInstance().get(bin.name());
+				if (thisBin != null && !StringUtils.isBlank(thisBin.getDerivedName())) {
+					binName = thisBin.getDerivedName();
+				}
 				String name;
-				if (bin == null || StringUtils.isBlank(binName)) {
+				if (StringUtils.isBlank(binName)) {
 					name = thisField.getName();
 				}
 				else {

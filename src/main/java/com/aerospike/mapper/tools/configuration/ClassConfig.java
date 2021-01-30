@@ -1,5 +1,10 @@
 package com.aerospike.mapper.tools.configuration;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import javax.validation.constraints.NotNull;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class ClassConfig {
@@ -12,8 +17,11 @@ public class ClassConfig {
 	private Boolean sendKey;
 	private Boolean mapAll;
 	private Boolean durableDelete;
+	private KeyConfig key;
+	private List<BinConfig> bins;
 	
 	public ClassConfig() {
+		bins = new ArrayList<>();
 	}
 
 	public String getClassName() {
@@ -46,5 +54,32 @@ public class ClassConfig {
 	
 	public Boolean getDurableDelete() {
 		return durableDelete;
+	}
+	
+	public KeyConfig getKey() {
+		return key;
+	}
+	public List<BinConfig> getBins() {
+		return bins;
+	}
+	
+	public BinConfig getBinByName(@NotNull String name) {
+		if (bins == null) {
+			return null;
+		}
+		for (BinConfig thisBin : bins) {
+			if (name.equals(thisBin.getName())) {
+				return thisBin;
+			}
+		}
+		return null;
+	}
+	
+	public void validate() {
+		if (this.bins != null) {
+			for (BinConfig thisBin : bins) {
+				thisBin.validate(this.className);
+			}
+		}
 	}
 }

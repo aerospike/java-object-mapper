@@ -22,7 +22,6 @@ public class AeroMapperConfigurationYamlTest extends AeroMapperBaseTest {
     }
 
     public static class DataClass {
-    	@AerospikeKey
     	private int id;
     	private int integer;
     	private String string;
@@ -68,7 +67,6 @@ public class AeroMapperConfigurationYamlTest extends AeroMapperBaseTest {
     }
 
     public static class ContainerClass {
-    	@AerospikeKey
     	public int id;
     	public List<DataClass> dataClasses;
     	
@@ -110,10 +108,19 @@ public class AeroMapperConfigurationYamlTest extends AeroMapperBaseTest {
 "  - class: com.aerospike.mapper.AeroMapperConfigurationYamlTest$DataClass\n" +
 "    namespace: test\n" +
 "    set: dataClass\n" +
+"    key:\n" +
+"      field: id\n" +
+"    bins:\n" +
+"      - field: date\n" +
+"        embed:\n" +
+"          type: LIST\n" +
+"        name: d1\n" +
 "  - class: com.aerospike.mapper.AeroMapperConfigurationYamlTest$ContainerClass\n" +
 "    namespace: test\n" +
-"    set: containers\n";
-
+"    set: containers\n" +
+"    key:\n" +
+"      field: id\n";
+		System.out.println(yaml);
 		AeroMapper mapper = new AeroMapper.Builder(client).withConfiguration(yaml).build();
 		
 		ContainerClass container = new ContainerClass();
