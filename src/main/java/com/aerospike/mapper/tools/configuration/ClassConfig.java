@@ -75,6 +75,29 @@ public class ClassConfig {
 		return null;
 	}
 	
+	public BinConfig getBinByGetterName(@NotNull String getterName) {
+		if (bins == null) {
+			return null;
+		}
+		for (BinConfig thisBin : bins) {
+			if (getterName.equals(thisBin.getGetter())) {
+				return thisBin;
+			}
+		}
+		return null;
+	}
+	
+	public BinConfig getBinByFieldName(@NotNull String fieldName) {
+		if (bins == null) {
+			return null;
+		}
+		for (BinConfig thisBin : bins) {
+			if (fieldName.equals(thisBin.getField())) {
+				return thisBin;
+			}
+		}
+		return null;
+	}
 	public void validate() {
 		if (this.bins != null) {
 			for (BinConfig thisBin : bins) {

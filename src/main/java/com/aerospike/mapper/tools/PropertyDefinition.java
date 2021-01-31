@@ -5,6 +5,8 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 
 import com.aerospike.client.AerospikeException;
+import com.aerospike.mapper.tools.TypeUtils.AnnotatedType;
+import com.aerospike.mapper.tools.configuration.ClassConfig;
 
 public class PropertyDefinition {
 	private Method getter;
@@ -53,7 +55,7 @@ public class PropertyDefinition {
 	/**
 	 * Validate that this is a valid property
 	 */
-	public void validate(String className, boolean allowNoSetter) {
+	public void validate(String className, ClassConfig config, boolean allowNoSetter) {
 		if (this.getter == null) {
 			throw new AerospikeException(String.format("Property %s on class %s must have a getter", this.name, className));
 		}
@@ -85,6 +87,7 @@ public class PropertyDefinition {
 			throw new AerospikeException(String.format("Getter (%s) and setter (%s) for property %s on class %s differ in type", getterClazz.getName(), setterClazz.getName(), this.name, className));
 		}
 		this.clazz = getterClazz;
-		this.typeMapper = TypeUtils.getMapper(clazz, getter.getGenericReturnType(), getter.getAnnotations(), this.mapper);
+		
+		this.typeMapper = TypeUtils.getMapper(clazz, new AnnotatedType(config, getter), this.mapper);
 	}
 }

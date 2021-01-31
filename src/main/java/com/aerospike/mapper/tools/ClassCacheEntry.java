@@ -26,6 +26,7 @@ import com.aerospike.mapper.annotations.AerospikeKey;
 import com.aerospike.mapper.annotations.AerospikeOrdinal;
 import com.aerospike.mapper.annotations.AerospikeRecord;
 import com.aerospike.mapper.annotations.AerospikeSetter;
+import com.aerospike.mapper.tools.TypeUtils.AnnotatedType;
 import com.aerospike.mapper.tools.configuration.BinConfig;
 import com.aerospike.mapper.tools.configuration.ClassConfig;
 import com.aerospike.mapper.tools.configuration.KeyConfig;
@@ -89,6 +90,10 @@ public class ClassCacheEntry {
 	
 	public Class<?> getUnderlyingClass() {
 		return this.clazz;
+	}
+	
+	public ClassConfig getClassConfig() {
+		return this.classConfig;
 	}
 	
 	private void overrideSettings(ClassConfig config) {
@@ -224,27 +229,27 @@ public class ClassCacheEntry {
 		}
 		
 		if (keyProperty != null) {
-			keyProperty.validate(clazz.getName(), true);
+			keyProperty.validate(clazz.getName(), config, true);
 			if (key != null) {
 				throw new AerospikeException("Class " + clazz.getName() + " cannot have a more than one key");
 			}
-			TypeMapper typeMapper = TypeUtils.getMapper(keyProperty.getType(), keyProperty.getGenericType(), keyProperty.getAnnotations(), this.mapper);
+			TypeMapper typeMapper = TypeUtils.getMapper(keyProperty.getType(), new AnnotatedType(config, keyProperty.getGetter()), this.mapper);
 			this.key = new ValueType.MethodValue(keyProperty, typeMapper);
 		}
 		for (String thisPropertyName : properties.keySet()) {
 			PropertyDefinition thisProperty = properties.get(thisPropertyName);
-			thisProperty.validate(clazz.getName(), false);
+			thisProperty.validate(clazz.getName(), config, false);
 			if (this.values.get(thisPropertyName) != null) {
 				throw new AerospikeException("Class " + clazz.getName() + " cannot define the mapped name " + thisPropertyName + " more than once");
 			}
-			TypeMapper typeMapper = TypeUtils.getMapper(thisProperty.getType(), thisProperty.getGenericType(), thisProperty.getAnnotations(), this.mapper);
+			TypeMapper typeMapper = TypeUtils.getMapper(thisProperty.getType(), new AnnotatedType(config, thisProperty.getGetter()), this.mapper);
 			ValueType value = new ValueType.MethodValue(thisProperty, typeMapper);
 			values.put(thisPropertyName, value);
 		}
 	}
 
 	private void loadFieldsFromClass(Class<?> clazz, boolean mapAll, ClassConfig config) {
-		KeyConfig keyConfig = config.getKey();
+		KeyConfig keyConfig = config != null ? config.getKey() : null;
 		String keyField = keyConfig == null ? null : keyConfig.getField();
 		for (Field thisField : clazz.getDeclaredFields()) {
 			boolean isKey = false;
@@ -256,7 +261,7 @@ public class ClassCacheEntry {
 				if (key != null) {
 					throw new AerospikeException("Class " + clazz.getName() + " cannot have a more than one key");
 				}
-				TypeMapper typeMapper = TypeUtils.getMapper(thisField.getType(), thisField.getGenericType(), thisField.getAnnotations(), this.mapper);
+				TypeMapper typeMapper = TypeUtils.getMapper(thisField.getType(), new AnnotatedType(config, thisField), this.mapper);
 				this.key = new ValueType.FieldValue(thisField, typeMapper);
 				isKey = true;
 			}
@@ -288,7 +293,7 @@ public class ClassCacheEntry {
 				if (this.values.get(name) != null) {
 					throw new AerospikeException("Class " + clazz.getName() + " cannot define the mapped name " + name + " more than once");
 				}
-				TypeMapper typeMapper = TypeUtils.getMapper(thisField.getType(), thisField.getGenericType(), thisField.getAnnotations(), this.mapper);
+				TypeMapper typeMapper = TypeUtils.getMapper(thisField.getType(), new AnnotatedType(config, thisField), this.mapper);
 				ValueType valueType = new ValueType.FieldValue(thisField, typeMapper);
 				values.put(name, valueType);
 			}

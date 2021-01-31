@@ -1,6 +1,8 @@
 package com.aerospike.mapper.tools;
 
 import java.lang.annotation.Annotation;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.time.Instant;
@@ -15,6 +17,8 @@ import com.aerospike.mapper.annotations.AerospikeEmbed.EmbedType;
 import com.aerospike.mapper.annotations.AerospikeRecord;
 import com.aerospike.mapper.annotations.AerospikeReference;
 import com.aerospike.mapper.annotations.AerospikeReference.ReferenceType;
+import com.aerospike.mapper.tools.configuration.BinConfig;
+import com.aerospike.mapper.tools.configuration.ClassConfig;
 import com.aerospike.mapper.tools.mappers.ArrayMapper;
 import com.aerospike.mapper.tools.mappers.BooleanMapper;
 import com.aerospike.mapper.tools.mappers.ByteMapper;
@@ -34,6 +38,50 @@ import com.aerospike.mapper.tools.mappers.ShortMapper;
 public class TypeUtils {
 	private static Map<Class<?>, TypeMapper> mappers = new HashMap<>();
 	
+	public static class AnnotatedType {
+		
+		private static final AnnotatedType defaultAnnotatedType = new AnnotatedType(null, null, null);
+		public static AnnotatedType getDefaultAnnotateType() {
+			return defaultAnnotatedType; 
+		}
+
+		private final Annotation[] annotations;
+		private final ParameterizedType paramterizedType;
+		private final BinConfig binConfig;
+		
+		private AnnotatedType(BinConfig binConfig, Type type, Annotation[] annotations) {
+			this.binConfig = binConfig;
+			this.annotations = annotations;
+			if (type instanceof ParameterizedType) {
+				this.paramterizedType = (ParameterizedType) type;
+			}
+			else {
+				this.paramterizedType = null;
+			}
+		}
+		
+		public AnnotatedType(ClassConfig config, Field field) {
+			this(config == null ? null : config.getBinByFieldName(field.getName()), field.getGenericType(), field.getAnnotations());
+		}
+		
+		public AnnotatedType(ClassConfig config, Method getter) {
+			this(config == null ? null : config.getBinByGetterName(getter.getName()), getter.getGenericReturnType(), getter.getAnnotations());
+		}		
+		
+		public Annotation[] getAnnotations() {
+			return annotations;
+		}
+		public BinConfig getBinConfig() {
+			return binConfig;
+		}
+		public ParameterizedType getParamterizedType() {
+			return paramterizedType;
+		}
+		public boolean isParameterizedType() {
+			return paramterizedType != null;
+		}
+	}
+	
 	// package visibility
 	/**
 	 * This method adds a new type mapper into the system. This type mapper will replace any other mappers
@@ -50,7 +98,7 @@ public class TypeUtils {
 	}
 	
 	@SuppressWarnings("unchecked")
-	private static TypeMapper getMapper(Class<?> clazz, Type instanceType, Annotation[] annotations, AeroMapper mapper, boolean isForSubType) {
+	private static TypeMapper getMapper(Class<?> clazz, AnnotatedType type, AeroMapper mapper, boolean isForSubType) {
 		if (clazz == null) {
 			return null;
 		}
@@ -91,13 +139,13 @@ public class TypeUtils {
 					typeMapper = new DefaultMapper();
 				}
 				else {
-					TypeMapper subMapper = getMapper(elementType, instanceType, annotations, mapper, true);
+					TypeMapper subMapper = getMapper(elementType, type, mapper, true);
 					typeMapper = new ArrayMapper(elementType, subMapper);
 				}
 			}
 			else if (Map.class.isAssignableFrom(clazz)) {
-				if (instanceType instanceof ParameterizedType) {
-					ParameterizedType paramType = (ParameterizedType)instanceType;
+				if (type.isParameterizedType()) {
+					ParameterizedType paramType = type.getParamterizedType();
 					Type[] types = paramType.getActualTypeArguments();
 					if (types.length != 2) {
 						throw new AerospikeException(String.format("Type %s is a parameterized type as expected, but has %d type parameters, not the expected 2", clazz.getName(), types.length));
@@ -105,8 +153,8 @@ public class TypeUtils {
 					
 					Class<?> keyClazz = (Class<?>)types[0];
 					Class<?> itemClazz = (Class<?>)types[1];
-					TypeMapper keyMapper = getMapper(keyClazz, instanceType, annotations, mapper, true);
-					TypeMapper itemMapper = getMapper(itemClazz, instanceType, annotations, mapper, true);
+					TypeMapper keyMapper = getMapper(keyClazz, type, mapper, true);
+					TypeMapper itemMapper = getMapper(itemClazz, type, mapper, true);
 					typeMapper = new MapMapper(clazz, keyClazz, itemClazz, keyMapper, itemMapper,  mapper);
 
 				}
@@ -118,22 +166,22 @@ public class TypeUtils {
 			else if (List.class.isAssignableFrom(clazz)) {
 				EmbedType embedType = EmbedType.DEFAULT;
 				boolean saveKey = true;
-				for (Annotation annotation : annotations) {
+				for (Annotation annotation : type.getAnnotations()) {
 					if (annotation.annotationType().equals(AerospikeEmbed.class)) {
 						AerospikeEmbed embed = (AerospikeEmbed)annotation;
 						embedType = embed.type();
 						saveKey = embed.saveKey();
 					}
 				}
-				if (instanceType instanceof ParameterizedType) {
-					ParameterizedType paramType = (ParameterizedType)instanceType;
+				if (type.isParameterizedType()) {
+					ParameterizedType paramType = type.getParamterizedType();
 					Type[] types = paramType.getActualTypeArguments();
 					if (types.length != 1) {
 						throw new AerospikeException(String.format("Type %s is a parameterized type as expected, but has %d type parameters, not the expected 1", clazz.getName(), types.length));
 					}
 					
 					Class<?> subClazz = (Class<?>)types[0];
-					TypeMapper subMapper = getMapper(subClazz, instanceType, annotations, mapper, true);
+					TypeMapper subMapper = getMapper(subClazz, type, mapper, true);
 					typeMapper = new ListMapper(clazz, subClazz, subMapper,  mapper, embedType, saveKey);
 				}
 				else {
@@ -142,7 +190,7 @@ public class TypeUtils {
 				addToMap = false;
 			}
 			else if (clazz.isAnnotationPresent(AerospikeRecord.class) || ClassCache.getInstance().hasClass(clazz)) {
-				for (Annotation annotation : annotations) {
+				for (Annotation annotation : type.getAnnotations()) {
 					boolean throwError = false;
 					if (annotation.annotationType().equals(AerospikeReference.class)) {
 						if (typeMapper != null) {
@@ -160,9 +208,9 @@ public class TypeUtils {
 							throwError = true;
 						}
 						else {
-							EmbedType type = isForSubType ? embed.elementType() : embed.type();
+							EmbedType embedType = isForSubType ? embed.elementType() : embed.type();
 							boolean skipKey = isForSubType && (embed.type() == EmbedType.MAP && embed.elementType() == EmbedType.LIST && (!embed.saveKey()));
-							typeMapper = new ObjectEmbedMapper(clazz, type, mapper, skipKey);
+							typeMapper = new ObjectEmbedMapper(clazz, embedType, mapper, skipKey);
 							addToMap = false;
 						}
 					}
@@ -186,8 +234,8 @@ public class TypeUtils {
 		return typeMapper;
 	}
 
-	public static TypeMapper getMapper(Class<?> clazz, Type instanceType, Annotation[] annotations, AeroMapper mapper) {
-		return getMapper(clazz, instanceType, annotations, mapper, false);
+	public static TypeMapper getMapper(Class<?> clazz, AnnotatedType type, AeroMapper mapper) {
+		return getMapper(clazz, type, mapper, false);
 	}
 
 	public static boolean isByteType(Class<?> clazz) {

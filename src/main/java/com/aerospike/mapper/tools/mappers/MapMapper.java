@@ -6,6 +6,7 @@ import java.util.TreeMap;
 import com.aerospike.mapper.tools.AeroMapper;
 import com.aerospike.mapper.tools.TypeMapper;
 import com.aerospike.mapper.tools.TypeUtils;
+import com.aerospike.mapper.tools.TypeUtils.AnnotatedType;
 
 public class MapMapper implements TypeMapper {
 
@@ -45,8 +46,8 @@ public class MapMapper implements TypeMapper {
 		for (Object key : map.keySet()) {
 			Object item = map.get(key);
 			
-			TypeMapper keyMap = keyMapper != null ? keyMapper : TypeUtils.getMapper(key.getClass(), null, null, mapper);
-			TypeMapper itemMap = itemMapper != null ? itemMapper : TypeUtils.getMapper(item.getClass(), null, null, mapper);
+			TypeMapper keyMap = keyMapper != null ? keyMapper : TypeUtils.getMapper(key.getClass(), AnnotatedType.getDefaultAnnotateType(), mapper);
+			TypeMapper itemMap = itemMapper != null ? itemMapper : TypeUtils.getMapper(item.getClass(), AnnotatedType.getDefaultAnnotateType(), mapper);
 			results.put(keyMap.toAerospikeFormat(key), itemMap.toAerospikeFormat(item));
 		}
 		return results;
@@ -66,8 +67,8 @@ public class MapMapper implements TypeMapper {
 		for (Object key : map.keySet()) {
 			Object item = map.get(key);
 			
-			TypeMapper keyMap = keyMapper != null ? keyMapper : TypeUtils.getMapper(key.getClass(), null, null, mapper);
-			TypeMapper itemMap = itemMapper != null ? itemMapper : TypeUtils.getMapper(item.getClass(), null, null, mapper);
+			TypeMapper keyMap = keyMapper != null ? keyMapper : TypeUtils.getMapper(key.getClass(), AnnotatedType.getDefaultAnnotateType(), mapper);
+			TypeMapper itemMap = itemMapper != null ? itemMapper : TypeUtils.getMapper(item.getClass(), AnnotatedType.getDefaultAnnotateType(), mapper);
 			results.put(keyMap.fromAerospikeFormat(key), itemMap.fromAerospikeFormat(item));
 		}
 		return results;

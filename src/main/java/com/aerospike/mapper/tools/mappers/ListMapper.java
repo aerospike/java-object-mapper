@@ -12,6 +12,7 @@ import com.aerospike.mapper.tools.ClassCache;
 import com.aerospike.mapper.tools.ClassCacheEntry;
 import com.aerospike.mapper.tools.TypeMapper;
 import com.aerospike.mapper.tools.TypeUtils;
+import com.aerospike.mapper.tools.TypeUtils.AnnotatedType;
 
 public class ListMapper implements TypeMapper {
 
@@ -67,7 +68,7 @@ public class ListMapper implements TypeMapper {
 						results.add(null);
 					}
 					else {
-						TypeMapper thisMapper = TypeUtils.getMapper(obj.getClass(), null, null, mapper);
+						TypeMapper thisMapper = TypeUtils.getMapper(obj.getClass(), null, mapper);
 						results.add(thisMapper == null ? obj : thisMapper.toAerospikeFormat(obj));
 					}
 				}
@@ -112,7 +113,7 @@ public class ListMapper implements TypeMapper {
 						results.add(null);
 					}
 					else {
-						TypeMapper thisMapper = TypeUtils.getMapper(obj.getClass(), null, null, mapper);
+						TypeMapper thisMapper = TypeUtils.getMapper(obj.getClass(), AnnotatedType.getDefaultAnnotateType(), mapper);
 						results.add(thisMapper == null ? obj : thisMapper.fromAerospikeFormat(obj));
 					}
 				}
