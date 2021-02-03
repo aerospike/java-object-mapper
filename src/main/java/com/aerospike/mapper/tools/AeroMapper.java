@@ -3,6 +3,7 @@ package com.aerospike.mapper.tools;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -92,7 +93,7 @@ public class AeroMapper {
 	        		}
 	        		else {
 	        			try {
-							ClassCache.getInstance().loadClass(this.mapper, config);
+	        				Class.forName(config.getClassName());
 						} catch (ClassNotFoundException e) {
 							throw new AerospikeException("Canot find a class with name " + name);
 						}
@@ -107,6 +108,7 @@ public class AeroMapper {
         			}
         		}
         	}
+        	ClassCache.getInstance().addConfiguration(configuration);
         }
         
         public AeroMapper build() {
@@ -142,11 +144,11 @@ public class AeroMapper {
         int ttl = entry.getTtl();
         boolean sendKey = entry.getSendKey();
 
-        long now = System.nanoTime();
+//        long now = System.nanoTime();
         Key key = new Key(namespace, set, Value.get(entry.getKey(object)));
 
         Bin[] bins = entry.getBins(object);
-        System.out.printf("Convert to bins in %,.3fms\n", ((System.nanoTime() - now) / 1_000_000.0));
+//        System.out.printf("Convert to bins in %,.3fms\n", ((System.nanoTime() - now) / 1_000_000.0));
 
         WritePolicy writePolicy = null;
         if (ttl != 0 || sendKey) {
@@ -154,9 +156,9 @@ public class AeroMapper {
             writePolicy.expiration = ttl;
             writePolicy.sendKey = sendKey;
         }
-        now = System.nanoTime();
+//        now = System.nanoTime();
         mClient.put(writePolicy, key, bins);
-        System.out.printf("Saved to database in %,.3fms\n", ((System.nanoTime() - now) / 1_000_000.0));
+//        System.out.printf("Saved to database in %,.3fms\n", ((System.nanoTime() - now) / 1_000_000.0));
     }
 
     public <T> T readFromDigest(@NotNull Class<T> clazz, @NotNull byte[] digest) throws AerospikeException {

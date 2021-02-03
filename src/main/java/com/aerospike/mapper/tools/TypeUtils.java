@@ -19,6 +19,8 @@ import com.aerospike.mapper.annotations.AerospikeReference;
 import com.aerospike.mapper.annotations.AerospikeReference.ReferenceType;
 import com.aerospike.mapper.tools.configuration.BinConfig;
 import com.aerospike.mapper.tools.configuration.ClassConfig;
+import com.aerospike.mapper.tools.configuration.EmbedConfig;
+import com.aerospike.mapper.tools.configuration.ReferenceConfig;
 import com.aerospike.mapper.tools.mappers.ArrayMapper;
 import com.aerospike.mapper.tools.mappers.BooleanMapper;
 import com.aerospike.mapper.tools.mappers.ByteMapper;
@@ -139,8 +141,12 @@ public class TypeUtils {
 					typeMapper = new DefaultMapper();
 				}
 				else {
+					// TODO: The type mapped into this type mapper should be the element type
+//					ClassConfig config = ClassCache.getInstance().getClassConfig(elementType.getClass());
+//					AnnotatedType elementAnnotateType = type.replaceClassConfig(config);
 					TypeMapper subMapper = getMapper(elementType, type, mapper, true);
 					typeMapper = new ArrayMapper(elementType, subMapper);
+					addToMap = false;
 				}
 			}
 			else if (Map.class.isAssignableFrom(clazz)) {
@@ -171,8 +177,20 @@ public class TypeUtils {
 						AerospikeEmbed embed = (AerospikeEmbed)annotation;
 						embedType = embed.type();
 						saveKey = embed.saveKey();
+						break;
 					}
 				}
+
+				BinConfig binConfig = type.getBinConfig();
+				if (binConfig != null && binConfig.getEmbed() != null) {
+					if (binConfig.getEmbed().getSaveKey() != null) {
+						saveKey = binConfig.getEmbed().getSaveKey();
+					}
+					if (binConfig.getEmbed().getType() != null) {
+						embedType = binConfig.getEmbed().getType();
+					}
+				}
+				
 				if (type.isParameterizedType()) {
 					ParameterizedType paramType = type.getParamterizedType();
 					Type[] types = paramType.getActualTypeArguments();
@@ -189,34 +207,63 @@ public class TypeUtils {
 				}
 				addToMap = false;
 			}
-			else if (clazz.isAnnotationPresent(AerospikeRecord.class) || ClassCache.getInstance().hasClass(clazz)) {
-				for (Annotation annotation : type.getAnnotations()) {
-					boolean throwError = false;
-					if (annotation.annotationType().equals(AerospikeReference.class)) {
-						if (typeMapper != null) {
-							throwError = true;
+			
+			else if (clazz.isAnnotationPresent(AerospikeRecord.class) || ClassCache.getInstance().hasClassConfig(clazz)) {
+				boolean throwError = false;
+				BinConfig binConfig = type.getBinConfig();
+				if (binConfig != null && (binConfig.getEmbed() != null || binConfig.getReference() != null)) {
+					// The config parameters take precedence over the annotations.
+					if (binConfig.getEmbed() != null && binConfig.getReference() != null) {
+						throwError = true;
+					}
+					else if (binConfig.getEmbed() != null) {
+						EmbedConfig embedConfig = binConfig.getEmbed();
+						EmbedType embedType = isForSubType ? embedConfig.getElementType() : embedConfig.getType();
+						if (embedType == null) {
+							embedType = EmbedType.MAP;
 						}
-						else {
-							AerospikeReference ref = (AerospikeReference)annotation;
-							typeMapper = new ObjectReferenceMapper(ClassCache.getInstance().loadClass(clazz, mapper), ref.lazy(), ref.type(), mapper);
-							addToMap = false;
+						boolean saveKey = embedConfig.getSaveKey() == null ? false : true;
+						boolean skipKey = isForSubType && (embedConfig.getType() == EmbedType.MAP && embedConfig.getElementType() == EmbedType.LIST && (!saveKey));
+						typeMapper = new ObjectEmbedMapper(clazz, embedType, mapper, skipKey);
+						addToMap = false;
+					}
+					else {
+						// Reference
+						ReferenceConfig ref = binConfig.getReference();
+						typeMapper = new ObjectReferenceMapper(ClassCache.getInstance().loadClass(clazz, mapper), ref.getLazy(), ref.getType(), mapper);
+						addToMap = false;
+					}
+				}
+				else {
+					for (Annotation annotation : type.getAnnotations()) {
+						if (annotation.annotationType().equals(AerospikeReference.class)) {
+							if (typeMapper != null) {
+								throwError = true;
+								break;
+							}
+							else {
+								AerospikeReference ref = (AerospikeReference)annotation;
+								typeMapper = new ObjectReferenceMapper(ClassCache.getInstance().loadClass(clazz, mapper), ref.lazy(), ref.type(), mapper);
+								addToMap = false;
+							}
+						}
+						if (annotation.annotationType().equals(AerospikeEmbed.class)) {
+							AerospikeEmbed embed = (AerospikeEmbed)annotation;
+							if (typeMapper != null) {
+								throwError = true;
+								break;
+							}
+							else {
+								EmbedType embedType = isForSubType ? embed.elementType() : embed.type();
+								boolean skipKey = isForSubType && (embed.type() == EmbedType.MAP && embed.elementType() == EmbedType.LIST && (!embed.saveKey()));
+								typeMapper = new ObjectEmbedMapper(clazz, embedType, mapper, skipKey);
+								addToMap = false;
+							}
 						}
 					}
-					if (annotation.annotationType().equals(AerospikeEmbed.class)) {
-						AerospikeEmbed embed = (AerospikeEmbed)annotation;
-						if (typeMapper != null) {
-							throwError = true;
-						}
-						else {
-							EmbedType embedType = isForSubType ? embed.elementType() : embed.type();
-							boolean skipKey = isForSubType && (embed.type() == EmbedType.MAP && embed.elementType() == EmbedType.LIST && (!embed.saveKey()));
-							typeMapper = new ObjectEmbedMapper(clazz, embedType, mapper, skipKey);
-							addToMap = false;
-						}
-					}
-					if (throwError) {
-						throw new AerospikeException(String.format("A class with a reference to %s specifies multiple annotations for storing the reference", clazz.getName()));
-					}
+				}
+				if (throwError) {
+					throw new AerospikeException(String.format("A class with a reference to %s specifies multiple annotations for storing the reference", clazz.getName()));
 				}
 				if (typeMapper == null) {
 					// No annotations were specified, so use the ObjectReferenceMapper with non-lazy references
@@ -259,5 +306,9 @@ public class TypeUtils {
 				Double.TYPE.equals(clazz) ||
 				Double.class.equals(clazz) ||
 				String.class.equals(clazz);
+	}
+
+	public static void clear() {
+		mappers.clear();
 	}
 }

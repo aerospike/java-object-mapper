@@ -1106,7 +1106,7 @@ public static class PokerHand {
 - Make all maps (esp Embedded ones) K_ORDERED
 - Add policies. Maybe drive via annotations? Certainly need a "sendKey" annotation property.
 - Add interface to adaptiveMap, including changing EmbedType
-- Lists of references do not load children references
+- Bug: Lists of references do not load children references
 - Make lists of references load the data via batch loads.
 - Document all parameters to annotations and examples of types
 - Document enums, dates, instants.
@@ -1114,4 +1114,9 @@ public static class PokerHand {
 - Test to ensure List<AerospikeRecord> / Map<AerospikeRecord> cannot have both an embed and reference annotations / multiple annotations.
 - If a class is not annoated with @AerospikeRecord, CacheEntry returns null, which causes AeroMapper.save() to throw an NPE
 - Configuration file via YAML which overrides any annotation, but only the parts specified. (Eg override namespace name, TTL should still be preserved)
+- Document configuration file. 
+- Document creation of builder -- multiple configuration files are allowed, if the same class is declared in both the first one encountered wins. 
+- Setters and Key Setters should be able to take 2 arguments as well as one: the second argument is the record key (object) if desired. (Eg: Txn has a date. Txns are stored in DB per day, so day part of date is the record key, time part is the map key)
+- Allow injection of arguments into constructor to remove the need for the zero-argument constructor. See https://stackoverflow.com/questions/25367979/why-json-ask-for-no-argument-constructor-for-junit-test for details (Maybe only for records stored as a map?)
+
 

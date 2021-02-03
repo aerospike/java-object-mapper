@@ -112,14 +112,19 @@ public class AeroMapperConfigurationYamlTest extends AeroMapperBaseTest {
 "      field: id\n" +
 "    bins:\n" +
 "      - field: date\n" +
-"        embed:\n" +
-"          type: LIST\n" +
 "        name: d1\n" +
 "  - class: com.aerospike.mapper.AeroMapperConfigurationYamlTest$ContainerClass\n" +
 "    namespace: test\n" +
 "    set: containers\n" +
 "    key:\n" +
-"      field: id\n";
+"      field: id\n" +
+"    bins:\n" +
+"      - field: dataClasses\n" +
+"        embed:\n" +
+"          type: MAP\n" +
+"          elementType: LIST\n" +
+"        name: data\n";
+
 		System.out.println(yaml);
 		AeroMapper mapper = new AeroMapper.Builder(client).withConfiguration(yaml).build();
 		
