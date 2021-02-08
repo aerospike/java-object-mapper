@@ -9,7 +9,6 @@ import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.aerospike.mapper.annotations.AerospikeKey;
 import com.aerospike.mapper.tools.AeroMapper;
 
 public class AeroMapperConfigurationYamlTest extends AeroMapperBaseTest {

@@ -1,12 +1,12 @@
 package com.aerospike.mapper.model;
 
-import com.aerospike.mapper.annotations.AerospikeBin;
-import com.aerospike.mapper.annotations.AerospikeKey;
-import com.aerospike.mapper.annotations.AerospikeRecord;
-
 import java.util.Base64;
 import java.util.Date;
 import java.util.List;
+
+import com.aerospike.mapper.annotations.AerospikeBin;
+import com.aerospike.mapper.annotations.AerospikeKey;
+import com.aerospike.mapper.annotations.AerospikeRecord;
 
 @AerospikeRecord(namespace = "test", set = "people")
 public class PersonDifferentNames {

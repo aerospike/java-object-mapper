@@ -1,9 +1,10 @@
 package com.aerospike.mapper;
 
-import com.aerospike.client.AerospikeClient;
-import com.aerospike.client.IAerospikeClient;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+
+import com.aerospike.client.AerospikeClient;
+import com.aerospike.client.IAerospikeClient;
 
 public abstract class AeroMapperBaseTest {
 

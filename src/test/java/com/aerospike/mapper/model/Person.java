@@ -1,8 +1,16 @@
 package com.aerospike.mapper.model;
 
-import com.aerospike.mapper.annotations.*;
+import java.util.ArrayList;
+import java.util.Base64;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
 
-import java.util.*;
+import com.aerospike.mapper.annotations.AerospikeBin;
+import com.aerospike.mapper.annotations.AerospikeEmbed;
+import com.aerospike.mapper.annotations.AerospikeKey;
+import com.aerospike.mapper.annotations.AerospikeRecord;
+import com.aerospike.mapper.annotations.AerospikeReference;
 
 // The set name will read a system definition of people.set.name for the set name. If not set, it will use "people". For example:
 // -Dpeople.set.name=persons

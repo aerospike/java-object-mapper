@@ -1,5 +1,13 @@
 package com.aerospike.mapper;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
+
+import java.util.Date;
+
+import org.junit.Before;
+import org.junit.Test;
+
 import com.aerospike.client.Key;
 import com.aerospike.client.Record;
 import com.aerospike.mapper.annotations.AerospikeBin;
@@ -8,13 +16,6 @@ import com.aerospike.mapper.annotations.AerospikeRecord;
 import com.aerospike.mapper.model.Person;
 import com.aerospike.mapper.model.PersonDifferentNames;
 import com.aerospike.mapper.tools.AeroMapper;
-import org.junit.Before;
-import org.junit.Test;
-
-import java.util.Date;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
 
 public class AeroMapperTest extends AeroMapperBaseTest {
 

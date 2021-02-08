@@ -1,6 +1,12 @@
 package com.aerospike.mapper.model;
 
-import com.aerospike.mapper.annotations.*;
+import com.aerospike.mapper.annotations.AerospikeBin;
+import com.aerospike.mapper.annotations.AerospikeExclude;
+import com.aerospike.mapper.annotations.AerospikeGetter;
+import com.aerospike.mapper.annotations.AerospikeKey;
+import com.aerospike.mapper.annotations.AerospikeRecord;
+import com.aerospike.mapper.annotations.AerospikeReference;
+import com.aerospike.mapper.annotations.AerospikeSetter;
 
 @AerospikeRecord(namespace = "test", set = "account", version = 2)
 public class Account {
