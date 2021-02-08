@@ -6,6 +6,7 @@ import java.lang.reflect.Field;
 import javax.validation.constraints.NotNull;
 
 import com.aerospike.client.AerospikeException;
+import com.aerospike.client.Key;
 import com.aerospike.mapper.annotations.AerospikeVersion;
 
 /**
@@ -96,7 +97,20 @@ public abstract class ValueType {
 				throw new AerospikeException("Lazy loading cannot be used on objects with a property key type and no annotated key setter method");
 			}
 			else {
-				this.property.getSetter().invoke(obj, value);
+				switch (this.property.getSetterParamType()) {
+				case KEY:
+					Key key = ThreadLocalKeySaver.get();
+					this.property.getSetter().invoke(obj, value, key);
+					break;
+					
+				case VALUE:
+					key = ThreadLocalKeySaver.get();
+					this.property.getSetter().invoke(obj, value, key.userKey);
+					break;
+					
+				default:
+					this.property.getSetter().invoke(obj, value);
+				}
 			}
 		}
 

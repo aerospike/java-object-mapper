@@ -1,5 +1,7 @@
 package com.aerospike.mapper.tools.configuration;
 
+import org.apache.commons.lang3.StringUtils;
+
 public class KeyConfig {
 	private String field;
 	private String getter;
@@ -13,5 +15,13 @@ public class KeyConfig {
 	}
 	public String getSetter() {
 		return setter;
+	}
+	
+	public boolean isGetter(String methodName) {
+		return (!StringUtils.isBlank(this.getter)) && this.getter.equals(methodName);
+	}
+
+	public boolean isSetter(String methodName) {
+		return (!StringUtils.isBlank(this.setter)) && this.setter.equals(methodName);
 	}
 }

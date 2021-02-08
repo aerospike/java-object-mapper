@@ -110,7 +110,7 @@ public class AeroMapperExample {
             System.out.printf("Original person: %s\n", p.toString());
 
             long now = System.nanoTime();
-            mapper.save("test", p);
+            mapper.save(p);
             System.out.printf("Saved in %,.3fms\n", ((System.nanoTime() - now) / 1_000_000.0));
         }
         System.out.println(client.get(null, new Key("test", "people", "123456789")));

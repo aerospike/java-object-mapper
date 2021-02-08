@@ -9,7 +9,7 @@ import java.lang.annotation.Target;
 @Target(ElementType.TYPE)
 public @interface AerospikeRecord {
 	String namespace() default "";
-	String set();
+	String set() default "";
 	int ttl() default 0;
 	/**
 	 * Determine whether to add all the bins or not. If true, all bins will be added without having to map them via @AerospikeBin

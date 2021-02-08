@@ -18,6 +18,7 @@ import com.aerospike.client.IAerospikeClient;
 import com.aerospike.client.Key;
 import com.aerospike.client.Record;
 import com.aerospike.client.Value;
+import com.aerospike.client.policy.RecordExistsAction;
 import com.aerospike.client.policy.WritePolicy;
 import com.aerospike.client.query.RecordSet;
 import com.aerospike.client.query.Statement;
@@ -125,63 +126,76 @@ public class AeroMapper {
         this.mClient = client;
     }
 
-    public void save(@NotNull Object object) throws AerospikeException {
-        this.save(null, object);
+    
+    private ClassCacheEntry getEntryAndValidateNamespace(Class<?> clazz) {
+        ClassCacheEntry entry = ClassCache.getInstance().loadClass(clazz, this);
+        String namespace = null;
+        if (entry != null) {
+	        namespace = entry.getNamespace();
+        }
+        if (StringUtils.isBlank(namespace)) {
+            throw new AerospikeException("Namespace not specified to save a record of type " + clazz.getName());
+        }
+        return entry;
     }
 
-    public void save(String namespace, @NotNull Object object) throws AerospikeException {
-        Class<?> clazz = object.getClass();
-        ClassCacheEntry entry = ClassCache.getInstance().loadClass(clazz, this);
-
-        if (StringUtils.isBlank(namespace)) {
-            namespace = entry.getNamespace();
-            if (StringUtils.isBlank(namespace)) {
-                throw new AerospikeException("Namespace not specified in annotation.");
-            }
-        }
-
+    private void save(@NotNull Object object, @NotNull WritePolicy writePolicy, String[] binNames) {
+    	ClassCacheEntry entry = getEntryAndValidateNamespace(object.getClass());
+        
         String set = entry.getSetName();
+        if ("".equals(set)) {
+        	// Use the null set
+        	set = null;
+        }
         int ttl = entry.getTtl();
         boolean sendKey = entry.getSendKey();
 
-//        long now = System.nanoTime();
-        Key key = new Key(namespace, set, Value.get(entry.getKey(object)));
+        writePolicy.expiration = ttl;
+        writePolicy.sendKey = sendKey;
+        
+        Key key = new Key(entry.getNamespace(), set, Value.get(entry.getKey(object)));
 
-        Bin[] bins = entry.getBins(object);
-//        System.out.printf("Convert to bins in %,.3fms\n", ((System.nanoTime() - now) / 1_000_000.0));
+        Bin[] bins = entry.getBins(object, writePolicy.recordExistsAction != RecordExistsAction.REPLACE, binNames);
 
-        WritePolicy writePolicy = null;
-        if (ttl != 0 || sendKey) {
-            writePolicy = new WritePolicy();
-            writePolicy.expiration = ttl;
-            writePolicy.sendKey = sendKey;
-        }
-//        now = System.nanoTime();
         mClient.put(writePolicy, key, bins);
-//        System.out.printf("Saved to database in %,.3fms\n", ((System.nanoTime() - now) / 1_000_000.0));
     }
 
-    public <T> T readFromDigest(@NotNull Class<T> clazz, @NotNull byte[] digest) throws AerospikeException {
-        ClassCacheEntry entry = ClassCache.getInstance().loadClass(clazz, this);
-        String namespace = entry.getNamespace();
-        if (StringUtils.isBlank(namespace)) {
-            throw new AerospikeException("Namespace not specified in annotation.");
-        }
+    /**
+     * Save an object in the database. This method will perform a REPLACE on the existing record so any existing
+     * data will be overwritten by the data in the passed object
+     * @param object
+     * @throws AerospikeException
+     */
+    public void save(@NotNull Object object, String ...binNames) throws AerospikeException {
+        WritePolicy writePolicy =  new WritePolicy();
+        writePolicy.recordExistsAction = RecordExistsAction.REPLACE;
+        save(object, writePolicy, binNames);
+    }
 
-        Key key = new Key(namespace, digest, entry.getSetName(), null);
+    /**
+     * Updates the object in the database, merging the record with the existing record. This uses the RecordExistsAction
+     * of UPDATE. If bins are specified, only bins with the passed names will be updated (or all of them if null is passed)
+     * @param object
+     * @throws AerospikeException
+     */
+    public void update(@NotNull Object object, String ... binNames) throws AerospikeException {
+        WritePolicy writePolicy =  new WritePolicy();
+        writePolicy.recordExistsAction = RecordExistsAction.UPDATE;
+        save(object, writePolicy, binNames);
+    }
+
+
+    public <T> T readFromDigest(@NotNull Class<T> clazz, @NotNull byte[] digest) throws AerospikeException {
+        ClassCacheEntry entry = getEntryAndValidateNamespace(clazz);
+        Key key = new Key(entry.getNamespace(), digest, entry.getSetName(), null);
         return this.read(clazz, key, entry);
     }
 
     public <T> T read(@NotNull Class<T> clazz, @NotNull Object userKey) throws AerospikeException {
 
-        ClassCacheEntry entry = ClassCache.getInstance().loadClass(clazz, this);
-        String namespace = entry.getNamespace();
-        if (StringUtils.isBlank(namespace)) {
-            throw new AerospikeException("Namespace not specified in annotation.");
-        }
-
+        ClassCacheEntry entry = getEntryAndValidateNamespace(clazz);
         String set = entry.getSetName();
-        Key key = new Key(namespace, set, Value.get(entry.translateKeyToAerospikeKey(userKey)));
+        Key key = new Key(entry.getNamespace(), set, Value.get(entry.translateKeyToAerospikeKey(userKey)));
         return read(clazz, key, entry);
     }
 
@@ -192,16 +206,20 @@ public class AeroMapper {
             return null;
         } else {
             try {
+            	ThreadLocalKeySaver.save(key);
                 T result = convertToObject(clazz, record, entry);
                 return result;
             } catch (ReflectiveOperationException e) {
                 throw new AerospikeException(e);
             }
+            finally {
+            	ThreadLocalKeySaver.clear();
+            }
         }
     }
 
     public boolean delete(@NotNull Class<?> clazz, @NotNull Object userKey) throws AerospikeException {
-        ClassCacheEntry entry = ClassCache.getInstance().loadClass(clazz, this);
+        ClassCacheEntry entry = getEntryAndValidateNamespace(clazz);
         Object asKey = entry.translateKeyToAerospikeKey(userKey);
         Key key = new Key(entry.getNamespace(), entry.getSetName(), Value.get(asKey));
 
@@ -215,9 +233,7 @@ public class AeroMapper {
     }
 
     public boolean delete(@NotNull Object object) throws AerospikeException {
-        Class<?> clazz = object.getClass();
-        ClassCacheEntry entry = ClassCache.getInstance().loadClass(clazz, this);
-
+        ClassCacheEntry entry = getEntryAndValidateNamespace(object.getClass());
         Key key = new Key(entry.getNamespace(), entry.getSetName(), Value.get(entry.getKey(object)));
 
         WritePolicy writePolicy = null;
@@ -229,21 +245,10 @@ public class AeroMapper {
     }
 
     public <T> void find(@NotNull Class<T> clazz, Function<T, Boolean> function) throws AerospikeException {
-        this.find(clazz, null, function);
-    }
-
-    public <T> void find(@NotNull Class<T> clazz, String namespace, Function<T, Boolean> function) throws AerospikeException {
-        ClassCacheEntry entry = ClassCache.getInstance().loadClass(clazz, this);
-
-        if (StringUtils.isBlank(namespace)) {
-            namespace = entry.getNamespace();
-            if (StringUtils.isBlank(namespace)) {
-                throw new AerospikeException("Namespace not specified in annotation.");
-            }
-        }
+        ClassCacheEntry entry = getEntryAndValidateNamespace(clazz);
 
         Statement statement = new Statement();
-        statement.setNamespace(namespace);
+        statement.setNamespace(entry.getNamespace());
         statement.setSetName(entry.getSetName());
 
         RecordSet recordSet = null;

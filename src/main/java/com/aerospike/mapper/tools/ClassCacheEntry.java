@@ -4,6 +4,7 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -137,12 +138,37 @@ public class ClassCacheEntry {
 			return null;
 		}
 		for (BinConfig thisBin: this.classConfig.getBins()) {
-			if (thisBin.getField().equals(field.getName())) {
+			if (thisBin.getField() != null && thisBin.getField().equals(field.getName())) {
 				return thisBin;
 			}
 		}
 		return null;
 	}
+	
+	private BinConfig getBinFromGetter(String name) {
+		if (this.classConfig == null || this.classConfig.getBins() == null) {
+			return null;
+		}
+		for (BinConfig thisBin: this.classConfig.getBins()) {
+			if (thisBin.getGetter() != null && thisBin.getGetter().equals(name)) {
+				return thisBin;
+			}
+		}
+		return null;
+	}
+	
+	private BinConfig getBinFromSetter(String name) {
+		if (this.classConfig == null || this.classConfig.getBins() == null) {
+			return null;
+		}
+		for (BinConfig thisBin: this.classConfig.getBins()) {
+			if (thisBin.getSetter() != null && thisBin.getSetter().equals(name)) {
+				return thisBin;
+			}
+		}
+		return null;
+	}
+	
 	
 	private void formOrdinalsFromValues() {
 		for (String thisValueName : this.values.keySet()) {
@@ -195,25 +221,44 @@ public class ClassCacheEntry {
 	private void loadPropertiesFromClass(@NotNull Class<?> clazz, ClassConfig config) {
 		Map<String, PropertyDefinition> properties = new HashMap<>();
 		PropertyDefinition keyProperty = null;
+		KeyConfig keyConfig = config != null ? config.getKey() : null;
 		for (Method thisMethod : clazz.getDeclaredMethods()) {
 			
+			String methodName = thisMethod.getName();
+			BinConfig getterConfig = getBinFromGetter(methodName);
+			BinConfig setterConfig = getBinFromSetter(methodName);
+			
 			boolean isKey = false;
-			if (thisMethod.isAnnotationPresent(AerospikeKey.class)) {
-				AerospikeKey key = thisMethod.getAnnotation(AerospikeKey.class);
+			boolean isKeyViaConfig = keyConfig != null && (keyConfig.isGetter(methodName) || keyConfig.isSetter(methodName));
+			if (thisMethod.isAnnotationPresent(AerospikeKey.class) || isKeyViaConfig) {
+
 				if (keyProperty == null) {
 					keyProperty = new PropertyDefinition("_key_", mapper);
 				}
-				if (key.setter()) {
-					keyProperty.setSetter(thisMethod);
+				if (isKeyViaConfig) {
+					if (keyConfig.isGetter(methodName)) {
+						keyProperty.setGetter(thisMethod);
+					}
+					else {
+						keyProperty.setSetter(thisMethod);
+					}
 				}
 				else {
-					keyProperty.setGetter(thisMethod);
+					AerospikeKey key = thisMethod.getAnnotation(AerospikeKey.class);
+					if (key.setter()) {
+						keyProperty.setSetter(thisMethod);
+					}
+					else {
+						keyProperty.setGetter(thisMethod);
+					}
 				}
 				isKey = true;
 			}
-			if (thisMethod.isAnnotationPresent(AerospikeGetter.class)) {
-				AerospikeGetter getter = thisMethod.getAnnotation(AerospikeGetter.class);
-				String name = ParserUtils.getInstance().get(ParserUtils.getInstance().get(getter.name()));
+			
+			if (thisMethod.isAnnotationPresent(AerospikeGetter.class) || getterConfig != null) {
+				String getterName = (getterConfig != null) ? getterConfig.getGetter() : thisMethod.getAnnotation(AerospikeGetter.class).name();
+
+				String name = ParserUtils.getInstance().get(ParserUtils.getInstance().get(getterName));
 				PropertyDefinition thisProperty = getOrCreateProperty(name, properties);
 				thisProperty.setGetter(thisMethod);
 				if (isKey) {
@@ -221,9 +266,9 @@ public class ClassCacheEntry {
 				}
 			}
 			
-			if (thisMethod.isAnnotationPresent(AerospikeSetter.class)) {
-				AerospikeSetter setter = thisMethod.getAnnotation(AerospikeSetter.class);
-				PropertyDefinition thisProperty = getOrCreateProperty(ParserUtils.getInstance().get(ParserUtils.getInstance().get(setter.name())), properties);
+			if (thisMethod.isAnnotationPresent(AerospikeSetter.class) || setterConfig != null) {
+				String setterName = (setterConfig != null) ? setterConfig.getSetter() : thisMethod.getAnnotation(AerospikeSetter.class).name();
+				PropertyDefinition thisProperty = getOrCreateProperty(ParserUtils.getInstance().get(ParserUtils.getInstance().get(setterName)), properties);
 				thisProperty.setSetter(thisMethod);
 			}
 		}
@@ -365,26 +410,48 @@ public class ClassCacheEntry {
 		return durableDelete;
 	}
 	
+	private boolean contains(String[] names, String thisName) {
+		if (names == null || names.length == 0) {
+			return true;
+		}
+		if (thisName == null) {
+			return false;
+		}
+		for (String aName : names) {
+			if (thisName.equals(aName)) {
+				return true;
+			}
+		}
+		return false;
+	}
+	
 	@SuppressWarnings({ "unchecked", "rawtypes" })
-	public Bin[] getBins(Object instance) {
+	public Bin[] getBins(Object instance, boolean allowNullBins, String[] binNames) {
 		try {
 			Bin[] bins = new Bin[this.binCount];
 			int index = 0;
 			ClassCacheEntry thisClass = this;
 			while (thisClass != null) {
 				for (String name : this.values.keySet()) {
-					ValueType value = this.values.get(name);
-					Object javaValue = value.get(instance);
-					Object aerospikeValue = value.getTypeMapper().toAerospikeFormat(javaValue);
-					if (aerospikeValue instanceof TreeMap<?, ?>) {
-						TreeMap<?,?> treeMap = (TreeMap<?,?>)aerospikeValue;
-						bins[index++] = new Bin(name, new ArrayList(treeMap.entrySet()), MapOrder.KEY_ORDERED);
-					}
-					else {
-						bins[index++] = new Bin(name, aerospikeValue);
+					if (contains(binNames, name)) {
+						ValueType value = this.values.get(name);
+						Object javaValue = value.get(instance);
+						Object aerospikeValue = value.getTypeMapper().toAerospikeFormat(javaValue);
+						if (aerospikeValue != null || allowNullBins) {
+							if (aerospikeValue != null && aerospikeValue instanceof TreeMap<?, ?>) {
+								TreeMap<?,?> treeMap = (TreeMap<?,?>)aerospikeValue;
+								bins[index++] = new Bin(name, new ArrayList(treeMap.entrySet()), MapOrder.KEY_ORDERED);
+							}
+							else {
+								bins[index++] = new Bin(name, aerospikeValue);
+							}
+						}
 					}
 				}
 				thisClass = thisClass.superClazz;
+			}
+			if (index != this.binCount) {
+				bins = Arrays.copyOf(bins, index);
 			}
 			return bins;
 		}

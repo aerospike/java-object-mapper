@@ -2,19 +2,30 @@ package com.aerospike.mapper.tools;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
+import java.lang.reflect.Parameter;
 import java.lang.reflect.Type;
 
 import com.aerospike.client.AerospikeException;
+import com.aerospike.client.Key;
+import com.aerospike.client.Value;
 import com.aerospike.mapper.tools.TypeUtils.AnnotatedType;
 import com.aerospike.mapper.tools.configuration.ClassConfig;
 
 public class PropertyDefinition {
+	
+	public static enum SetterParamType {
+		NONE,
+		KEY,
+		VALUE
+	}
+	
 	private Method getter;
 	private Method setter;
 	private String name;
 	private Class<?> clazz;
 	private TypeMapper typeMapper;
 	private AeroMapper mapper;
+	private SetterParamType setterParamType = SetterParamType.NONE;
 	
 	public PropertyDefinition(String name, AeroMapper mapper) {
 		this.name = name;
@@ -32,6 +43,11 @@ public class PropertyDefinition {
 	public void setSetter(Method setter) {
 		this.setter = setter;
 	}
+	
+	public SetterParamType getSetterParamType() {
+		return setterParamType;
+	}
+	
 	/**
 	 * Get the type of this property. The getter and setter must agree on the property and this method
 	 * is only valid after the <code>validate</code> method has been called.
@@ -76,8 +92,20 @@ public class PropertyDefinition {
 			if (!TypeUtils.isVoidType(setter.getReturnType())) {
 				throw new AerospikeException(String.format("Setter for property %s on class %s must return void", this.name, className));
 			}
-			if (setter.getParameterCount() != 1) {
-				throw new AerospikeException(String.format("Setter for property %s on class %s must take 1 argument", this.name, className));
+			if (setter.getParameterCount() == 2) {
+				Parameter param = setter.getParameters()[1];
+				if (param.getType().isAssignableFrom(Key.class)) {
+					this.setterParamType = SetterParamType.KEY;
+				}
+				else if (param.getType().isAssignableFrom(Value.class)){
+					this.setterParamType = SetterParamType.VALUE;
+				}
+				else {
+					throw new AerospikeException(String.format("Property %s on class %s has a setter with 2 arguments, but the second one is neither a Key or a Value", this.name, className));
+				}
+			}
+			else if (setter.getParameterCount() != 1) {
+				throw new AerospikeException(String.format("Setter for property %s on class %s must take 1 or 2 arguments", this.name, className));
 			}
 			setterClazz = setter.getParameterTypes()[0];
 			this.setter.setAccessible(true);

@@ -538,6 +538,7 @@ Note that storing the digest as the referencing key is not compatible with lazy 
 ```
 
 will throw an exception at runtime.
+
 ### Aggregating by Embedding
 The other way object relationships can be modeled is by embedding the child object(s) inside the parent object. For example, in some banking systems, Accounts are based off Products. The Products are typically versioned but can have changes made to them by banking officers. Hence the product is effectively specific to a particular account, even though it is derived from a global product. In this case, it makes sense to encapsulate the product into the account object.
 
@@ -591,6 +592,8 @@ title: "Test Account"
 ```
 
 Note that the product definition is fully encapsulated inside the account with all the fields stored in a map. Since the product does not need to be selected in it's own right (it can only be accessed by reading it from the account) there is no need for the product to have an @AerospikeKey, nor was there any need to save the product in it's own right. Hence this product definition as it stands would _not_ be suitable to be a reference, it must be embedded. To increase flexibility, it is recommended that all objects are given an @AerospikeKey, even if they are to be embedded.
+
+Similarly, the Product does not need to specify either a set or a namespace in the @AerospikeRecord annotation as they are not being stored in Aerospike in their own right.
 
 By default, embedding the child information is placed into a map, with the product bin names as the keys to the map and the values as the data in the product. This results in a very readable sub-record, but it's wasteful on space. If we have 1,000,000 accounts in our database each of which has this product, the strings "productId", "name", "createdDate" and "version" will be repeated 1,000,000 times.
 
@@ -1097,26 +1100,19 @@ public static class PokerHand {
 - maps of embedded objects
 - lists of referenced objects
 - maps of referenced objects
-- Check arrays of scalars map to the database correctly and back
-- If a class is only used for embedding, it does not need a set attribute or namespace attribute
 - Add in a method to add an entry to a collection, get a range from a collection, delete from a collection
-- Add a "Save(instance, String ...)" which will perform an update on the desired fields rather than a full replace
-- Add in a Update(instance, String ...) method to retrieve on selected properties. The update should be applied to the passed instance and the instance returned.
 - Validate some of the limits, eg bin name length, set name length, etc.
 - Make all maps (esp Embedded ones) K_ORDERED
-- Add policies. Maybe drive via annotations? Certainly need a "sendKey" annotation property.
+- Add policies. Maybe drive via annotations?
 - Add interface to adaptiveMap, including changing EmbedType
-- Bug: Lists of references do not load children references
 - Make lists of references load the data via batch loads.
 - Document all parameters to annotations and examples of types
 - Document enums, dates, instants.
 - Validate that all AerospikeRecord objects have a no-arg constructor
 - Test to ensure List<AerospikeRecord> / Map<AerospikeRecord> cannot have both an embed and reference annotations / multiple annotations.
-- If a class is not annoated with @AerospikeRecord, CacheEntry returns null, which causes AeroMapper.save() to throw an NPE
-- Configuration file via YAML which overrides any annotation, but only the parts specified. (Eg override namespace name, TTL should still be preserved)
 - Document configuration file. 
 - Document creation of builder -- multiple configuration files are allowed, if the same class is declared in both the first one encountered wins. 
-- Setters and Key Setters should be able to take 2 arguments as well as one: the second argument is the record key (object) if desired. (Eg: Txn has a date. Txns are stored in DB per day, so day part of date is the record key, time part is the map key)
+- Document methods with 2 parameters for keys and setters, the second one either a Key or a Value
 - Allow injection of arguments into constructor to remove the need for the zero-argument constructor. See https://stackoverflow.com/questions/25367979/why-json-ask-for-no-argument-constructor-for-junit-test for details (Maybe only for records stored as a map?)
 
 
