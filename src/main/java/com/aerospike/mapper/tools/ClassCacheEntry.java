@@ -20,6 +20,8 @@ import com.aerospike.client.AerospikeException;
 import com.aerospike.client.Bin;
 import com.aerospike.client.Record;
 import com.aerospike.client.cdt.MapOrder;
+import com.aerospike.client.policy.Policy;
+import com.aerospike.client.policy.WritePolicy;
 import com.aerospike.mapper.annotations.AerospikeBin;
 import com.aerospike.mapper.annotations.AerospikeExclude;
 import com.aerospike.mapper.annotations.AerospikeGetter;
@@ -54,11 +56,16 @@ public class ClassCacheEntry {
 	private Map<Integer, String> ordinals = null;
 	private Set<String> fieldsWithOrdinals = null;
 	private final ClassConfig classConfig;
+	private final Policy readPolicy;
+	private final WritePolicy writePolicy;
 	
-	public ClassCacheEntry(@NotNull Class<?> clazz, AeroMapper mapper, ClassConfig config) {
+	// package visibility only.
+	ClassCacheEntry(@NotNull Class<?> clazz, AeroMapper mapper, ClassConfig config, @NotNull Policy readPolicy, @NotNull WritePolicy writePolicy) {
 		this.clazz = clazz;
 		this.mapper = mapper;
 		this.classConfig = config;
+		this.readPolicy = readPolicy;
+		this.writePolicy = writePolicy;
 
 		AerospikeRecord recordDescription = clazz.getAnnotation(AerospikeRecord.class);
 		if (recordDescription == null && config == null) {
@@ -87,6 +94,13 @@ public class ClassCacheEntry {
 			throw new AerospikeException("Class " + clazz.getSimpleName() + " has no values defined to be stored in the database");
 		}
 		this.formOrdinalsFromValues();
+	}
+	
+	public Policy getReadPolicy() {
+		return readPolicy;
+	}
+	public WritePolicy getWritePolicy() {
+		return writePolicy;
 	}
 	
 	public Class<?> getUnderlyingClass() {

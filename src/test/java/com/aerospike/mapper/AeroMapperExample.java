@@ -10,6 +10,7 @@ import java.util.function.Function;
 import com.aerospike.client.AerospikeClient;
 import com.aerospike.client.IAerospikeClient;
 import com.aerospike.client.Key;
+import com.aerospike.client.policy.Policy;
 import com.aerospike.mapper.model.Account;
 import com.aerospike.mapper.model.Person;
 import com.aerospike.mapper.model.Product;
@@ -22,11 +23,13 @@ public class AeroMapperExample {
 
         IAerospikeClient client = new AerospikeClient("localhost", 3000);
 
+        Policy readPolicy = new Policy();
         AeroMapper mapper = new AeroMapper.Builder(client)
                 // The following lines are for performance reasons only, they are not required.
                 .preLoadClass(Account.class)
                 .preLoadClass(Person.class)
                 .preLoadClass(Product.class)
+                .withReadPolicy(null).forClasses(Person.class, Account.class)
                 .build();
 
         for (int i = 0; i < 100; i++) {

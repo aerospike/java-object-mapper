@@ -6,6 +6,7 @@ import org.junit.Test;
 
 import com.aerospike.client.Key;
 import com.aerospike.client.Record;
+import com.aerospike.client.policy.WritePolicy;
 import com.aerospike.mapper.annotations.AerospikeKey;
 import com.aerospike.mapper.annotations.AerospikeRecord;
 import com.aerospike.mapper.tools.AeroMapper;
@@ -24,7 +25,12 @@ public class PartialRecordsTest extends AeroMapperBaseTest{
 	
 	@Test
 	public void testPartialSave() {
-		AeroMapper mapper = new AeroMapper.Builder(client).build();
+		WritePolicy writePolicy = new WritePolicy(client.getWritePolicyDefault());
+		writePolicy.totalTimeout = 2000;
+		writePolicy.socketTimeout = 100;
+		AeroMapper mapper = new AeroMapper.Builder(client)
+				.withWritePolicy(writePolicy).forClasses(DataClass.class)
+				.build();
 		
 		DataClass dataClass = new DataClass();
 		dataClass.a = 1;

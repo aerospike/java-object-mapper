@@ -17,10 +17,12 @@ import com.aerospike.client.IAerospikeClient;
 import com.aerospike.client.Key;
 import com.aerospike.client.Record;
 import com.aerospike.client.Value;
+import com.aerospike.client.policy.Policy;
 import com.aerospike.client.policy.RecordExistsAction;
 import com.aerospike.client.policy.WritePolicy;
 import com.aerospike.client.query.RecordSet;
 import com.aerospike.client.query.Statement;
+import com.aerospike.mapper.tools.ClassCache.PolicyType;
 import com.aerospike.mapper.tools.configuration.ClassConfig;
 import com.aerospike.mapper.tools.configuration.Configuration;
 import com.fasterxml.jackson.core.JsonParseException;
@@ -39,6 +41,7 @@ public class AeroMapper {
 
         public Builder(IAerospikeClient client) {
             this.mapper = new AeroMapper(client);
+            ClassCache.getInstance().setDefaultPolicies(client.getReadPolicyDefault(), client.getWritePolicyDefault());
         }
 
         /**
@@ -111,6 +114,39 @@ public class AeroMapper {
         	ClassCache.getInstance().addConfiguration(configuration);
         }
         
+        public static class AeroPolicyMapper {
+        	private final Builder builder;
+        	private final Policy policy;
+        	private final PolicyType policyType;
+
+        	public AeroPolicyMapper(Builder builder, PolicyType policyType, Policy policy) {
+        		this.builder = builder;
+        		this.policyType = policyType;
+        		this.policy = policy;
+			}
+        	public Builder forClasses(Class<?> ... classes) {
+        		for (Class<?> thisClass : classes) {
+        			ClassCache.getInstance().setSpecificPolicy(policyType, thisClass, policy);
+        		}
+        		return builder;
+        	}
+        	public Builder forChildrenOf(Class<?> clazz) {
+        		ClassCache.getInstance().setChildrenPolicy(this.policyType, clazz, this.policy);
+        		return builder;
+        	}
+        	public Builder forAll() {
+        		ClassCache.getInstance().setDefaultPolicy(policyType, policy);
+        		return builder;
+        	}
+        }
+        
+        public AeroPolicyMapper withReadPolicy(Policy policy) {
+        	return new AeroPolicyMapper(this, PolicyType.READ, policy);
+        }
+        public AeroPolicyMapper withWritePolicy(Policy policy) {
+        	return new AeroPolicyMapper(this, PolicyType.WRITE, policy);
+        }
+        
         public AeroMapper build() {
             if (classesToPreload != null) {
                 for (Class<?> clazz : classesToPreload) {
@@ -138,9 +174,9 @@ public class AeroMapper {
         return entry;
     }
 
-    private void save(@NotNull Object object, @NotNull WritePolicy writePolicy, String[] binNames) {
+    private void save(@NotNull Object object, @NotNull RecordExistsAction recordExistsAction, String[] binNames) {
     	ClassCacheEntry entry = getEntryAndValidateNamespace(object.getClass());
-        
+        WritePolicy writePolicy = new WritePolicy(entry.getWritePolicy());
         String set = entry.getSetName();
         if ("".equals(set)) {
         	// Use the null set
@@ -151,10 +187,11 @@ public class AeroMapper {
 
         writePolicy.expiration = ttl;
         writePolicy.sendKey = sendKey;
+        writePolicy.recordExistsAction = recordExistsAction;
         
         Key key = new Key(entry.getNamespace(), set, Value.get(entry.getKey(object)));
 
-        Bin[] bins = entry.getBins(object, writePolicy.recordExistsAction != RecordExistsAction.REPLACE, binNames);
+        Bin[] bins = entry.getBins(object, recordExistsAction != RecordExistsAction.REPLACE, binNames);
 
         mClient.put(writePolicy, key, bins);
     }
@@ -166,9 +203,7 @@ public class AeroMapper {
      * @throws AerospikeException
      */
     public void save(@NotNull Object object, String ...binNames) throws AerospikeException {
-        WritePolicy writePolicy =  new WritePolicy();
-        writePolicy.recordExistsAction = RecordExistsAction.REPLACE;
-        save(object, writePolicy, binNames);
+        save(object, RecordExistsAction.REPLACE, binNames);
     }
 
     /**
@@ -178,9 +213,7 @@ public class AeroMapper {
      * @throws AerospikeException
      */
     public void update(@NotNull Object object, String ... binNames) throws AerospikeException {
-        WritePolicy writePolicy =  new WritePolicy();
-        writePolicy.recordExistsAction = RecordExistsAction.UPDATE;
-        save(object, writePolicy, binNames);
+        save(object, RecordExistsAction.UPDATE, binNames);
     }
 
 
@@ -199,7 +232,7 @@ public class AeroMapper {
     }
 
     private <T> T read(@NotNull Class<T> clazz, @NotNull Key key, @NotNull ClassCacheEntry entry) {
-        Record record = mClient.get(null, key);
+        Record record = mClient.get(entry.getReadPolicy(), key);
 
         if (record == null) {
             return null;
@@ -222,9 +255,10 @@ public class AeroMapper {
         Object asKey = entry.translateKeyToAerospikeKey(userKey);
         Key key = new Key(entry.getNamespace(), entry.getSetName(), Value.get(asKey));
 
-        WritePolicy writePolicy = null;
+        WritePolicy writePolicy = entry.getWritePolicy();
         if (entry.getDurableDelete()) {
-            writePolicy = new WritePolicy();
+        	// Clone the write policy so we're not changing the original one
+            writePolicy = new WritePolicy(writePolicy);
             writePolicy.durableDelete = entry.getDurableDelete();
         }
 
@@ -235,9 +269,9 @@ public class AeroMapper {
         ClassCacheEntry entry = getEntryAndValidateNamespace(object.getClass());
         Key key = new Key(entry.getNamespace(), entry.getSetName(), Value.get(entry.getKey(object)));
 
-        WritePolicy writePolicy = null;
+        WritePolicy writePolicy = entry.getWritePolicy();
         if (entry.getDurableDelete()) {
-            writePolicy = new WritePolicy();
+            writePolicy = new WritePolicy(writePolicy);
             writePolicy.durableDelete = entry.getDurableDelete();
         }
         return mClient.delete(writePolicy, key);
@@ -252,6 +286,7 @@ public class AeroMapper {
 
         RecordSet recordSet = null;
         try {
+        	// TODO: set the policy (If this statement is thought to be useful, which is dubious)
             recordSet = mClient.query(null, statement);
             T result;
             while (recordSet.next()) {

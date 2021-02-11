@@ -1103,7 +1103,8 @@ public static class PokerHand {
 - Add in a method to add an entry to a collection, get a range from a collection, delete from a collection
 - Validate some of the limits, eg bin name length, set name length, etc.
 - Make all maps (esp Embedded ones) K_ORDERED
-- Add policies. Maybe drive via annotations?
+- Document the builder
+- Document policies (done via the builder)
 - Add interface to adaptiveMap, including changing EmbedType
 - Make lists of references load the data via batch loads.
 - Document all parameters to annotations and examples of types
