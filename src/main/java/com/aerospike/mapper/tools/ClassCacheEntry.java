@@ -20,7 +20,10 @@ import com.aerospike.client.AerospikeException;
 import com.aerospike.client.Bin;
 import com.aerospike.client.Record;
 import com.aerospike.client.cdt.MapOrder;
+import com.aerospike.client.policy.BatchPolicy;
 import com.aerospike.client.policy.Policy;
+import com.aerospike.client.policy.QueryPolicy;
+import com.aerospike.client.policy.ScanPolicy;
 import com.aerospike.client.policy.WritePolicy;
 import com.aerospike.mapper.annotations.AerospikeBin;
 import com.aerospike.mapper.annotations.AerospikeExclude;
@@ -58,14 +61,24 @@ public class ClassCacheEntry {
 	private final ClassConfig classConfig;
 	private final Policy readPolicy;
 	private final WritePolicy writePolicy;
+	private final BatchPolicy batchPolicy;
+	private final QueryPolicy queryPolicy;
+	private final ScanPolicy scanPolicy;
+	
 	
 	// package visibility only.
-	ClassCacheEntry(@NotNull Class<?> clazz, AeroMapper mapper, ClassConfig config, @NotNull Policy readPolicy, @NotNull WritePolicy writePolicy) {
+	ClassCacheEntry(@NotNull Class<?> clazz, AeroMapper mapper, ClassConfig config, 
+			@NotNull Policy readPolicy, @NotNull WritePolicy writePolicy,
+			@NotNull BatchPolicy batchPolicy, @NotNull QueryPolicy queryPolicy,
+			@NotNull ScanPolicy scanPolicy) {
 		this.clazz = clazz;
 		this.mapper = mapper;
 		this.classConfig = config;
 		this.readPolicy = readPolicy;
 		this.writePolicy = writePolicy;
+		this.batchPolicy = batchPolicy;
+		this.scanPolicy = scanPolicy;
+		this.queryPolicy = queryPolicy;
 
 		AerospikeRecord recordDescription = clazz.getAnnotation(AerospikeRecord.class);
 		if (recordDescription == null && config == null) {
@@ -95,7 +108,6 @@ public class ClassCacheEntry {
 		}
 		this.formOrdinalsFromValues();
 	}
-	
 	public Policy getReadPolicy() {
 		return readPolicy;
 	}

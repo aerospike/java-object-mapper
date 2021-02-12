@@ -5,7 +5,11 @@ import java.util.Map;
 
 import javax.validation.constraints.NotNull;
 
+import com.aerospike.client.IAerospikeClient;
+import com.aerospike.client.policy.BatchPolicy;
 import com.aerospike.client.policy.Policy;
+import com.aerospike.client.policy.QueryPolicy;
+import com.aerospike.client.policy.ScanPolicy;
 import com.aerospike.client.policy.WritePolicy;
 import com.aerospike.mapper.tools.configuration.ClassConfig;
 import com.aerospike.mapper.tools.configuration.Configuration;
@@ -19,7 +23,10 @@ public class ClassCache {
 	
 	enum PolicyType {
 		READ,
-		WRITE
+		WRITE,
+		BATCH,
+		SCAN,
+		QUERY
 	}
 	
 	private Map<Class<?>, ClassCacheEntry> cacheMap = new HashMap<>();
@@ -39,7 +46,12 @@ public class ClassCache {
 		ClassCacheEntry entry = cacheMap.get(clazz);
 		if (entry == null) {
 			try {
-				entry = new ClassCacheEntry(clazz, mapper, getClassConfig(clazz), determinePolicy(clazz, PolicyType.READ), (WritePolicy)determinePolicy(clazz, PolicyType.WRITE));
+				entry = new ClassCacheEntry(clazz, mapper, getClassConfig(clazz), 
+						determinePolicy(clazz, PolicyType.READ), 
+						(WritePolicy)determinePolicy(clazz, PolicyType.WRITE),
+						(BatchPolicy)determinePolicy(clazz, PolicyType.BATCH),
+						(QueryPolicy)determinePolicy(clazz, PolicyType.QUERY),
+						(ScanPolicy)determinePolicy(clazz, PolicyType.SCAN));
 			}
 			catch (IllegalArgumentException iae) {
 				return null;
@@ -50,9 +62,12 @@ public class ClassCache {
 	}
 
 	// package visibility
-	void setDefaultPolicies(Policy readPolicy, WritePolicy writePolicy) {
-		this.defaultPolicies.put(PolicyType.READ, readPolicy);
-		this.defaultPolicies.put(PolicyType.WRITE, writePolicy);
+	void setDefaultPolicies(IAerospikeClient client) {
+		this.defaultPolicies.put(PolicyType.READ, client.getReadPolicyDefault());
+		this.defaultPolicies.put(PolicyType.WRITE, client.getWritePolicyDefault());
+		this.defaultPolicies.put(PolicyType.BATCH, client.getBatchPolicyDefault());
+		this.defaultPolicies.put(PolicyType.QUERY, client.getQueryPolicyDefault());
+		this.defaultPolicies.put(PolicyType.SCAN, client.getScanPolicyDefault());
 	}
 	
 	void setDefaultPolicy(PolicyType policyType, Policy policy) {

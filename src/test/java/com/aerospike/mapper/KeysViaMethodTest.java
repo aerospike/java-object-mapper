@@ -143,9 +143,9 @@ public class KeysViaMethodTest extends AeroMapperBaseTest {
 		account.daySinceEpoch = 1;
 		account.accountName = "Tim";
 		
-		account.txnList.add(new Transaction(new Date(epochTime + account.daySinceEpoch * TimeUnit.MILLISECONDS.convert(1, TimeUnit.DAYS) +10000), 1234, "Test Transaction"));
-		account.txnList.add(new Transaction(new Date(epochTime + account.daySinceEpoch * TimeUnit.MILLISECONDS.convert(1, TimeUnit.DAYS) +75000), 1234, "Test Transaction"));
-		account.txnList.add(new Transaction(new Date(epochTime + account.daySinceEpoch * TimeUnit.MILLISECONDS.convert(1, TimeUnit.DAYS) +13 * 60* 60* 1000), 1234, "Test Transaction"));
+		account.txnList.add(new Transaction(new Date(epochTime + account.daySinceEpoch * TimeUnit.MILLISECONDS.convert(1, TimeUnit.DAYS) +10000), 1111, "Test Transaction 1"));
+		account.txnList.add(new Transaction(new Date(epochTime + account.daySinceEpoch * TimeUnit.MILLISECONDS.convert(1, TimeUnit.DAYS) +75000), 2222, "Test Transaction 2"));
+		account.txnList.add(new Transaction(new Date(epochTime + account.daySinceEpoch * TimeUnit.MILLISECONDS.convert(1, TimeUnit.DAYS) +13 * 60* 60* 1000), 3333, "Test Transaction"));
 		
 		AeroMapper mapper = new AeroMapper.Builder(client).build();
 		mapper.save(account);

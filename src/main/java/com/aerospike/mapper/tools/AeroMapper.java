@@ -17,8 +17,11 @@ import com.aerospike.client.IAerospikeClient;
 import com.aerospike.client.Key;
 import com.aerospike.client.Record;
 import com.aerospike.client.Value;
+import com.aerospike.client.policy.BatchPolicy;
 import com.aerospike.client.policy.Policy;
+import com.aerospike.client.policy.QueryPolicy;
 import com.aerospike.client.policy.RecordExistsAction;
+import com.aerospike.client.policy.ScanPolicy;
 import com.aerospike.client.policy.WritePolicy;
 import com.aerospike.client.query.RecordSet;
 import com.aerospike.client.query.Statement;
@@ -41,7 +44,7 @@ public class AeroMapper {
 
         public Builder(IAerospikeClient client) {
             this.mapper = new AeroMapper(client);
-            ClassCache.getInstance().setDefaultPolicies(client.getReadPolicyDefault(), client.getWritePolicyDefault());
+            ClassCache.getInstance().setDefaultPolicies(client);
         }
 
         /**
@@ -145,6 +148,15 @@ public class AeroMapper {
         }
         public AeroPolicyMapper withWritePolicy(Policy policy) {
         	return new AeroPolicyMapper(this, PolicyType.WRITE, policy);
+        }
+        public AeroPolicyMapper withBatchPolicy(BatchPolicy policy) {
+        	return new AeroPolicyMapper(this, PolicyType.BATCH, policy);
+        }
+        public AeroPolicyMapper withScanPolicy(ScanPolicy policy) {
+        	return new AeroPolicyMapper(this, PolicyType.SCAN, policy);
+        }
+        public AeroPolicyMapper withQueryPolicy(QueryPolicy policy) {
+        	return new AeroPolicyMapper(this, PolicyType.QUERY, policy);
         }
         
         public AeroMapper build() {

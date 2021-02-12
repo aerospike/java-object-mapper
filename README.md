@@ -173,6 +173,54 @@ Function<Person,Boolean> function = person -> {
 mapper.find(Person.class, function);
 ```
 
+----
+
+## Getting Started
+The first thing that needs to be done is to create an instance of the AeroMapper class. This is achieved through the Builder class which allows you to specify
+various options. Once the options have been specified, `build()` is called to get an instance of the AeroMapper. Thus, the simplest usage is:
+
+``` java
+AeroMapper mapper = new AeroMapper.Builder(client).build();
+```
+
+The Builder constructor simply takes an IAerospikeClient which it uses for access to the database. Other options can be added to the mapper between the constructor for the Builder and the invocation of the build() method. These options include:
+
+`.addConverter(Object converter)`: Registers a class as a custom converter, which allows programmatic control over how data types are mapped to and from Aerospike. This custom converter must have @ToAerospike and @FromAerospike annotated methods. For more information, see [Custom Object Converters](#custom-mappers) below.
+
+`.preLoadClass(Class<?>)`: Used to load a class before it is needed. The process of loading a class for the first time can be moderately expensive -- there is lots of introspection which goes on to determine how to map the classes to and from the database with the help of the annotations or configuration file. The results of this process are cached so it only has to happen once, and as few introspection calls as possible are called during the actual transformation. If a class is not preloaded, this computation will happen the first time an instance of that class is encountered, resulting in slowdown on the first call.
+
+`withConfigurationFile`: Whilst mapping information from POJOs via annotations is efficient and has the mapping code inline with the POJO code, there are times when this is not available. For example, if an external library with POJOs is being used and it is desired to map those POJOs to the database, there is no easy way of annotating the source code. Another case this applies is if different mapping parameters are needed between different environments. For example, embedded objects might be stored in a map in development for ease of debugging, but stored in a list in production for compaction of stored data. In these cases an external configuration YAML file can be used to specify how to map the data to the database. See [External Configuration File](#external-configuration-file) for more details. There is an overload of this method which takes an additional boolean parameter -- if this is `true` and the configuration file is not valid, errors will be logged to `stderr` and the process continue. It is normally not recommended to set this parameter to true.
+
+`withConfiguration`: Similar to the `withConfigurationFile` above, this allows configuration to be externally specified. In this case, the configuration is passed as a YAML string.
+
+`withReadPolicy`, `withWritePolicy`, `withBatchPolicy`, `withScanPolicy`, `withQueryPolicy`: This allows setting of the appropriate policy type. The following discussion uses read policies, but applies equally to all the other policies.
+
+After the specified policy, there are 3 possible options: 
+
+- `forAll()`: The passed policy is used for all classes. This is similar to setting the defaultReadPolicy on the IAerospikeClient but allows it to be set after the client is created. 
+- `forChildrenOf(Class<?> class)`: The passed policy is used for the passed class and all subclasses of the passed class.
+- `forClasses(Class<?> ... classes)`: The passed policy is used for the passed class(es), but no subclasses.
+
+It is entirely possible that a class falls into more than one category, in which case the most specific policy is used. If no policy is specified, the defaultReadPolicy passed to the IAerospikeClient is used. For example, if there are classes A, B, C with C being a subclass of B, a definition could be for example:
+
+```java
+Policy readPolicy1, readPolicy2, readPolicy3;
+// ... code to set up the policies goes here...
+AeroMapper.Builder(client)
+          .withReadPolicy(readPolicy1).forAll()
+          .withReadPolicy(readPolicy2).forChildrenOf(B.class)
+          .withReadPolicy(readPolicy3).forClasses(C.class)
+          .build();
+```
+
+In this case the `forAll()` would apply to A,B,C, the `forChildrenOf` would apply to B,C and `forClasses` would apply to C. So the policies used for each class would be:
+
+- A: `readPolicy1`
+- B: `readPolicy2`
+- C: `readPolicy3`
+           
+---
+ 
 ## Keys
 The key to an Aerospike record can be specified either as a field or a property. Remember that Aerospike keys can be Strings, integer types and binary types only.
 
@@ -195,6 +243,8 @@ public String getKey() {
 Note that it is not required to have a key on an object annotated with @AerospikeRecord. This is because an object can be embedded in another object (as a map or list) and hence not require a key to identify it to the database.
 
 Also, the existence of @AerospikeKey on a field does not imply that the field will get stored in the database explicitly. Use @AerospikeBin or mapAll attribute to ensure that the key gets mapped to the database too.
+
+----
 
 ## Fields
 Fields in Java can be mapped to the database irrespective of the visibility of the field. To do so, simply specify the bin to map to with the @AerospikeBin annotation:
@@ -271,6 +321,7 @@ public static class Test {
 ```
 This will save 4 fields in the database, a, b, longCname, d.
 
+----
 
 ## Properties
 A pair of methods comprising a getter and setter can also be mapped to a field in the database. These should be annotated with @AerospikeGetter and @AerospikeSetter respectively and the name attribute of these annotations must be provided. The getter must take no arguments and return something, and the setter must return void and take 1 parameter of the same type as the getter return value. Both a setter and a getter must be provided, an exception will be thrown otherwise.
@@ -289,6 +340,8 @@ public int getCrazyness() {
 ```
 
 This will create a bin in the database with the name "bob".
+
+----
 
 ## References to other objects
 The mapper has 2 ways of mapping child objects associated with parent objects: by reference, or embedding them. Further, embedded objects can be stored either as lists or maps. All of this is controlled by annotations on the owning (parent) class.
@@ -866,6 +919,8 @@ Multiple ordinals can be specified for a single class, but these must be sequent
 
 **Note**: Ordinal fields cannot be versioned.
   
+----
+
 ## Advanced Features
 ### Placeholder replacement
 Sometimes it is desirable to have the parameters to the annotations not being hard coded. For example, it might be desirable to have different namespaces for dev, test, staging and production. Annotations in Java must have constant parameters, so they cannot be pulled from environment variables, system properties, etc.
@@ -895,6 +950,8 @@ private String title;
 ```
 
 In this case, if the environment variable ``ACCOUNT_TITLE_BIN_NAME`` is set, that will be the name of the bin which is used. If it is not set, it will be like the annotation does not specify the ``name`` paramteter at all, which means that the field name (``title``) will be used for the bin name.
+
+----
 
 ### Custom Mappers
 Sometimes, the representation of the data in Aerospike and the representation in Java should be very different. Consider a class which represents a playing card and another class which represents a poker hand:
@@ -1095,6 +1152,12 @@ public static class PokerHand {
 }
 ```
 
+----
+
+## External Configuration File
+
+----
+
 ## To finish
 - lists of embedded objects
 - maps of embedded objects
@@ -1103,8 +1166,6 @@ public static class PokerHand {
 - Add in a method to add an entry to a collection, get a range from a collection, delete from a collection
 - Validate some of the limits, eg bin name length, set name length, etc.
 - Make all maps (esp Embedded ones) K_ORDERED
-- Document the builder
-- Document policies (done via the builder)
 - Add interface to adaptiveMap, including changing EmbedType
 - Make lists of references load the data via batch loads.
 - Document all parameters to annotations and examples of types
