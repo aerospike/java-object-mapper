@@ -185,7 +185,7 @@ AeroMapper mapper = new AeroMapper.Builder(client).build();
 
 The Builder constructor simply takes an IAerospikeClient which it uses for access to the database. Other options can be added to the mapper between the constructor for the Builder and the invocation of the build() method. These options include:
 
-`.addConverter(Object converter)`: Registers a class as a custom converter, which allows programmatic control over how data types are mapped to and from Aerospike. This custom converter must have @ToAerospike and @FromAerospike annotated methods. For more information, see [Custom Object Converters](#custom-mappers) below.
+`.addConverter(Object converter)`: Registers a class as a custom converter, which allows programmatic control over how data types are mapped to and from Aerospike. This custom converter must have @ToAerospike and @FromAerospike annotated methods. For more information, see [Custom Object Converters](#custom-object-converters) below.
 
 `.preLoadClass(Class<?>)`: Used to load a class before it is needed. The process of loading a class for the first time can be moderately expensive -- there is lots of introspection which goes on to determine how to map the classes to and from the database with the help of the annotations or configuration file. The results of this process are cached so it only has to happen once, and as few introspection calls as possible are called during the actual transformation. If a class is not preloaded, this computation will happen the first time an instance of that class is encountered, resulting in slowdown on the first call.
 
@@ -198,7 +198,7 @@ The Builder constructor simply takes an IAerospikeClient which it uses for acces
 After the specified policy, there are 3 possible options: 
 
 - `forAll()`: The passed policy is used for all classes. This is similar to setting the defaultReadPolicy on the IAerospikeClient but allows it to be set after the client is created. 
-- `forThisOrChildrenOf(Class<?> class)`: The passed policy is used for the passed class and all subclasses of the passed class.
+- `forChildrenOf(Class<?> class)`: The passed policy is used for the passed class and all subclasses of the passed class.
 - `forClasses(Class<?> ... classes)`: The passed policy is used for the passed class(es), but no subclasses.
 
 It is entirely possible that a class falls into more than one category, in which case the most specific policy is used. If no policy is specified, the defaultReadPolicy passed to the IAerospikeClient is used. For example, if there are classes A, B, C with C being a subclass of B, a definition could be for example:
@@ -208,12 +208,12 @@ Policy readPolicy1, readPolicy2, readPolicy3;
 // ... code to set up the policies goes here...
 AeroMapper.Builder(client)
           .withReadPolicy(readPolicy1).forAll()
-          .withReadPolicy(readPolicy2).forThisOrChildrenOf(B.class)
+          .withReadPolicy(readPolicy2).forChildrenOf(B.class)
           .withReadPolicy(readPolicy3).forClasses(C.class)
           .build();
 ```
 
-In this case the `forAll()` would apply to A,B,C, the `forThisOrChildrenOf` would apply to B,C and `forClasses` would apply to C. So the policies used for each class would be:
+In this case the `forAll()` would apply to A,B,C, the `forChildrenOf` would apply to B,C and `forClasses` would apply to C. So the policies used for each class would be:
 
 - A: `readPolicy1`
 - B: `readPolicy2`
@@ -953,7 +953,7 @@ In this case, if the environment variable ``ACCOUNT_TITLE_BIN_NAME`` is set, tha
 
 ----
 
-### Custom Mappers
+### Custom Object Converters
 Sometimes, the representation of the data in Aerospike and the representation in Java should be very different. Consider a class which represents a playing card and another class which represents a poker hand:
 
 ```java
@@ -1023,7 +1023,7 @@ tableCards: LIST('[{"rank":52, "suit":"CLUBS"}, {"rank":65, "suit":"HEARTS"}]')
 
 Why not store the whole class as a simple 2 character string, one character which is the rank, and the second is the suit?
 
-In this case, we have to create a custom mapper:
+In this case, we have to create a custom object converter:
 
 ```java
 public static class CardConverter {
