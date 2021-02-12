@@ -1155,6 +1155,38 @@ public static class PokerHand {
 ----
 
 ## External Configuration File
+An configuration file in YAML format can be created and passed to the builder either as a File object containing the YAML file or as a string containing the YAML. Note that passing a string representing a filename does not work -- it should be explicitly turned into a file using `new File(fileName)` for example. 
+
+All of the properties which can be specified via annotations can also be specified via the configuration file. If the same property exists in both a configuration file and an annotation, the value in the configuration file is used in preference to the value in the annotation. This allows for changing the way data is mapped in different environments by specifying a different configuration file. For example, in a development environment it might be desirable for an embedded object to be stored as a map for ease of debugging, but then in test, staging and prod environments it might be useful to store the same object as a list to prevent bloating of the data.
+
+The syntax of the builder allows for multiple configuration files to be specified. If the same class definition appears in 2 different configuration files, the first one encountered for that class will be taken and subsequent ones ignored, even if those subsequent ones contain additional information not specified in the first one.
+
+An example configuration file might contain:
+
+```yaml
+---
+classes:
+  - class: com.aerospike.mapper.AeroMapperConfigurationYamlTest$DataClass
+    namespace: test
+    set: dataClass
+    key:
+      field: id
+    bins:
+      - field: date
+        name: d1
+  - class: com.aerospike.mapper.AeroMapperConfigurationYamlTest$ContainerClass
+    namespace: test
+    set: containers
+    key:
+      field: id
+    bins:
+      - field: dataClasses
+        embed:
+          type: MAP
+          elementType: LIST
+        name: data
+```
+ 
 
 ----
 
