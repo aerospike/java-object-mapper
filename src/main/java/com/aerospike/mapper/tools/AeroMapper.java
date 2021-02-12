@@ -133,7 +133,7 @@ public class AeroMapper {
         		}
         		return builder;
         	}
-        	public Builder forChildrenOf(Class<?> clazz) {
+        	public Builder forThisOrChildrenOf(Class<?> clazz) {
         		ClassCache.getInstance().setChildrenPolicy(this.policyType, clazz, this.policy);
         		return builder;
         	}
