@@ -194,11 +194,15 @@ public class AeroMapper {
         	// Use the null set
         	set = null;
         }
-        int ttl = entry.getTtl();
-        boolean sendKey = entry.getSendKey();
+        Integer ttl = entry.getTtl();
+        Boolean sendKey = entry.getSendKey();
 
-        writePolicy.expiration = ttl;
-        writePolicy.sendKey = sendKey;
+        if (ttl != null) {
+        	writePolicy.expiration = ttl;
+        }
+        if (sendKey != null) {
+        	writePolicy.sendKey = sendKey;
+        }
         writePolicy.recordExistsAction = recordExistsAction;
         
         Key key = new Key(entry.getNamespace(), set, Value.get(entry.getKey(object)));
@@ -268,7 +272,7 @@ public class AeroMapper {
         Key key = new Key(entry.getNamespace(), entry.getSetName(), Value.get(asKey));
 
         WritePolicy writePolicy = entry.getWritePolicy();
-        if (entry.getDurableDelete()) {
+        if (entry.getDurableDelete() != null) {
         	// Clone the write policy so we're not changing the original one
             writePolicy = new WritePolicy(writePolicy);
             writePolicy.durableDelete = entry.getDurableDelete();
@@ -282,7 +286,7 @@ public class AeroMapper {
         Key key = new Key(entry.getNamespace(), entry.getSetName(), Value.get(entry.getKey(object)));
 
         WritePolicy writePolicy = entry.getWritePolicy();
-        if (entry.getDurableDelete()) {
+        if (entry.getDurableDelete() != null) {
             writePolicy = new WritePolicy(writePolicy);
             writePolicy.durableDelete = entry.getDurableDelete();
         }

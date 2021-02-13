@@ -1,8 +1,10 @@
 package com.aerospike.mapper.tools;
 
 import java.lang.annotation.Annotation;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.lang.reflect.Parameter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -43,10 +45,10 @@ public class ClassCacheEntry {
 	
 	private String namespace;
 	private String setName;
-	private int ttl = 0;
+	private Integer ttl = null;
 	private boolean mapAll = true;
-	private boolean sendKey = false;
-	private boolean durableDelete = false;
+	private Boolean sendKey = null;
+	private Boolean durableDelete = null;
 	private int version = 1;
 
 	private final Class<?> clazz;
@@ -107,6 +109,7 @@ public class ClassCacheEntry {
 			throw new AerospikeException("Class " + clazz.getSimpleName() + " has no values defined to be stored in the database");
 		}
 		this.formOrdinalsFromValues();
+		this.findConstructor();
 	}
 	public Policy getReadPolicy() {
 		return readPolicy;
@@ -139,12 +142,8 @@ public class ClassCacheEntry {
 		if (config.getDurableDelete() != null) {
 			this.durableDelete = config.getDurableDelete();
 		}
-		if (config.getMapAll() != null) {
-			this.mapAll = config.getMapAll();
-		}
-		if (config.getSendKey() != null) {
-			this.mapAll = config.getSendKey();
-		}
+		this.mapAll = config.getMapAll();
+		this.sendKey = config.getSendKey();
 	}
 	
 	private BinConfig getBinFromName(String name) {
@@ -195,7 +194,6 @@ public class ClassCacheEntry {
 		return null;
 	}
 	
-	
 	private void formOrdinalsFromValues() {
 		for (String thisValueName : this.values.keySet()) {
 			ValueType thisValue = this.values.get(thisValueName);
@@ -231,6 +229,19 @@ public class ClassCacheEntry {
 					throw new AerospikeException(String.format("Class %s has %d values specifying ordinals. These should be 1..%d, but %d is missing",
 							clazz.getSimpleName(), ordinals.size(), ordinals.size(), i));
 				}
+			}
+		}
+	}
+	
+	private void findConstructor() {
+		Constructor<?>[] constructors = clazz.getConstructors();
+		for (Constructor<?> thisConstructor : constructors) {
+			Parameter[] params = thisConstructor.getParameters();
+			
+			for (Parameter thisParam : params) {
+				Class<?> type = thisParam.getType();
+				String name = thisParam.getName();
+				System.out.println("name = " + name + ", type = " + type);
 			}
 		}
 	}
@@ -424,15 +435,15 @@ public class ClassCacheEntry {
 		return setName;
 	}
 	
-	public int getTtl() {
+	public Integer getTtl() {
 		return ttl;
 	}
 	
-	public boolean getSendKey() {
+	public Boolean getSendKey() {
 		return sendKey;
 	}
 	
-	public boolean getDurableDelete() {
+	public Boolean getDurableDelete() {
 		return durableDelete;
 	}
 	

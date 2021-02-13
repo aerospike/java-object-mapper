@@ -1187,6 +1187,36 @@ classes:
         name: data
 ```
  
+ The structure of the file is: 
+ 
+ Top level is an array of classes. Each class has:
+ - **class**: the name of the class. This must match the full class name to which you want to apply the configuration
+ - **namespace**: The namespace to map this class to. Can be unspecified if the class is only ever used for embedding in another object
+ - **set**: The set to map this class to. Can be unspecified if the class is only ever used for embedding in another object
+ - **durableDelete** (boolean): If set to `true`, any deletes on this class will use [durable deletes](https://www.aerospike.com/docs/guide/durable_deletes.html). If not set, it will use the flag from the policy for this class
+ - **mapAll** (boolean, default `true`): If true, all fields of this class will automatically be mapped to the database. Fields can be excluded using `exclude` on the bin config. If this is set to false, only the fields specified with an explicit bin configuration will be stored.
+ - **sendKey** (boolean): If true, the key of the record will be stored in Aerospike. See [send key](https://www.aerospike.com/docs/guide/policies.html#send-key) for more details. If this is false, the key will not be stored in Aerospike. If not set, the `sendKey` field from the policy will be used.
+ - **ttl**: the time to live for the record, mapped to the expiration time on the policy. If not set, the expiration from the policy will be used.
+ - **key**: a key structure, specified below
+ - **bins**: a list of bin structure, specified below
+ 
+ The key structure contains:
+ - **field**: the field for the key. Can be unspecified if methods are being used for the key
+ - **getter**: the name of the method to be used as the getter for the key. 
+ - **setter**: the name of the method to be used as the setter for the key. This is optional -- if lazy loading of referenced objects is used, a setter must be specified for the child class if a getter is
+ Note that either a field should be specified, or a getter (potentially with a setter). Using both a field and a getter will throw an error. Also note that the method is specified by names only, not parameters so it is a good idea to us a unique method. 
+ 
+ The bin structure contains:
+ - **embed**:
+ - **exclude**:
+ - **field**:
+ - **getter**:
+ - **name**:
+ - **ordinal**:
+ - **reference**:
+ - **setter**:
+ 
+  
 
 ----
 
