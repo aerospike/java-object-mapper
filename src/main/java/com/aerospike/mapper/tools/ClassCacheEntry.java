@@ -28,18 +28,20 @@ import com.aerospike.client.policy.QueryPolicy;
 import com.aerospike.client.policy.ScanPolicy;
 import com.aerospike.client.policy.WritePolicy;
 import com.aerospike.mapper.annotations.AerospikeBin;
+import com.aerospike.mapper.annotations.AerospikeConstructor;
 import com.aerospike.mapper.annotations.AerospikeExclude;
 import com.aerospike.mapper.annotations.AerospikeGetter;
 import com.aerospike.mapper.annotations.AerospikeKey;
 import com.aerospike.mapper.annotations.AerospikeOrdinal;
 import com.aerospike.mapper.annotations.AerospikeRecord;
 import com.aerospike.mapper.annotations.AerospikeSetter;
+import com.aerospike.mapper.annotations.ParamFrom;
 import com.aerospike.mapper.tools.TypeUtils.AnnotatedType;
 import com.aerospike.mapper.tools.configuration.BinConfig;
 import com.aerospike.mapper.tools.configuration.ClassConfig;
 import com.aerospike.mapper.tools.configuration.KeyConfig;
 
-public class ClassCacheEntry {
+public class ClassCacheEntry<T> {
 	
 	public static final String VERSION_PREFIX = "@V";
 	
@@ -51,11 +53,11 @@ public class ClassCacheEntry {
 	private Boolean durableDelete = null;
 	private int version = 1;
 
-	private final Class<?> clazz;
+	private final Class<T> clazz;
 	private ValueType key;
 	private String keyName = null;
 	private final TreeMap<String, ValueType> values = new TreeMap<>();
-	private final ClassCacheEntry superClazz;
+	private final ClassCacheEntry<?> superClazz;
 	private final int binCount;
 	private final AeroMapper mapper;
 	private Map<Integer, String> ordinals = null;
@@ -66,10 +68,12 @@ public class ClassCacheEntry {
 	private final BatchPolicy batchPolicy;
 	private final QueryPolicy queryPolicy;
 	private final ScanPolicy scanPolicy;
+	private String[] constructorParamBins;
+	private Constructor<T> constructor;
 	
 	
 	// package visibility only.
-	ClassCacheEntry(@NotNull Class<?> clazz, AeroMapper mapper, ClassConfig config, 
+	ClassCacheEntry(@NotNull Class<T> clazz, AeroMapper mapper, ClassConfig config, 
 			@NotNull Policy readPolicy, @NotNull WritePolicy writePolicy,
 			@NotNull BatchPolicy batchPolicy, @NotNull QueryPolicy queryPolicy,
 			@NotNull ScanPolicy scanPolicy) {
@@ -234,16 +238,68 @@ public class ClassCacheEntry {
 	}
 	
 	private void findConstructor() {
-		Constructor<?>[] constructors = clazz.getConstructors();
-		for (Constructor<?> thisConstructor : constructors) {
-			Parameter[] params = thisConstructor.getParameters();
-			
-			for (Parameter thisParam : params) {
-				Class<?> type = thisParam.getType();
-				String name = thisParam.getName();
-				System.out.println("name = " + name + ", type = " + type);
+		Constructor<?>[] constructors = clazz.getDeclaredConstructors();
+		if (constructors.length == 0) {
+			throw new AerospikeException("Class " + clazz.getSimpleName() + " has no constructors and hence cannot be mapped to Aerospike");
+		}
+		Constructor<?> desiredConstructor = null;
+		Constructor<?> noArgConstructor = null;
+		if (constructors.length == 1) {
+			desiredConstructor = constructors[0];
+		}
+		else {
+			for (Constructor<?> thisConstructor : constructors) {
+				if (thisConstructor.getParameters().length == 0) {
+					noArgConstructor = thisConstructor;
+				}
+				AerospikeConstructor aerospikeConstructor = thisConstructor.getAnnotation(AerospikeConstructor.class);
+				if (aerospikeConstructor != null) {
+					if (desiredConstructor != null) {
+						throw new AerospikeException("Class " + clazz.getSimpleName() + " has multiple constructors annotated with @AerospikeConstructor. Only one constructor can be so annotated.");
+					}
+					else {
+						desiredConstructor = thisConstructor;
+					}
+				}
 			}
 		}
+		if (desiredConstructor == null && noArgConstructor != null) {
+			constructorParamBins = new String[0];
+			desiredConstructor = noArgConstructor;
+		}
+		
+		if (desiredConstructor == null) {
+			throw new AerospikeException("Class " + clazz.getSimpleName() + " has neither a no-arg constructor, nor a constructor annotated with @AerospikeConstructor so cannot be mapped to Aerospike.");
+		}
+		
+		Parameter[] params = desiredConstructor.getParameters();
+		this.constructorParamBins = new String[params.length];
+			
+		int count = 0;
+		for (Parameter thisParam : params) {
+			count++;
+			ParamFrom parameterDetails = thisParam.getAnnotation(ParamFrom.class);
+			if (parameterDetails == null) {
+				throw new AerospikeException("Class " + clazz.getSimpleName() + " has a preferred constructor of " + desiredConstructor.toString()+ ". However, parameter " + count + 
+						" is not marked with a @ParamFrom annotation, and hence cannot be determined how to map to this from the bins in the record.");
+			}
+			String binName = parameterDetails.value();
+			
+			// Validate that we have such a value
+			if (!values.containsKey(binName)) {
+				String valueList = String.join(",", values.keySet());
+				throw new AerospikeException("Class " + clazz.getSimpleName() + " has a preferred constructor of " + desiredConstructor.toString()+ ". However, parameter " + count + 
+						" is mapped to bin \"" + binName + "\" which is not one of the values on the class, which are: " + valueList);
+			}
+			Class<?> type = thisParam.getType();
+			if (!type.isAssignableFrom(values.get(binName).getType())) {
+				throw new AerospikeException("Class " + clazz.getSimpleName() + " has a preferred constructor of " + desiredConstructor.toString()+ ". However, parameter " + count + 
+						" is of type " + type + " but assigned from bin \"" + binName + "\" of type " +values.get(binName).getType()+ ". These types are incompatible.");
+			}
+			constructorParamBins[count-1] = binName;
+		}
+		this.constructor = (Constructor<T>) desiredConstructor;
+		this.constructor.setAccessible(true);
 	}
 	
 	private PropertyDefinition getOrCreateProperty(String name, Map<String, PropertyDefinition> properties) {
@@ -564,6 +620,50 @@ public class ClassCacheEntry {
 		}
 	}
 	
+	public T constructAndHydrate(Class<T> clazz, Map<String, Object> map) {
+		return constructAndHydrate(clazz, null, map);
+	}
+	public T constructAndHydrate(Class<T> clazz, Record record) {
+		return constructAndHydrate(clazz, record, null);
+	}
+	
+	private T constructAndHydrate(Class<T> clazz, Record record, Map<String, Object> map) {
+		Map<String, Object> valueMap = new HashMap<>();
+		try {
+			ClassCacheEntry<?> thisClass = this;
+			while (thisClass != null) {
+				for (String name : this.values.keySet()) {
+					ValueType value = this.values.get(name);
+					Object aerospikeValue = record == null? map.get(name) : record.getValue(name);
+					valueMap.put(name, value.getTypeMapper().fromAerospikeFormat(aerospikeValue));
+				}
+				thisClass = thisClass.superClazz;
+			}
+			
+			// Now form the values which satisfy the constructor
+			T result;
+			if (constructorParamBins.length == 0) {
+				result = clazz.newInstance();				
+			}
+			else {
+				Object[] args = new Object[constructorParamBins.length];
+				for (int i = 0; i < constructorParamBins.length; i++) {
+					args[i] = valueMap.get(constructorParamBins[i]);;
+					valueMap.remove(constructorParamBins[i]);
+				}
+				result = constructor.newInstance(args);
+			}
+			for (String field : valueMap.keySet()) {
+				ValueType value = this.values.get(field);
+				value.set(result, valueMap.get(field));
+			}
+			return result;
+		}
+		catch (ReflectiveOperationException ref) {
+			throw new AerospikeException(ref);
+		}
+	}
+	
 	public void hydrateFromRecord(Record record, Object instance) {
 		this.hydrateFromRecordOrMap(record, null, instance);
 	}
@@ -574,7 +674,7 @@ public class ClassCacheEntry {
 	
 	private void hydrateFromRecordOrMap(Record record, Map<String, Object> map, Object instance) {
 		try {
-			ClassCacheEntry thisClass = this;
+			ClassCacheEntry<?> thisClass = this;
 			while (thisClass != null) {
 				for (String name : this.values.keySet()) {
 					ValueType value = this.values.get(name);

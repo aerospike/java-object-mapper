@@ -1237,6 +1237,6 @@ classes:
 - Document configuration file. 
 - Document creation of builder -- multiple configuration files are allowed, if the same class is declared in both the first one encountered wins. 
 - Document methods with 2 parameters for keys and setters, the second one either a Key or a Value
-- Allow injection of arguments into constructor to remove the need for the zero-argument constructor. See https://stackoverflow.com/questions/25367979/why-json-ask-for-no-argument-constructor-for-junit-test for details (Maybe only for records stored as a map?)
+- Document constructor injection
 
 

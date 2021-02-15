@@ -174,8 +174,8 @@ public class AeroMapper {
     }
 
     
-    private ClassCacheEntry getEntryAndValidateNamespace(Class<?> clazz) {
-        ClassCacheEntry entry = ClassCache.getInstance().loadClass(clazz, this);
+    private <T> ClassCacheEntry<T> getEntryAndValidateNamespace(Class<T> clazz) {
+        ClassCacheEntry<T> entry = ClassCache.getInstance().loadClass(clazz, this);
         String namespace = null;
         if (entry != null) {
 	        namespace = entry.getNamespace();
@@ -186,8 +186,9 @@ public class AeroMapper {
         return entry;
     }
 
-    private void save(@NotNull Object object, @NotNull RecordExistsAction recordExistsAction, String[] binNames) {
-    	ClassCacheEntry entry = getEntryAndValidateNamespace(object.getClass());
+    private <T> void save(@NotNull T object, @NotNull RecordExistsAction recordExistsAction, String[] binNames) {
+    	Class<T> clazz = (Class<T>) object.getClass();
+    	ClassCacheEntry<T> entry = getEntryAndValidateNamespace(clazz);
         WritePolicy writePolicy = new WritePolicy(entry.getWritePolicy());
         String set = entry.getSetName();
         if ("".equals(set)) {
@@ -255,7 +256,7 @@ public class AeroMapper {
         } else {
             try {
             	ThreadLocalKeySaver.save(key);
-                T result = convertToObject(clazz, record, entry);
+                T result = (T) convertToObject(clazz, record, entry);
                 return result;
             } catch (ReflectiveOperationException e) {
                 throw new AerospikeException(e);
@@ -266,8 +267,8 @@ public class AeroMapper {
         }
     }
 
-    public boolean delete(@NotNull Class<?> clazz, @NotNull Object userKey) throws AerospikeException {
-        ClassCacheEntry entry = getEntryAndValidateNamespace(clazz);
+    public <T> boolean delete(@NotNull Class<T> clazz, @NotNull Object userKey) throws AerospikeException {
+        ClassCacheEntry<T> entry = getEntryAndValidateNamespace(clazz);
         Object asKey = entry.translateKeyToAerospikeKey(userKey);
         Key key = new Key(entry.getNamespace(), entry.getSetName(), Value.get(asKey));
 
@@ -343,18 +344,16 @@ public class AeroMapper {
 		}    		
     }
 
-    public <T> T convertToObject(Class<T> clazz, Record record, ClassCacheEntry entry) throws ReflectiveOperationException {
+    public <T> T convertToObject(Class<T> clazz, Record record, ClassCacheEntry<T> entry) throws ReflectiveOperationException {
         if (entry == null) {
             entry = ClassCache.getInstance().loadClass(clazz, this);
         }
-        T result = clazz.getConstructor().newInstance();
-        entry.hydrateFromRecord(record, result);
-        return result;
+        return entry.constructAndHydrate(clazz, record);
     }
 
     public <T> T convertToObject(Class<T> clazz, List<Object> record)  {
 		try {
-	        ClassCacheEntry entry = ClassCache.getInstance().loadClass(clazz, this);
+	        ClassCacheEntry<T> entry = ClassCache.getInstance().loadClass(clazz, this);
 	        T result;
 			result = clazz.getConstructor().newInstance();
 			entry.hydrateFromList(record, result);
@@ -365,13 +364,13 @@ public class AeroMapper {
     }
 
     public <T> List<Object> convertToList(@NotNull T instance) {
-    	ClassCacheEntry entry = ClassCache.getInstance().loadClass(instance.getClass(), this);
+    	ClassCacheEntry<T> entry = (ClassCacheEntry<T>) ClassCache.getInstance().loadClass(instance.getClass(), this);
     	return entry.getList(instance, false);
     }
 
     public <T> T convertToObject(Class<T> clazz, Map<String,Object> record) {
     	try {
-	        ClassCacheEntry entry = ClassCache.getInstance().loadClass(clazz, this);
+	        ClassCacheEntry<T> entry = ClassCache.getInstance().loadClass(clazz, this);
 	        T result = clazz.getConstructor().newInstance();
 	        entry.hydrateFromMap(record, result);
 	        return result;
@@ -381,7 +380,7 @@ public class AeroMapper {
     }
 
     public <T> Map<String, Object> convertToMap(@NotNull T instance) {
-    	ClassCacheEntry entry = ClassCache.getInstance().loadClass(instance.getClass(), this);
+    	ClassCacheEntry<T> entry = (ClassCacheEntry<T>) ClassCache.getInstance().loadClass(instance.getClass(), this);
     	return entry.getMap(instance);
     }
 }

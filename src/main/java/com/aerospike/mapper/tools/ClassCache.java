@@ -42,11 +42,11 @@ public class ClassCache {
 		}
 	}
 
-	public ClassCacheEntry loadClass(@NotNull Class<?> clazz, AeroMapper mapper) {
-		ClassCacheEntry entry = cacheMap.get(clazz);
+	public <T> ClassCacheEntry<T> loadClass(@NotNull Class<T> clazz, AeroMapper mapper) {
+		ClassCacheEntry<T> entry = cacheMap.get(clazz);
 		if (entry == null) {
 			try {
-				entry = new ClassCacheEntry(clazz, mapper, getClassConfig(clazz), 
+				entry = new ClassCacheEntry<T>(clazz, mapper, getClassConfig(clazz), 
 						determinePolicy(clazz, PolicyType.READ), 
 						(WritePolicy)determinePolicy(clazz, PolicyType.WRITE),
 						(BatchPolicy)determinePolicy(clazz, PolicyType.BATCH),
