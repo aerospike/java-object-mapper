@@ -220,6 +220,114 @@ In this case the `forAll()` would apply to A,B,C, the `forChildrenOf` would appl
 - C: `readPolicy3`
            
 ---
+
+## Constructors
+Given that the AeroMapper is designed to read and write information to an Aerospike database, it must be able to create objects when the data has been read from the database. To construct an object, it will typically use the default (no argument) constructor. 
+
+However, there are times when this is not desirable, for example when the class declares final fields which must be mapped to the constructor. For example, consider the following class:
+
+```java
+@AerospikeRecord(namespace = "test", set = "testSet")
+public class ConstructoredClass {
+	@AerospikeKey
+	public final int id;
+	public final int age;
+	public final String name;
+	public final Date date;
+	
+	public ConstructoredClass(int id, int age, String name, Date date) {
+		super();
+		this.id = id;
+		this.age = age;
+		this.name = name;
+		this.date = date;
+	}
+}
+```
+
+As it stands, this class cannot be used with the AeroMapper because there is no valid constructor to invoke when an object needs to be created. There is a constructor but it does not contain enough information to map the reocrd on the database to the parameters of the constructor. (Remember that at runtime method and argument names are typically lost and become "arg1", "arg2" and so on). We can use this constructor, but we need to provide this missing information with annotations:
+
+```java
+@AerospikeRecord(namespace = "test", set = "testSet")
+public class ConstructoredClass {
+	@AerospikeKey
+	public final int id;
+	public final int age;
+	public final String name;
+	public final Date date;
+	
+	public ConstructoredClass(@ParamFrom("id") int id, @ParamFrom("age") int age, @ParamFrom("name") String name, @ParamFrom("date")Date date) {
+		super();
+		this.id = id;
+		this.age = age;
+		this.name = name;
+		this.date = date;
+	}
+}
+```
+
+Now there is enough information to be able to construct an instance of this class from a database record. Note that the names of the @ParamFrom annotation are the bin names, not the underlying field names. So if you have a field declared as
+
+```java
+@AerospikeBin(name = "shrtNm")
+private String fieldWithAVeryLongName;
+```
+
+then the constructor might look line:
+
+```java
+public FieldNameTest(@ParamFrom("shrtNm") String fieldWithAVeryLongName) {
+	this.fieldWithAVeryLongName = fieldWithAVeryLongName;
+}
+```
+
+Note that not all the fields in the class need to be specified in the constructor (unless needed to satisfy the Java compiler, eg setting any final fields). Any values not passed in the constructor will be explicitly set. For example:
+
+```java
+@AerospikeRecord(namespace = "test", set = "testSet") 
+public class ConstructoredClass2 {
+	@AerospikeKey
+	public final int id;
+	public final int a;
+	public int b;
+	public int c;
+	
+	public ConstructoredClass2(@ParamFrom("id") int id, @ParamFrom("a") int a) {
+		this.id = id;
+		this.a = a;
+	}
+}
+```
+
+Whilst these examples show only final fields being set, this is not a requirement.
+
+If there are multiple constructors on the class, the one to be used by the AeroMapper should be annotated with @AerospikeConstructor:
+
+```java
+@AerospikeRecord(namespace = "test", set = "testSet") 
+public class ConstructoredClass2 {
+	@AerospikeKey
+	public final int id;
+	public final int a;
+	public int b;
+	public int c;
+	
+	public ConstructoredClass2(@ParamFrom("id") int id, @ParamFrom("a") int a) {
+		this.id = id;
+		this.a = a;
+	}
+	@AerospikeConstructor
+	public ConstructoredClass2(@ParamFrom("id") int id, @ParamFrom("a") int a, @ParamFrom("b") int b) {
+		this.id = id;
+		this.a = a;
+		this.b = b;
+	}
+}
+```
+
+In this case, the 3 argument constructor will be used. Note that you must annotate the desired constructor on any class with multiple constructors, irrespective of how many of those constructors have the @ParamFrom annotations on their arguments.
+
+---
  
 ## Keys
 The key to an Aerospike record can be specified either as a field or a property. Remember that Aerospike keys can be Strings, integer types and binary types only.

@@ -6,9 +6,9 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Tags a field in a class to be mapped to an Aerospike bin.
+ * Tags a constructor to be the one to use when a class as multiple constructors
  */
 @Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.PARAMETER)
+@Target(ElementType.CONSTRUCTOR)
 public @interface AerospikeConstructor {
 }
