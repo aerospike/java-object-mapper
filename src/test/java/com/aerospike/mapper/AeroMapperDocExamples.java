@@ -15,6 +15,7 @@ import org.junit.Test;
 
 import com.aerospike.client.AerospikeException;
 import com.aerospike.mapper.annotations.AerospikeBin;
+import com.aerospike.mapper.annotations.AerospikeConstructor;
 import com.aerospike.mapper.annotations.AerospikeEmbed;
 import com.aerospike.mapper.annotations.AerospikeEmbed.EmbedType;
 import com.aerospike.mapper.annotations.AerospikeKey;
@@ -23,6 +24,7 @@ import com.aerospike.mapper.annotations.AerospikeRecord;
 import com.aerospike.mapper.annotations.AerospikeReference;
 import com.aerospike.mapper.annotations.AerospikeReference.ReferenceType;
 import com.aerospike.mapper.annotations.AerospikeVersion;
+import com.aerospike.mapper.annotations.ParamFrom;
 import com.aerospike.mapper.tools.AeroMapper;
 
 public class AeroMapperDocExamples extends AeroMapperBaseTest {
@@ -267,7 +269,7 @@ public class AeroMapperDocExamples extends AeroMapperBaseTest {
     	@AerospikeReference(type = ReferenceType.DIGEST)
     	public Child refChild;
 
-		public Parent(int id, String name, Child child) {
+		public Parent(@ParamFrom("id") int id, @ParamFrom("name") String name, @ParamFrom("refChild") Child child) {
 			super();
 			this.id = id;
 			this.name = name;
@@ -292,7 +294,7 @@ public class AeroMapperDocExamples extends AeroMapperBaseTest {
     	@AerospikeReference(type = ReferenceType.DIGEST, lazy = true)
     	public Child refChild;
 
-		public ParentWithBadChild(int id, String name, Child child) {
+		public ParentWithBadChild(@ParamFrom("id") int id, @ParamFrom("name") String name, @ParamFrom("refChild") Child child) {
 			super();
 			this.id = id;
 			this.name = name;
@@ -309,7 +311,7 @@ public class AeroMapperDocExamples extends AeroMapperBaseTest {
     	String name;
     	Date date;
 
-    	public Child(int id, String name, Date date) {
+    	public Child(@ParamFrom("id") int id, @ParamFrom("name")String name, @ParamFrom("date") Date date) {
 			super();
 			this.id = id;
 			this.name = name;

@@ -146,8 +146,12 @@ public class ClassCacheEntry<T> {
 		if (config.getDurableDelete() != null) {
 			this.durableDelete = config.getDurableDelete();
 		}
-		this.mapAll = config.getMapAll();
-		this.sendKey = config.getSendKey();
+		if (config.getMapAll() != null) {
+			this.mapAll = config.getMapAll();
+		}
+		if (config.getSendKey() != null) {
+			this.sendKey = config.getSendKey();
+		}
 	}
 	
 	private BinConfig getBinFromName(String name) {
@@ -639,25 +643,7 @@ public class ClassCacheEntry<T> {
 				}
 				thisClass = thisClass.superClazz;
 			}
-			
-			// Now form the values which satisfy the constructor
-			T result;
-			if (constructorParamBins.length == 0) {
-				result = clazz.newInstance();				
-			}
-			else {
-				Object[] args = new Object[constructorParamBins.length];
-				for (int i = 0; i < constructorParamBins.length; i++) {
-					args[i] = valueMap.get(constructorParamBins[i]);;
-					valueMap.remove(constructorParamBins[i]);
-				}
-				result = constructor.newInstance(args);
-			}
-			for (String field : valueMap.keySet()) {
-				ValueType value = this.values.get(field);
-				value.set(result, valueMap.get(field));
-			}
-			return result;
+			return constructAndHydrate(valueMap);
 		}
 		catch (ReflectiveOperationException ref) {
 			throw new AerospikeException(ref);
@@ -689,7 +675,7 @@ public class ClassCacheEntry<T> {
 		}
 	}
 	
-	private int setValueByField(String name, int objectVersion, int recordVersion, Object instance, int index, List<Object> list) throws ReflectiveOperationException {
+	private int setValueByField(String name, int objectVersion, int recordVersion, Object instance, int index, List<Object> list, Map<String, Object> map) throws ReflectiveOperationException {
 		ValueType value = this.values.get(name);
 		TypeMapper typeMapper = value.getTypeMapper();
 		// If the version of this value does not exist on this object, simply skip it. For example, V1 contains {a,b,c} but V2 contains {a,c}, skip field B
@@ -704,7 +690,12 @@ public class ClassCacheEntry<T> {
 		if (value.getMinimumVersion() <= recordVersion && recordVersion <= value.getMaximumVersion() && index < list.size()) {
 			Object aerospikeValue = list.get(index++);
 			Object javaValue = aerospikeValue == null ? null : typeMapper.fromAerospikeFormat(aerospikeValue);
-			value.set(instance, javaValue);
+			if (instance == null) {
+				map.put(name, javaValue);
+			}
+			else {
+				value.set(instance, javaValue);
+			}
 		}
 		return index;
 	}
@@ -713,6 +704,69 @@ public class ClassCacheEntry<T> {
 		this.hydrateFromList(list, instance, false);
 	}
 	
+	private T constructAndHydrate(Map<String, Object> javaValuesMap) throws ReflectiveOperationException {
+		ClassCacheEntry<T> cacheEntry = this;
+		// Now form the values which satisfy the constructor
+		T result;
+		if (constructorParamBins.length == 0) {
+			result = clazz.newInstance();				
+		}
+		else {
+			Object[] args = new Object[constructorParamBins.length];
+			for (int i = 0; i < constructorParamBins.length; i++) {
+				args[i] = javaValuesMap.get(constructorParamBins[i]);;
+				javaValuesMap.remove(constructorParamBins[i]);
+			}
+			result = constructor.newInstance(args);
+		}
+		for (String field : javaValuesMap.keySet()) {
+			ValueType value = this.values.get(field);
+			value.set(result, javaValuesMap.get(field));
+		}
+		return result;
+	}
+	
+	public T constructAndHydrate(Class<T> clazz, List<Object> list, boolean skipKey) {
+		Map<String, Object> valueMap = new HashMap<>();
+		try {
+			ClassCacheEntry<?> thisClass = this;
+			int index = 0;
+			int endIndex = list.size();
+			while (thisClass != null) {
+				if (index < endIndex) {
+					Object lastValue = list.get(endIndex-1);
+					int recordVersion = 1;
+					if ((lastValue instanceof String) && (((String)lastValue).startsWith(VERSION_PREFIX))) {
+						recordVersion = Integer.valueOf(((String)lastValue).substring(2));
+						endIndex--;
+					}
+					int objectVersion = thisClass.version;
+					if (ordinals != null) {
+						for (int i = 1; i <= ordinals.size(); i++) {
+							String name = ordinals.get(i);
+							if (!skipKey || !isKeyField(name)) {
+								index = setValueByField(name, objectVersion, recordVersion, null, index, list, valueMap);
+							}
+						}
+					}
+					for (String name : this.values.keySet()) {
+						if (this.fieldsWithOrdinals == null || !thisClass.fieldsWithOrdinals.contains(name)) {
+							if (!skipKey || !isKeyField(name)) {
+								index = setValueByField(name, objectVersion, recordVersion, null, index, list, valueMap);
+							}
+						}
+					}
+					thisClass = thisClass.superClazz;
+				}
+			}
+
+			return constructAndHydrate(valueMap);
+		}
+		catch (ReflectiveOperationException ref) {
+			throw new AerospikeException(ref);
+		}
+	}
+
 	public void hydrateFromList(List<Object> list, Object instance, boolean skipKey) {
 		try {
 			int index = 0;
@@ -731,14 +785,14 @@ public class ClassCacheEntry<T> {
 						for (int i = 1; i <= ordinals.size(); i++) {
 							String name = ordinals.get(i);
 							if (!skipKey || !isKeyField(name)) {
-								index = setValueByField(name, objectVersion, recordVersion, instance, index, list);
+								index = setValueByField(name, objectVersion, recordVersion, instance, index, list, null);
 							}
 						}
 					}
 					for (String name : this.values.keySet()) {
 						if (this.fieldsWithOrdinals == null || !thisClass.fieldsWithOrdinals.contains(name)) {
 							if (!skipKey || !isKeyField(name)) {
-								index = setValueByField(name, objectVersion, recordVersion, instance, index, list);
+								index = setValueByField(name, objectVersion, recordVersion, instance, index, list, null);
 							}
 						}
 					}
