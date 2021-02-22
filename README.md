@@ -1061,6 +1061,12 @@ In this case, if the environment variable ``ACCOUNT_TITLE_BIN_NAME`` is set, tha
 
 ----
 
+### Subclasses
+
+
+
+----
+
 ### Custom Object Converters
 Sometimes, the representation of the data in Aerospike and the representation in Java should be very different. Consider a class which represents a playing card and another class which represents a poker hand:
 
@@ -1340,11 +1346,8 @@ classes:
 - Make lists of references load the data via batch loads.
 - Document all parameters to annotations and examples of types
 - Document enums, dates, instants.
-- Validate that all AerospikeRecord objects have a no-arg constructor
 - Test to ensure List<AerospikeRecord> / Map<AerospikeRecord> cannot have both an embed and reference annotations / multiple annotations.
 - Document configuration file. 
 - Document creation of builder -- multiple configuration files are allowed, if the same class is declared in both the first one encountered wins. 
 - Document methods with 2 parameters for keys and setters, the second one either a Key or a Value
-- Document constructor injection
-
-
+- Document subclasses and the mapping to tables + references stored as lists

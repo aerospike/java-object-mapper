@@ -1,10 +1,12 @@
 package com.aerospike.mapper;
 
 import org.junit.AfterClass;
+import org.junit.Before;
 import org.junit.BeforeClass;
 
 import com.aerospike.client.AerospikeClient;
 import com.aerospike.client.IAerospikeClient;
+import com.aerospike.mapper.tools.ClassCache;
 
 public abstract class AeroMapperBaseTest {
 
@@ -21,5 +23,11 @@ public abstract class AeroMapperBaseTest {
         if (client != null) {
             client.close();
         }
+    }
+    
+    @Before
+    public void clearCache() {
+		ClassCache.getInstance().clear();
+
     }
 }

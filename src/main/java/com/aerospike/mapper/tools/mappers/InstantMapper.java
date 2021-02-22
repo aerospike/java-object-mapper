@@ -4,7 +4,7 @@ import java.time.Instant;
 
 import com.aerospike.mapper.tools.TypeMapper;
 
-public class InstantMapper implements TypeMapper {
+public class InstantMapper extends TypeMapper {
 
 	@Override
 	public Object toAerospikeFormat(Object value) {

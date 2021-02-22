@@ -2,7 +2,7 @@ package com.aerospike.mapper.tools.mappers;
 
 import com.aerospike.mapper.tools.TypeMapper;
 
-public class BooleanMapper implements TypeMapper {
+public class BooleanMapper extends TypeMapper {
 
 	@Override
 	public Object toAerospikeFormat(Object value) {

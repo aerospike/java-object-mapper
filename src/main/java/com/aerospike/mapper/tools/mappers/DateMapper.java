@@ -4,7 +4,7 @@ import java.util.Date;
 
 import com.aerospike.mapper.tools.TypeMapper;
 
-public class DateMapper implements TypeMapper {
+public class DateMapper extends TypeMapper {
 
 	@Override
 	public Object toAerospikeFormat(Object value) {

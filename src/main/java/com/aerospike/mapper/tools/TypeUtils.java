@@ -172,16 +172,17 @@ public class TypeUtils {
 			else if (List.class.isAssignableFrom(clazz)) {
 				EmbedType embedType = EmbedType.DEFAULT;
 				boolean saveKey = true;
-				for (Annotation annotation : type.getAnnotations()) {
-					if (annotation.annotationType().equals(AerospikeEmbed.class)) {
-						AerospikeEmbed embed = (AerospikeEmbed)annotation;
-						embedType = embed.type();
-						saveKey = embed.saveKey();
-						break;
+				if (type != null && type.getAnnotations() != null) {
+					for (Annotation annotation : type.getAnnotations()) {
+						if (annotation.annotationType().equals(AerospikeEmbed.class)) {
+							AerospikeEmbed embed = (AerospikeEmbed)annotation;
+							embedType = embed.type();
+							saveKey = embed.saveKey();
+							break;
+						}
 					}
 				}
-
-				BinConfig binConfig = type.getBinConfig();
+				BinConfig binConfig = type != null ? type.getBinConfig() : null;
 				if (binConfig != null && binConfig.getEmbed() != null) {
 					if (binConfig.getEmbed().getSaveKey() != null) {
 						saveKey = binConfig.getEmbed().getSaveKey();
@@ -191,7 +192,7 @@ public class TypeUtils {
 					}
 				}
 				
-				if (type.isParameterizedType()) {
+				if (type != null && type.isParameterizedType()) {
 					ParameterizedType paramType = type.getParamterizedType();
 					Type[] types = paramType.getActualTypeArguments();
 					if (types.length != 1) {
@@ -210,54 +211,59 @@ public class TypeUtils {
 			
 			else if (clazz.isAnnotationPresent(AerospikeRecord.class) || ClassCache.getInstance().hasClassConfig(clazz)) {
 				boolean throwError = false;
-				BinConfig binConfig = type.getBinConfig();
-				if (binConfig != null && (binConfig.getEmbed() != null || binConfig.getReference() != null)) {
-					// The config parameters take precedence over the annotations.
-					if (binConfig.getEmbed() != null && binConfig.getReference() != null) {
-						throwError = true;
-					}
-					else if (binConfig.getEmbed() != null) {
-						EmbedConfig embedConfig = binConfig.getEmbed();
-						EmbedType embedType = isForSubType ? embedConfig.getElementType() : embedConfig.getType();
-						if (embedType == null) {
-							embedType = EmbedType.MAP;
-						}
-						boolean saveKey = embedConfig.getSaveKey() == null ? false : true;
-						boolean skipKey = isForSubType && (embedConfig.getType() == EmbedType.MAP && embedConfig.getElementType() == EmbedType.LIST && (!saveKey));
-						typeMapper = new ObjectEmbedMapper(clazz, embedType, mapper, skipKey);
-						addToMap = false;
-					}
-					else {
-						// Reference
-						ReferenceConfig ref = binConfig.getReference();
-						typeMapper = new ObjectReferenceMapper(ClassCache.getInstance().loadClass(clazz, mapper), ref.getLazy(), ref.getType(), mapper);
-						addToMap = false;
-					}
+				if (type == null) {
+					
 				}
 				else {
-					for (Annotation annotation : type.getAnnotations()) {
-						if (annotation.annotationType().equals(AerospikeReference.class)) {
-							if (typeMapper != null) {
-								throwError = true;
-								break;
-							}
-							else {
-								AerospikeReference ref = (AerospikeReference)annotation;
-								typeMapper = new ObjectReferenceMapper(ClassCache.getInstance().loadClass(clazz, mapper), ref.lazy(), ref.type(), mapper);
-								addToMap = false;
-							}
+					BinConfig binConfig = type.getBinConfig();
+					if (binConfig != null && (binConfig.getEmbed() != null || binConfig.getReference() != null)) {
+						// The config parameters take precedence over the annotations.
+						if (binConfig.getEmbed() != null && binConfig.getReference() != null) {
+							throwError = true;
 						}
-						if (annotation.annotationType().equals(AerospikeEmbed.class)) {
-							AerospikeEmbed embed = (AerospikeEmbed)annotation;
-							if (typeMapper != null) {
-								throwError = true;
-								break;
+						else if (binConfig.getEmbed() != null) {
+							EmbedConfig embedConfig = binConfig.getEmbed();
+							EmbedType embedType = isForSubType ? embedConfig.getElementType() : embedConfig.getType();
+							if (embedType == null) {
+								embedType = EmbedType.MAP;
 							}
-							else {
-								EmbedType embedType = isForSubType ? embed.elementType() : embed.type();
-								boolean skipKey = isForSubType && (embed.type() == EmbedType.MAP && embed.elementType() == EmbedType.LIST && (!embed.saveKey()));
-								typeMapper = new ObjectEmbedMapper(clazz, embedType, mapper, skipKey);
-								addToMap = false;
+							boolean saveKey = embedConfig.getSaveKey() == null ? false : true;
+							boolean skipKey = isForSubType && (embedConfig.getType() == EmbedType.MAP && embedConfig.getElementType() == EmbedType.LIST && (!saveKey));
+							typeMapper = new ObjectEmbedMapper(clazz, embedType, mapper, skipKey);
+							addToMap = false;
+						}
+						else {
+							// Reference
+							ReferenceConfig ref = binConfig.getReference();
+							typeMapper = new ObjectReferenceMapper(ClassCache.getInstance().loadClass(clazz, mapper), ref.getLazy(), ref.getType(), mapper);
+							addToMap = false;
+						}
+					}
+					else {
+						for (Annotation annotation : type.getAnnotations()) {
+							if (annotation.annotationType().equals(AerospikeReference.class)) {
+								if (typeMapper != null) {
+									throwError = true;
+									break;
+								}
+								else {
+									AerospikeReference ref = (AerospikeReference)annotation;
+									typeMapper = new ObjectReferenceMapper(ClassCache.getInstance().loadClass(clazz, mapper), ref.lazy(), ref.type(), mapper);
+									addToMap = false;
+								}
+							}
+							if (annotation.annotationType().equals(AerospikeEmbed.class)) {
+								AerospikeEmbed embed = (AerospikeEmbed)annotation;
+								if (typeMapper != null) {
+									throwError = true;
+									break;
+								}
+								else {
+									EmbedType embedType = isForSubType ? embed.elementType() : embed.type();
+									boolean skipKey = isForSubType && (embed.type() == EmbedType.MAP && embed.elementType() == EmbedType.LIST && (!embed.saveKey()));
+									typeMapper = new ObjectEmbedMapper(clazz, embedType, mapper, skipKey);
+									addToMap = false;
+								}
 							}
 						}
 					}

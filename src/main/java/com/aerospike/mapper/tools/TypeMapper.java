@@ -1,6 +1,16 @@
 package com.aerospike.mapper.tools;
 
-public interface TypeMapper {
-	Object toAerospikeFormat(Object value);
-	Object fromAerospikeFormat(Object value);
+public abstract class TypeMapper {
+	public abstract Object toAerospikeFormat(Object value);
+	public abstract Object fromAerospikeFormat(Object value);
+	
+	/**
+	 * Some types need to know if they're mapped to the correct class. If they do, they can override this method to glean that information
+	 * @param value
+	 * @param isExpectedType
+	 * @return
+	 */
+	public Object toAerospikeFormat(Object value, boolean isExpectedType) {
+		return toAerospikeFormat(value);
+	}
 }

@@ -10,7 +10,7 @@ import com.aerospike.mapper.tools.ClassCache;
 import com.aerospike.mapper.tools.ClassCacheEntry;
 import com.aerospike.mapper.tools.TypeMapper;
 
-public class ObjectEmbedMapper extends ObjectMapper implements TypeMapper {
+public class ObjectEmbedMapper extends ObjectMapper {
 
 	private final Class<?> referencedClass;
 	private final AeroMapper mapper;
@@ -30,12 +30,14 @@ public class ObjectEmbedMapper extends ObjectMapper implements TypeMapper {
 			return null;
 		}
 		// In this case we want to store a reference to the object.
-		ClassCacheEntry entry = ClassCache.getInstance().loadClass(referencedClass, this.mapper);
+		boolean needsType = !(referencedClass.equals(value.getClass()));
+		// Use the actual class here in case a sub-class is passed. In that case needsType will be true
+		ClassCacheEntry<?> entry = ClassCache.getInstance().loadClass(value.getClass(), this.mapper);
 		switch (type) {
-		case LIST:		return entry.getList(value, skipKey);
+		case LIST:		return entry.getList(value, skipKey, needsType);
 		case MAP:		// Fall through
 		// If unspecified, default to a MAP for embedded objects
-		case DEFAULT:	return entry.getMap(value);
+		case DEFAULT:	return entry.getMap(value, needsType);
 		default: 		throw new AerospikeException("Unspecified EmbedType");
 		}
 	}
@@ -46,17 +48,22 @@ public class ObjectEmbedMapper extends ObjectMapper implements TypeMapper {
 		if (value == null) {
 			return null;
 		}
-		ClassCacheEntry entry = ClassCache.getInstance().loadClass(referencedClass, this.mapper);
+		ClassCacheEntry<?> entry = ClassCache.getInstance().loadClass(referencedClass, this.mapper);
 		try {
-			Object instance = this.referencedClass.newInstance();
+			Object instance = null;
 			
 			switch (type) {
 			case LIST:
-				entry.hydrateFromList((List<Object>)value, instance, skipKey);
+				List<Object> listValue = (List<Object>) value;
+				instance = entry.constructAndHydrate((Class)this.referencedClass, listValue, skipKey);
+//				instance = this.referencedClass.newInstance();
+//				entry.hydrateFromList(listValue, instance, skipKey);
 				break;
 			case MAP:	// Fall through
 			case DEFAULT:
-				entry.hydrateFromMap((Map<String,Object>)value, instance);
+				instance = entry.constructAndHydrate((Class)this.referencedClass, (Map<String,Object>)value);
+//				instance = this.referencedClass.newInstance();
+//				entry.hydrateFromMap((Map<String,Object>)value, instance);
 				break;
 			default:
 				throw new AerospikeException("Unspecified EmbedType");

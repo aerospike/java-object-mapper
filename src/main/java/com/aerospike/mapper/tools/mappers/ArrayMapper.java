@@ -7,7 +7,7 @@ import java.util.List;
 import com.aerospike.mapper.tools.TypeMapper;
 import com.aerospike.mapper.tools.TypeUtils;
 
-public class ArrayMapper implements TypeMapper {
+public class ArrayMapper extends TypeMapper {
 
 	private final Class<?> instanceClass;
 	private final boolean supportedWithoutTranslation;

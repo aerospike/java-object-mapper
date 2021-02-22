@@ -365,7 +365,7 @@ public class AeroMapper {
 
     public <T> List<Object> convertToList(@NotNull T instance) {
     	ClassCacheEntry<T> entry = (ClassCacheEntry<T>) ClassCache.getInstance().loadClass(instance.getClass(), this);
-    	return entry.getList(instance, false);
+    	return entry.getList(instance, false, false);
     }
 
     public <T> T convertToObject(Class<T> clazz, Map<String,Object> record) {
@@ -381,6 +381,6 @@ public class AeroMapper {
 
     public <T> Map<String, Object> convertToMap(@NotNull T instance) {
     	ClassCacheEntry<T> entry = (ClassCacheEntry<T>) ClassCache.getInstance().loadClass(instance.getClass(), this);
-    	return entry.getMap(instance);
+    	return entry.getMap(instance, false);
     }
 }

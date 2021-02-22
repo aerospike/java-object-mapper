@@ -7,7 +7,7 @@ import com.aerospike.client.AerospikeException;
 import com.aerospike.mapper.annotations.FromAerospike;
 import com.aerospike.mapper.annotations.ToAerospike;
 
-public class GenericTypeMapper implements TypeMapper {
+public class GenericTypeMapper extends TypeMapper {
 	private Class<?> mappedClass;
 	private Object converter;
 	private Method toAerospike;

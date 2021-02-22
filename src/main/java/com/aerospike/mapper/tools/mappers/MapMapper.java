@@ -8,7 +8,7 @@ import com.aerospike.mapper.tools.TypeMapper;
 import com.aerospike.mapper.tools.TypeUtils;
 import com.aerospike.mapper.tools.TypeUtils.AnnotatedType;
 
-public class MapMapper implements TypeMapper {
+public class MapMapper extends TypeMapper {
 
 	@SuppressWarnings("unused")
 	private final Class<?> referencedClass;

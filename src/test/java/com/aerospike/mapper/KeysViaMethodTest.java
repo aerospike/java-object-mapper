@@ -19,6 +19,7 @@ import com.aerospike.mapper.annotations.AerospikeExclude;
 import com.aerospike.mapper.annotations.AerospikeKey;
 import com.aerospike.mapper.annotations.AerospikeRecord;
 import com.aerospike.mapper.tools.AeroMapper;
+import com.aerospike.mapper.tools.ClassCache;
 
 public class KeysViaMethodTest extends AeroMapperBaseTest {
 

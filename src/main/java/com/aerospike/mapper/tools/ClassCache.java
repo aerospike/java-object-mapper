@@ -5,6 +5,7 @@ import java.util.Map;
 
 import javax.validation.constraints.NotNull;
 
+import com.aerospike.client.AerospikeException;
 import com.aerospike.client.IAerospikeClient;
 import com.aerospike.client.policy.BatchPolicy;
 import com.aerospike.client.policy.Policy;
@@ -32,6 +33,7 @@ public class ClassCache {
 	private Map<Class<?>, ClassCacheEntry> cacheMap = new HashMap<>();
 	private Map<String, ClassConfig> classesConfig = new HashMap<>();
 	private Map<PolicyType, Policy> defaultPolicies = new HashMap<>();
+	private Map<String, ClassCacheEntry> storedNameToCacheEntry = new HashMap<>();
 	private Map<PolicyType, Map<Class<?>, Policy>> childrenPolicies = new HashMap<>();  
 	private Map<PolicyType, Map<Class<?>, Policy>> specificPolicies = new HashMap<>();  
 
@@ -62,6 +64,22 @@ public class ClassCache {
 	}
 
 	// package visibility
+	void setStoredName(@NotNull ClassCacheEntry<?> entry, @NotNull String name) {
+		ClassCacheEntry<?> existingEntry = storedNameToCacheEntry.get(name);
+		if (existingEntry != null && !(existingEntry.equals(entry))) {
+			String errorMessage = String.format("Stored name of \"%s\" is used for both %s and %s",
+					name, existingEntry.getUnderlyingClass().getName(), entry.getUnderlyingClass().getName());
+			throw new AerospikeException(errorMessage);
+		}
+		else {
+			storedNameToCacheEntry.put(name, entry);
+		}
+	}
+	
+	public ClassCacheEntry<?> getCacheEntryFromStoredName(@NotNull String name) {
+		return storedNameToCacheEntry.get(name);
+	}
+	
 	void setDefaultPolicies(IAerospikeClient client) {
 		this.defaultPolicies.put(PolicyType.READ, client.getReadPolicyDefault());
 		this.defaultPolicies.put(PolicyType.WRITE, client.getWritePolicyDefault());
@@ -113,6 +131,7 @@ public class ClassCache {
 		this.cacheMap.clear();
 		this.classesConfig.clear();
 		TypeUtils.clear();
+		this.storedNameToCacheEntry.clear();
 	}
 
 	public void addConfiguration(@NotNull Configuration configuration) {

@@ -14,7 +14,7 @@ import com.aerospike.mapper.tools.TypeMapper;
 import com.aerospike.mapper.tools.TypeUtils;
 import com.aerospike.mapper.tools.TypeUtils.AnnotatedType;
 
-public class ListMapper implements TypeMapper {
+public class ListMapper extends TypeMapper {
 
 	@SuppressWarnings("unused")
 	private final Class<?> referencedClass;
@@ -23,7 +23,7 @@ public class ListMapper implements TypeMapper {
 	private final boolean supportedWithoutTranslation;
 	private final TypeMapper instanceClassMapper;
 	private final EmbedType embedType;
-	private final ClassCacheEntry subTypeEntry;
+	private final ClassCacheEntry<?> subTypeEntry;
 	private final boolean saveKey;
 	
 	public ListMapper(final Class<?> clazz, final Class<?> instanceClass, final TypeMapper instanceClassMapper, final AeroMapper mapper, final EmbedType embedType, final boolean saveKey) {
@@ -46,7 +46,12 @@ public class ListMapper implements TypeMapper {
 			throw new AerospikeException("Annotations embedding lists of objects can only map those objects to maps instead of lists if the object is an AerospikeRecord on instance of class " + clazz.getSimpleName());
 		}
 		else {
-			subTypeEntry = ClassCache.getInstance().loadClass(instanceClass, mapper);
+			if (instanceClass != null) {
+				subTypeEntry = ClassCache.getInstance().loadClass(instanceClass, mapper);
+			}
+			else {
+				subTypeEntry = null;
+			}
 		}
 	}
 	
@@ -69,14 +74,19 @@ public class ListMapper implements TypeMapper {
 					}
 					else {
 						TypeMapper thisMapper = TypeUtils.getMapper(obj.getClass(), null, mapper);
-						results.add(thisMapper == null ? obj : thisMapper.toAerospikeFormat(obj));
+						results.add(thisMapper == null ? obj : thisMapper.toAerospikeFormat(obj, false));
 					}
 				}
 			}
 			else {
 				for (Object obj : list) {
-					// TODO: Handle subclasses of the objects
-					results.add(this.instanceClassMapper.toAerospikeFormat(obj));
+					if (obj == null || obj.getClass().equals(instanceClass)) {
+						results.add(this.instanceClassMapper.toAerospikeFormat(obj));
+					}
+					else {
+						// This class must be a subclass of the annotated type
+						results.add(this.instanceClassMapper.toAerospikeFormat(obj, false));
+					}
 				}
 			}
 			return results;
@@ -84,9 +94,15 @@ public class ListMapper implements TypeMapper {
 		else {
 			Map<Object, Object> results = new TreeMap<>();
 			for (Object obj : list) {
-				// TODO: Handle subclasses of the objects
 				Object key = subTypeEntry.getKey(obj);
-				Object item = this.instanceClassMapper.toAerospikeFormat(obj);
+				Object item;
+				if (obj == null || obj.getClass().equals(instanceClass)) {
+					item = this.instanceClassMapper.toAerospikeFormat(obj);
+				}
+				else {
+					// This class must be a subclass of the annotated type
+					item = this.instanceClassMapper.toAerospikeFormat(obj, false);
+				}
 				results.put(key, item);
 			}
 			return results;

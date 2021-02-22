@@ -18,6 +18,7 @@ public class ClassConfig {
 	private Boolean mapAll;
 	private Boolean durableDelete;
 	private KeyConfig key;
+	private String shortName;
 	private List<BinConfig> bins;
 	
 	public ClassConfig() {
@@ -54,6 +55,10 @@ public class ClassConfig {
 	
 	public Boolean getDurableDelete() {
 		return durableDelete;
+	}
+	
+	public String getShortName() {
+		return shortName;
 	}
 	
 	public KeyConfig getKey() {

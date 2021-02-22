@@ -2,7 +2,7 @@ package com.aerospike.mapper.tools.mappers;
 
 import com.aerospike.mapper.tools.TypeMapper;
 
-public class LongMapper implements TypeMapper {
+public class LongMapper extends TypeMapper {
 
 	@Override
 	public Object toAerospikeFormat(Object value) {

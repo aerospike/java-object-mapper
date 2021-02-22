@@ -1,5 +1,7 @@
 package com.aerospike.mapper.tools.mappers;
 
-public abstract class ObjectMapper {
+import com.aerospike.mapper.tools.TypeMapper;
+
+public abstract class ObjectMapper extends TypeMapper {
 
 }

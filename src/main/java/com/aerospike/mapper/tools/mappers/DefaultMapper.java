@@ -2,7 +2,7 @@ package com.aerospike.mapper.tools.mappers;
 
 import com.aerospike.mapper.tools.TypeMapper;
 
-public class DefaultMapper implements TypeMapper {
+public class DefaultMapper extends TypeMapper {
 
 	@Override
 	public Object toAerospikeFormat(Object value) {

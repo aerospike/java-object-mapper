@@ -44,6 +44,8 @@ import com.aerospike.mapper.tools.configuration.KeyConfig;
 public class ClassCacheEntry<T> {
 	
 	public static final String VERSION_PREFIX = "@V";
+	public static final String TYPE_PREFIX = "@T:";
+	public static final String TYPE_NAME = ".type";
 	
 	private String namespace;
 	private String setName;
@@ -70,6 +72,12 @@ public class ClassCacheEntry<T> {
 	private final ScanPolicy scanPolicy;
 	private String[] constructorParamBins;
 	private Constructor<T> constructor;
+	/** 
+	 * When there are subclasses, we need to store the type information to be able to re-create an instance of the same type. As the
+	 * class name can be verbose, we provide the ability to set a string representing the class name. This string must be unique for all classes.
+	 */
+	private String shortenedClassName;
+	private boolean isChildClass = false;
 	
 	
 	// package visibility only.
@@ -98,6 +106,7 @@ public class ClassCacheEntry<T> {
 			this.version = recordDescription.version();
 			this.sendKey = recordDescription.sendKey();
 			this.durableDelete = recordDescription.durableDelete();
+			this.shortenedClassName = recordDescription.shortName();
 		}
 		
 		if (config != null) {
@@ -114,6 +123,12 @@ public class ClassCacheEntry<T> {
 		}
 		this.formOrdinalsFromValues();
 		this.findConstructor();
+		if (StringUtils.isBlank(this.shortenedClassName)) {
+			this.shortenedClassName = clazz.getSimpleName();
+		}
+		ClassCache.getInstance().setStoredName(this, this.shortenedClassName);
+		
+		this.checkRecordSettingsAgainstSuperClasses();
 	}
 	public Policy getReadPolicy() {
 		return readPolicy;
@@ -128,6 +143,10 @@ public class ClassCacheEntry<T> {
 	
 	public ClassConfig getClassConfig() {
 		return this.classConfig;
+	}
+	
+	public String getShortenedClassName() {
+		return this.shortenedClassName;
 	}
 	
 	private void overrideSettings(ClassConfig config) {
@@ -151,6 +170,59 @@ public class ClassCacheEntry<T> {
 		}
 		if (config.getSendKey() != null) {
 			this.sendKey = config.getSendKey();
+		}
+		if (config.getShortName() != null) {
+			this.shortenedClassName = config.getShortName();
+		}
+	}
+	
+	public boolean isChildClass() {
+		return isChildClass;
+	}
+	
+	private void checkRecordSettingsAgainstSuperClasses() {
+		if (!StringUtils.isBlank(this.namespace) && !StringUtils.isBlank(this.setName)) {
+			// This class defines it's own namespace + set, it is only a child class if it's closest named superclass is the same as ours.
+			this.isChildClass = false;
+			ClassCacheEntry<?> thisEntry = this.superClazz;
+			while (thisEntry != null) {
+				if ((!StringUtils.isBlank(thisEntry.getNamespace())) && (!StringUtils.isBlank(thisEntry.getSetName()))) {
+					if (this.namespace.equals(thisEntry.getNamespace()) && this.setName.equals(thisEntry.getSetName())) {
+						this.isChildClass = true;
+					}
+					break;
+				}
+				thisEntry = thisEntry.superClazz;
+			}
+		}
+		else {
+			// Otherwise this is a child class, find the set and namespace from the closest highest class
+			this.isChildClass = true;
+			ClassCacheEntry<?> thisEntry = this.superClazz;
+			while (thisEntry != null) {
+				if ((!StringUtils.isBlank(thisEntry.getNamespace())) && (!StringUtils.isBlank(thisEntry.getSetName()))) {
+					this.namespace = thisEntry.getNamespace();
+					this.setName = thisEntry.getSetName();
+					break;
+				}
+				thisEntry = thisEntry.superClazz;
+			}
+		}
+		ClassCacheEntry<?> thisEntry = this.superClazz;
+		while (thisEntry != null) {
+			if (this.durableDelete == null && thisEntry.getDurableDelete() != null) {
+				this.durableDelete = thisEntry.getDurableDelete();
+			}
+			if (this.ttl == null && thisEntry.getTtl() != null) {
+				this.ttl = thisEntry.getTtl();
+			}
+			if (this.sendKey == null && thisEntry.getSendKey() != null) {
+				this.sendKey = thisEntry.getSendKey();
+			}
+			if (this.key == null && thisEntry.key != null) {
+				this.key = thisEntry.key;
+			}
+			thisEntry = thisEntry.superClazz;
 		}
 	}
 	
@@ -529,9 +601,10 @@ public class ClassCacheEntry<T> {
 			int index = 0;
 			ClassCacheEntry thisClass = this;
 			while (thisClass != null) {
-				for (String name : this.values.keySet()) {
+				Set<String> keys = thisClass.values.keySet();
+				for (String name : keys) {
 					if (contains(binNames, name)) {
-						ValueType value = this.values.get(name);
+						ValueType value = (ValueType) thisClass.values.get(name);
 						Object javaValue = value.get(instance);
 						Object aerospikeValue = value.getTypeMapper().toAerospikeFormat(javaValue);
 						if (aerospikeValue != null || allowNullBins) {
@@ -557,13 +630,16 @@ public class ClassCacheEntry<T> {
 		}
 	}
 	
-	public Map<String, Object> getMap(Object instance) {
+	public Map<String, Object> getMap(Object instance, boolean needsType) {
 		try {
 			Map<String, Object> results = new HashMap<>();
-			ClassCacheEntry thisClass = this;
+			ClassCacheEntry<?> thisClass = this;
+			if (needsType) {
+				results.put(TYPE_NAME, this.getShortenedClassName());
+			}
 			while (thisClass != null) {
-				for (String name : this.values.keySet()) {
-					ValueType value = this.values.get(name);
+				for (String name : thisClass.values.keySet()) {
+					ValueType value = thisClass.values.get(name);
 					Object javaValue = value.get(instance);
 					Object aerospikeValue = value.getTypeMapper().toAerospikeFormat(javaValue);
 					results.put(name, aerospikeValue);
@@ -577,8 +653,8 @@ public class ClassCacheEntry<T> {
 		}
 	}
 	
-	private void addDataFromValueName(String name, Object instance, ClassCacheEntry thisClass, List<Object> results) throws ReflectiveOperationException {
-		ValueType value = this.values.get(name);
+	private void addDataFromValueName(String name, Object instance, ClassCacheEntry<?> thisClass, List<Object> results) throws ReflectiveOperationException {
+		ValueType value = thisClass.values.get(name);
 		if (value.getMinimumVersion() <= thisClass.version && thisClass.version <= value.getMaximumVersion()) {
 			Object javaValue = value.get(instance);
 			Object aerospikeValue = value.getTypeMapper().toAerospikeFormat(javaValue);
@@ -590,25 +666,25 @@ public class ClassCacheEntry<T> {
 		return name != null && keyName != null && keyName.equals(name);
 	}
 	
-	public List<Object> getList(Object instance, boolean skipKey) {
+	public List<Object> getList(Object instance, boolean skipKey, boolean needsType) {
 		try {
 			List<Object> results = new ArrayList<>();
 			List<Object> versionsToAdd = new ArrayList<>();
-			ClassCacheEntry thisClass = this;
+			ClassCacheEntry<?> thisClass = this;
 			while (thisClass != null) {
 				if (thisClass.version > 1) {
 					versionsToAdd.add(0, VERSION_PREFIX + thisClass.version);
 				}
-				if (ordinals != null) {
-					for (int i = 1; i <= ordinals.size(); i++) {
-						String name = ordinals.get(i);
+				if (thisClass.ordinals != null) {
+					for (int i = 1; i <= thisClass.ordinals.size(); i++) {
+						String name = thisClass.ordinals.get(i);
 						if (!skipKey || !isKeyField(name)) {
 							addDataFromValueName(name, instance, thisClass, results);
 						}
 					}
 				}
-				for (String name : this.values.keySet()) {
-					if (fieldsWithOrdinals == null || !fieldsWithOrdinals.contains(name)) {
+				for (String name : thisClass.values.keySet()) {
+					if (thisClass.fieldsWithOrdinals == null || !thisClass.fieldsWithOrdinals.contains(name)) {
 						if (!skipKey || !isKeyField(name)) {
 							addDataFromValueName(name, instance, thisClass, results);
 						}
@@ -617,6 +693,9 @@ public class ClassCacheEntry<T> {
 				thisClass = thisClass.superClazz;
 			}
 			results.addAll(versionsToAdd);
+			if (needsType) {
+				results.add(TYPE_PREFIX + this.getShortenedClassName());
+			}
 			return results;
 		}
 		catch (ReflectiveOperationException ref) {
@@ -635,15 +714,38 @@ public class ClassCacheEntry<T> {
 		Map<String, Object> valueMap = new HashMap<>();
 		try {
 			ClassCacheEntry<?> thisClass = this;
+			
+			// If the object saved in the list was a subclass of the declared type, it must have the type name in the map
+			// Note that there is a performance implication of using subclasses.
+			String className = map == null ? record.getString(TYPE_NAME) :(String) map.get(TYPE_NAME);
+			if (className != null) {
+				thisClass = ClassCache.getInstance().getCacheEntryFromStoredName(className);
+				if (thisClass == null) {
+					Class<?> typeClazz = Class.forName(className);
+					thisClass = ClassCache.getInstance().loadClass(typeClazz, this.mapper);
+				}
+			}
+			
+			T result = null;
 			while (thisClass != null) {
-				for (String name : this.values.keySet()) {
-					ValueType value = this.values.get(name);
+				for (String name : thisClass.values.keySet()) {
+					ValueType value = thisClass.values.get(name);
 					Object aerospikeValue = record == null? map.get(name) : record.getValue(name);
 					valueMap.put(name, value.getTypeMapper().fromAerospikeFormat(aerospikeValue));
 				}
+				if (result == null) {
+					result = (T)thisClass.constructAndHydrate(valueMap);
+				}
+				else {
+					for (String field : valueMap.keySet()) {
+						ValueType value = thisClass.values.get(field);
+						value.set(result, valueMap.get(field));
+					}
+				}
+				valueMap.clear();
 				thisClass = thisClass.superClazz;
 			}
-			return constructAndHydrate(valueMap);
+			return result;
 		}
 		catch (ReflectiveOperationException ref) {
 			throw new AerospikeException(ref);
@@ -705,7 +807,6 @@ public class ClassCacheEntry<T> {
 	}
 	
 	private T constructAndHydrate(Map<String, Object> javaValuesMap) throws ReflectiveOperationException {
-		ClassCacheEntry<T> cacheEntry = this;
 		// Now form the values which satisfy the constructor
 		T result;
 		if (constructorParamBins.length == 0) {
@@ -732,6 +833,22 @@ public class ClassCacheEntry<T> {
 			ClassCacheEntry<?> thisClass = this;
 			int index = 0;
 			int endIndex = list.size();
+			if (!list.isEmpty()) {
+				// If the object saved in the list was a subclass of the declared type, it must have the type name as the last element of the list.
+				// Note that there is a performance implication of using subclasses.
+				Object obj = list.get(endIndex-1);
+				if (obj != null && (obj instanceof String) && ((String)obj).startsWith(TYPE_PREFIX)) {
+					String className = ((String)obj).substring(TYPE_PREFIX.length());
+					thisClass = ClassCache.getInstance().getCacheEntryFromStoredName(className);
+					if (thisClass == null) {
+						Class<?> typeClazz = Class.forName(className);
+						thisClass = ClassCache.getInstance().loadClass(typeClazz, this.mapper);
+					}
+					endIndex--;
+				}
+			}
+
+			T result = null;
 			while (thisClass != null) {
 				if (index < endIndex) {
 					Object lastValue = list.get(endIndex-1);
@@ -741,26 +858,35 @@ public class ClassCacheEntry<T> {
 						endIndex--;
 					}
 					int objectVersion = thisClass.version;
-					if (ordinals != null) {
-						for (int i = 1; i <= ordinals.size(); i++) {
-							String name = ordinals.get(i);
+					if (thisClass.ordinals != null) {
+						for (int i = 1; i <= thisClass.ordinals.size(); i++) {
+							String name = thisClass.ordinals.get(i);
 							if (!skipKey || !isKeyField(name)) {
-								index = setValueByField(name, objectVersion, recordVersion, null, index, list, valueMap);
+								index = thisClass.setValueByField(name, objectVersion, recordVersion, null, index, list, valueMap);
 							}
 						}
 					}
-					for (String name : this.values.keySet()) {
-						if (this.fieldsWithOrdinals == null || !thisClass.fieldsWithOrdinals.contains(name)) {
+					for (String name : thisClass.values.keySet()) {
+						if (thisClass.fieldsWithOrdinals == null || !thisClass.fieldsWithOrdinals.contains(name)) {
 							if (!skipKey || !isKeyField(name)) {
-								index = setValueByField(name, objectVersion, recordVersion, null, index, list, valueMap);
+								index = thisClass.setValueByField(name, objectVersion, recordVersion, null, index, list, valueMap);
 							}
 						}
 					}
+					if (result == null) {
+						result = (T)thisClass.constructAndHydrate(valueMap);
+					}
+					else {
+						for (String field : valueMap.keySet()) {
+							ValueType value = this.values.get(field);
+							value.set(result, valueMap.get(field));
+						}
+					}
+					valueMap.clear();
 					thisClass = thisClass.superClazz;
 				}
 			}
-
-			return constructAndHydrate(valueMap);
+			return result;
 		}
 		catch (ReflectiveOperationException ref) {
 			throw new AerospikeException(ref);
@@ -803,6 +929,11 @@ public class ClassCacheEntry<T> {
 		catch (ReflectiveOperationException ref) {
 			throw new AerospikeException(ref);
 		}
+	}
+	
+	@Override
+	public String toString() {
+		return String.format("ClassCacheEntry<%s> (ns=%s, set=%s,subclass=%b,shortName=%s)", this.getUnderlyingClass().getSimpleName(), this.namespace, this.setName, this.isChildClass, this.shortenedClassName);
 	}
 
 }

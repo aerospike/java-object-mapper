@@ -3,7 +3,7 @@ package com.aerospike.mapper.tools.mappers;
 import com.aerospike.client.AerospikeException;
 import com.aerospike.mapper.tools.TypeMapper;
 
-public class EnumMapper implements TypeMapper {
+public class EnumMapper extends TypeMapper {
 
 	private final Class<? extends Enum<?>> clazz;
 	
