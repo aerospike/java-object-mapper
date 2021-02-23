@@ -1062,8 +1062,11 @@ In this case, if the environment variable ``ACCOUNT_TITLE_BIN_NAME`` is set, tha
 ----
 
 ### Subclasses
+The AeroMapper also supports mapping object hierarchies. To see this, consider the following class hierarchy:
 
+![Hierarchy](/images/classHierarchy.png)
 
+There are 2 abstract classes here: BaseClass which every business class in the hierarchy will inherit from, and Account which is an abstract superclass of all the different sort of Accounts (at the moment just Savings and Checking) 
 
 ----
 
@@ -1311,6 +1314,7 @@ classes:
  - **mapAll** (boolean, default `true`): If true, all fields of this class will automatically be mapped to the database. Fields can be excluded using `exclude` on the bin config. If this is set to false, only the fields specified with an explicit bin configuration will be stored.
  - **sendKey** (boolean): If true, the key of the record will be stored in Aerospike. See [send key](https://www.aerospike.com/docs/guide/policies.html#send-key) for more details. If this is false, the key will not be stored in Aerospike. If not set, the `sendKey` field from the policy will be used.
  - **ttl**: the time to live for the record, mapped to the expiration time on the policy. If not set, the expiration from the policy will be used.
+ - **shortName**: When this class name must be stored in the database, this is the name to store instead of the full class names. This is used particularly for sub-classes. For example, if an Account class has a Checking class and Savings class as subclasses, an object might store a reference to an Account (compiled type of Account), but this really is a Checking account (runtime type of Checking). If the reference to the account is persisted, a list storing the key and the type will be saved, and this name will be used as the type.
  - **key**: a key structure, specified below
  - **bins**: a list of bin structure, specified below
  
