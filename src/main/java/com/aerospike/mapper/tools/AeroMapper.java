@@ -186,10 +186,16 @@ public class AeroMapper {
         return entry;
     }
 
-    private <T> void save(@NotNull T object, @NotNull RecordExistsAction recordExistsAction, String[] binNames) {
+    private <T> void save(WritePolicy writePolicy, @NotNull T object, RecordExistsAction recordExistsAction, String[] binNames) {
     	Class<T> clazz = (Class<T>) object.getClass();
     	ClassCacheEntry<T> entry = getEntryAndValidateNamespace(clazz);
-        WritePolicy writePolicy = new WritePolicy(entry.getWritePolicy());
+    	if (writePolicy == null) {
+        	writePolicy = new WritePolicy(entry.getWritePolicy());
+        	if (recordExistsAction != null) {
+        		writePolicy.recordExistsAction = recordExistsAction;
+        	}
+    	}
+    	
         String set = entry.getSetName();
         if ("".equals(set)) {
         	// Use the null set
@@ -204,11 +210,9 @@ public class AeroMapper {
         if (sendKey != null) {
         	writePolicy.sendKey = sendKey;
         }
-        writePolicy.recordExistsAction = recordExistsAction;
-        
         Key key = new Key(entry.getNamespace(), set, Value.get(entry.getKey(object)));
 
-        Bin[] bins = entry.getBins(object, recordExistsAction != RecordExistsAction.REPLACE, binNames);
+        Bin[] bins = entry.getBins(object, writePolicy.recordExistsAction != RecordExistsAction.REPLACE, binNames);
 
         mClient.put(writePolicy, key, bins);
     }
@@ -220,8 +224,19 @@ public class AeroMapper {
      * @throws AerospikeException
      */
     public void save(@NotNull Object object, String ...binNames) throws AerospikeException {
-        save(object, RecordExistsAction.REPLACE, binNames);
+        save(null, object, RecordExistsAction.REPLACE, binNames);
     }
+
+    /**
+     * Save an object in the database with the given WritePolicy. This write policy will override any other set writePolicy so
+     * is effectively an upsert operation
+     * @param object
+     * @throws AerospikeException
+     */
+    public void save(@NotNull WritePolicy writePolicy, @NotNull Object object, String ...binNames) throws AerospikeException {
+        save(writePolicy, object, null, binNames);
+    }
+
 
     /**
      * Updates the object in the database, merging the record with the existing record. This uses the RecordExistsAction
@@ -230,26 +245,41 @@ public class AeroMapper {
      * @throws AerospikeException
      */
     public void update(@NotNull Object object, String ... binNames) throws AerospikeException {
-        save(object, RecordExistsAction.UPDATE, binNames);
+        save(null, object, RecordExistsAction.UPDATE, binNames);
     }
 
 
-    public <T> T readFromDigest(@NotNull Class<T> clazz, @NotNull byte[] digest) throws AerospikeException {
-        ClassCacheEntry entry = getEntryAndValidateNamespace(clazz);
+    public <T> T readFromDigest(Policy readPolicy, @NotNull Class<T> clazz, @NotNull byte[] digest) throws AerospikeException {
+        ClassCacheEntry<T> entry = getEntryAndValidateNamespace(clazz);
         Key key = new Key(entry.getNamespace(), digest, entry.getSetName(), null);
-        return this.read(clazz, key, entry);
+        return this.read(readPolicy, clazz, key, entry);
+    }
+
+    public <T> T readFromDigest(@NotNull Class<T> clazz, @NotNull byte[] digest) throws AerospikeException {
+        ClassCacheEntry<T> entry = getEntryAndValidateNamespace(clazz);
+        Key key = new Key(entry.getNamespace(), digest, entry.getSetName(), null);
+        return this.read(null, clazz, key, entry);
+    }
+
+    public <T> T read(Policy readPolicy, @NotNull Class<T> clazz, @NotNull Object userKey) throws AerospikeException {
+        ClassCacheEntry<T> entry = getEntryAndValidateNamespace(clazz);
+        String set = entry.getSetName();
+        Key key = new Key(entry.getNamespace(), set, Value.get(entry.translateKeyToAerospikeKey(userKey)));
+        return read(readPolicy, clazz, key, entry);
     }
 
     public <T> T read(@NotNull Class<T> clazz, @NotNull Object userKey) throws AerospikeException {
-
-        ClassCacheEntry entry = getEntryAndValidateNamespace(clazz);
+        ClassCacheEntry<T> entry = getEntryAndValidateNamespace(clazz);
         String set = entry.getSetName();
         Key key = new Key(entry.getNamespace(), set, Value.get(entry.translateKeyToAerospikeKey(userKey)));
-        return read(clazz, key, entry);
+        return read(null, clazz, key, entry);
     }
 
-    private <T> T read(@NotNull Class<T> clazz, @NotNull Key key, @NotNull ClassCacheEntry entry) {
-        Record record = mClient.get(entry.getReadPolicy(), key);
+    private <T> T read(Policy readPolicy, @NotNull Class<T> clazz, @NotNull Key key, @NotNull ClassCacheEntry<T> entry) {
+    	if (readPolicy == null) {
+    		readPolicy = entry.getReadPolicy();
+    	}
+        Record record = mClient.get(readPolicy, key);
 
         if (record == null) {
             return null;
@@ -268,34 +298,46 @@ public class AeroMapper {
     }
 
     public <T> boolean delete(@NotNull Class<T> clazz, @NotNull Object userKey) throws AerospikeException {
+    	return this.delete(null, clazz, userKey);
+    }
+    
+    public <T> boolean delete(WritePolicy writePolicy, @NotNull Class<T> clazz, @NotNull Object userKey) throws AerospikeException {
         ClassCacheEntry<T> entry = getEntryAndValidateNamespace(clazz);
         Object asKey = entry.translateKeyToAerospikeKey(userKey);
-        Key key = new Key(entry.getNamespace(), entry.getSetName(), Value.get(asKey));
 
-        WritePolicy writePolicy = entry.getWritePolicy();
-        if (entry.getDurableDelete() != null) {
-        	// Clone the write policy so we're not changing the original one
-            writePolicy = new WritePolicy(writePolicy);
-            writePolicy.durableDelete = entry.getDurableDelete();
-        }
+        if (writePolicy == null) {
+            writePolicy = entry.getWritePolicy();
+            if (entry.getDurableDelete() != null) {
+            	// Clone the write policy so we're not changing the original one
+                writePolicy = new WritePolicy(writePolicy);
+                writePolicy.durableDelete = entry.getDurableDelete();
+            }
+    	}
+        Key key = new Key(entry.getNamespace(), entry.getSetName(), Value.get(asKey));
 
         return mClient.delete(writePolicy, key);
     }
 
     public boolean delete(@NotNull Object object) throws AerospikeException {
-        ClassCacheEntry entry = getEntryAndValidateNamespace(object.getClass());
+    	return this.delete((WritePolicy)null, object);
+    }
+    
+    public boolean delete(WritePolicy writePolicy, @NotNull Object object) throws AerospikeException {
+        ClassCacheEntry<?> entry = getEntryAndValidateNamespace(object.getClass());
         Key key = new Key(entry.getNamespace(), entry.getSetName(), Value.get(entry.getKey(object)));
 
-        WritePolicy writePolicy = entry.getWritePolicy();
-        if (entry.getDurableDelete() != null) {
-            writePolicy = new WritePolicy(writePolicy);
-            writePolicy.durableDelete = entry.getDurableDelete();
+        if (writePolicy == null) {
+	        writePolicy = entry.getWritePolicy();
+	        if (entry.getDurableDelete() != null) {
+	            writePolicy = new WritePolicy(writePolicy);
+	            writePolicy.durableDelete = entry.getDurableDelete();
+	        }
         }
         return mClient.delete(writePolicy, key);
     }
 
     public <T> void find(@NotNull Class<T> clazz, Function<T, Boolean> function) throws AerospikeException {
-        ClassCacheEntry entry = getEntryAndValidateNamespace(clazz);
+        ClassCacheEntry<T> entry = getEntryAndValidateNamespace(clazz);
 
         Statement statement = new Statement();
         statement.setNamespace(entry.getNamespace());

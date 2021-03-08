@@ -11,6 +11,8 @@ import org.junit.Test;
 
 import com.aerospike.mapper.annotations.AerospikeBin;
 import com.aerospike.mapper.annotations.AerospikeConstructor;
+import com.aerospike.mapper.annotations.AerospikeEmbed;
+import com.aerospike.mapper.annotations.AerospikeEmbed.EmbedType;
 import com.aerospike.mapper.annotations.AerospikeKey;
 import com.aerospike.mapper.annotations.AerospikeRecord;
 import com.aerospike.mapper.annotations.AerospikeReference;
@@ -86,7 +88,7 @@ public class SubClassHierarchyTest extends AeroMapperBaseTest {
 		}
 	}
 	
-	@AerospikeRecord(namespace = "test", set = "subaccs", ttl=3600, durableDelete = true, sendKey = true)
+	@AerospikeRecord(namespace = "test", set = "subaccs", durableDelete = true, sendKey = true)
 	public static class Account extends BaseClass {
 		@AerospikeKey
 		protected String id;
@@ -120,6 +122,18 @@ public class SubClassHierarchyTest extends AeroMapperBaseTest {
 		System.out.println("\tDurable Deletes = " + entry.getDurableDelete());
 	}
 	
+	@AerospikeRecord(namespace = "test", set = "container")
+	private static class Container {
+		@AerospikeKey
+		private long id;
+		private Account account;
+		private Savings savings;
+		private Checking checking;
+		@AerospikeEmbed(elementType = EmbedType.LIST)
+		private List<Account> accountList = new ArrayList<>();
+		private Account primaryAccount;
+	}
+	
 	@Test
 	public void runTest() {
 		AeroMapper mapper = new AeroMapper.Builder(client).build();
@@ -140,20 +154,50 @@ public class SubClassHierarchyTest extends AeroMapperBaseTest {
 		
 		Customer customer = new Customer("cust1", "Tim");
 
-		Savings savingsAccount = new Savings();
-		savingsAccount.interestRate = 0.03f;
-		savingsAccount.numDeposits = 17;
-		savingsAccount.id = "SVNG1";
-		savingsAccount.balance = 200;
-		customer.accounts.add(savingsAccount);
-		mapper.save(savingsAccount);
+		Savings savingsAccount1 = new Savings();
+		savingsAccount1.interestRate = 0.03f;
+		savingsAccount1.numDeposits = 17;
+		savingsAccount1.id = "SVNG1";
+		savingsAccount1.balance = 200;
+		mapper.save(savingsAccount1);
 		
-		Checking checkingAccount = new Checking();
-		checkingAccount.checksWritten = 4;
-		checkingAccount.id = "CHK2";
-		checkingAccount.balance = 600;
-		customer.accounts.add(checkingAccount);
-		mapper.save(checkingAccount);
+		Savings savingsAccount2 = new Savings();
+		savingsAccount2.interestRate = 0.045f;
+		savingsAccount2.numDeposits = 11;
+		savingsAccount2.id = "SVNG2";
+		savingsAccount2.balance = 99;
+		mapper.save(savingsAccount2);
+
+		Checking checkingAccount1 = new Checking();
+		checkingAccount1.checksWritten = 4;
+		checkingAccount1.id = "CHK1";
+		checkingAccount1.balance = 600;
+		mapper.save(checkingAccount1);
+
+		Checking checkingAccount2 = new Checking();
+		checkingAccount2.checksWritten = 23;
+		checkingAccount2.id = "CHK2";
+		checkingAccount2.balance = 10902;
+		mapper.save(checkingAccount2);
+		
+		Account account = new Account();
+		account.balance = 927;
+		account.id = "Account1";
+		mapper.save(account);
+
+		Container container = new Container();
+		container.account = account;
+		container.checking = checkingAccount1;
+		container.savings = savingsAccount1;
+		container.primaryAccount = savingsAccount1;
+		container.accountList.add(account);
+		container.accountList.add(savingsAccount1);
+		container.accountList.add(checkingAccount1);
+		mapper.save(container);
+		
+		customer.accounts.add(savingsAccount1);
+		customer.accounts.add(checkingAccount1);
+		
 		
 		Portfolio portfolio = new Portfolio();
 		portfolio.subAccounts = Arrays.asList(new String[] {"sub-1", "sub-2", "sub-3"});
@@ -163,14 +207,14 @@ public class SubClassHierarchyTest extends AeroMapperBaseTest {
 		mapper.save(portfolio);
 		
 		customer.pfolioAcc = portfolio;
-		customer.checkAcc = checkingAccount;
-		customer.savingsAcc = savingsAccount;
-		customer.primaryAcc = checkingAccount;
+		customer.checkAcc = checkingAccount1;
+		customer.savingsAcc = savingsAccount1;
+		customer.primaryAcc = checkingAccount1;
 		customer.secondaryAcc = portfolio;
 		
 		customer.accountMap.put("A", portfolio);
-		customer.accountMap.put("B", savingsAccount);
-		customer.accountMap.put("C", checkingAccount);
+		customer.accountMap.put("B", savingsAccount1);
+		customer.accountMap.put("C", checkingAccount1);
 
 		mapper.save(customer);
 		

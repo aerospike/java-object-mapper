@@ -219,6 +219,9 @@ In this case the `forAll()` would apply to A,B,C, the `forChildrenOf` would appl
 - B: `readPolicy2`
 - C: `readPolicy3`
            
+Note that each operation can also optionally take a policy if it is desired to change any of the policy settings on the fly. The explicitly provided policy will override any other settings, such as `durableDelete` on the `@AerospikeRecord`
+ 
+
 ---
 
 ## Constructors
@@ -325,7 +328,9 @@ public class ConstructoredClass2 {
 }
 ```
 
-In this case, the 3 argument constructor will be used. Note that you must annotate the desired constructor on any class with multiple constructors, irrespective of how many of those constructors have the @ParamFrom annotations on their arguments.
+In this case, the 3 argument constructor will be used. Note that you must annotate the desired constructor with @AerospikeConstructor on any class with multiple constructors, irrespective of how many of those constructors have the @ParamFrom annotations on their arguments. It is only allowed to have one constructor so annotated.
+
+If no constructor is annotated with @AerospikeConstructor, the default no-argument constructor will be used. If there is no no-argument constructor and no @AerospikeConstructor annotated constructor has been declared, an exception will be thrown when the class is first used.
 
 ---
  
@@ -1066,7 +1071,269 @@ The AeroMapper also supports mapping object hierarchies. To see this, consider t
 
 ![Hierarchy](/images/classHierarchy.png)
 
-There are 2 abstract classes here: BaseClass which every business class in the hierarchy will inherit from, and Account which is an abstract superclass of all the different sort of Accounts (at the moment just Savings and Checking) 
+There are 2 abstract classes here: BaseClass which every business class in the hierarchy will inherit from, and Account which is an abstract superclass of all the different sort of Accounts (at the moment just Savings and Checking). In terms of mapping data, the Customer class will be mapped to it's own set in Aerospike. However, when considering the Checking and Savings accounts there are 2 different strategies which can be used for mapping the data:
+
+1. Both Account types are mapped to the same set (eg Account) and co-mingled with one another. 
+2. Checking and Savings are written to independent sets, holding only records of that type.
+
+The AeroMapper supports both strategies for resolving subclasses, as well as being able to inherit just data fields from superclasses.
+
+
+#### Data Inheritance
+
+Consider the Customer class which inherits from the BaseClass:
+
+```java
+@AerospikeRecord
+public static class BaseClass {
+	private Date lastReadTime;
+	private final Date creationTime;
+	
+	public BaseClass() {
+		this.creationTime = new Date();
+	}
+}
+
+@AerospikeRecord(set = "customer", namespace = "test")
+public static class Customer extends BaseClass {
+	@AerospikeKey
+	@AerospikeBin(name = "id")
+	private final String customerId;
+	private final String name;
+	@AerospikeBin(name = "date")
+	private Date dateJoined;
+	@AerospikeReference
+	private List<Account> accounts;
+
+	public Customer(String customerId, String name) {
+		this(customerId, name, new Date());
+	}
+	
+	@AerospikeConstructor
+	public Customer(@ParamFrom("id") String customerId, @ParamFrom("name") String name, @ParamFrom("date") Date dateJoined) {
+		this.customerId = customerId;
+		this.name = name;
+		this.dateJoined = dateJoined;
+		this.accounts = new ArrayList<>();
+		this.accountMap = new HashMap<>();
+	}
+	public Date getDateJoined() {
+		return dateJoined;
+	}
+	public void setDateJoined(Date dateJoined) {
+		this.dateJoined = dateJoined;
+	}
+	public List<Account> getAccounts() {
+		return accounts;
+	}
+	public void setAccounts(List<Account> accounts) {
+		this.accounts = accounts;
+	}
+	public String getCustomerId() {
+		return customerId;
+	}
+	public String getName() {
+		return name;
+	}
+}
+```
+
+In this case, the data from both classes (BaseClass and Customer) will be aggregated into the Customer record resulting in a record like:
+
+```
+aql> select * from test.customer
+*************************** 1. row ***************************
+accounts: LIST('[["SVNG1", "SVG"], ["CHK2", "CHK"]]')
+date: 1614025827020
+id: "cust1"
+name: "Tim"
+creationTime: 1614025827020
+```
+
+Note that the data here contains both the data for the child class (Customer) and the superclass (BaseClass)
+ 
+#### Subclass Inheritance
+
+As the first example, let's roll the Checking and Savings account up to the Account set.
+
+```
+@AerospikeRecord(namespace = "test", set = "subaccs", ttl=3600, durableDelete = true, sendKey = true)
+public static class Account extends BaseClass {
+	@AerospikeKey
+	protected String id;
+	protected long balance;
+}
+
+@AerospikeRecord(shortName = "SVG")
+public static class Savings extends Account {
+	private long numDeposits;
+	private float interestRate;
+}
+
+@AerospikeRecord(shortName = "CHK")
+public static class Checking extends Account {
+	private int checksWritten;
+}
+```
+
+In this case the 2 subclasses (Checking and Savings) do not define their own set so they will inherit the namespace and set from the closest superclass which has a namespace and set (in this case Account). Since this set will now contain both Savings and Checking accounts, we need some way of differentiating them. By default the name of the class will be added: `Savings` and `Checking` respectively. However, to keep these names short, we can specify `shortName`s for these classes, `SVG` and `CHK` respectively.
+
+If a class defines the same set and namespace as it's closest parent with a set and namespace, the effect will be as if the child class did not define the set and namespace. That is, the following 2 sections of code will have exactly the same effect:
+
+```java
+@AerospikeRecord(namespace = "test", set = "subaccs", ttl=3600, durableDelete = true, sendKey = true)
+public static class Account extends BaseClass {
+	@AerospikeKey
+	protected String id;
+	protected long balance;
+}
+
+@AerospikeRecord(shortName = "SVG")
+public static class Savings extends Account {
+	private long numDeposits;
+	private float interestRate;
+}
+```
+
+and
+
+```java
+@AerospikeRecord(namespace = "test", set = "subaccs", ttl=3600, durableDelete = true, sendKey = true)
+public static class Account extends BaseClass {
+	@AerospikeKey
+	protected String id;
+	protected long balance;
+}
+
+@AerospikeRecord(namespace = "test", set = "subaccs", shortName = "SVG")
+public static class Savings extends Account {
+	private long numDeposits;
+	private float interestRate;
+}
+```
+It should be noted that the names used to refer to the class (whether it is a `shortName` or the normal class name) must be globally unique in the system.
+
+Let's look at a rather contrived example, which shows how these are used in practice. We will define 2 Savings and 2 Checking accounts and save them to the database, as well as one Account. In a real application the Account class would likely be `abstract` and hence would not be saved to the database in it's own right, but it's a useful exercise to understand how things are mapped.
+
+```java
+Savings savingsAccount1 = new Savings();
+savingsAccount1.interestRate = 0.03f;
+savingsAccount1.numDeposits = 17;
+savingsAccount1.id = "SVNG1";
+savingsAccount1.balance = 200;
+mapper.save(savingsAccount1);
+
+Savings savingsAccount2 = new Savings();
+savingsAccount2.interestRate = 0.045f;
+savingsAccount2.numDeposits = 11;
+savingsAccount2.id = "SVNG2";
+savingsAccount2.balance = 99;
+mapper.save(savingsAccount2);
+
+Checking checkingAccount1 = new Checking();
+checkingAccount1.checksWritten = 4;
+checkingAccount1.id = "CHK1";
+checkingAccount1.balance = 600;
+mapper.save(checkingAccount1);
+
+Checking checkingAccount2 = new Checking();
+checkingAccount2.checksWritten = 23;
+checkingAccount2.id = "CHK2";
+checkingAccount2.balance = 10902;
+mapper.save(checkingAccount2);
+		
+Account account = new Account();
+account.balance = 927;
+account.id = "Account1";
+mapper.save(account);
+```
+
+Running this and querying the data gives:
+
+```
+aql> set output raw
+OUTPUT = RAW
+aql> select * from test.subaccs
+*************************** 1. row ***************************
+interestRate: 0.02999999932944775
+numDeposits: 17
+balance: 200
+id: "SVNG1"
+creationTime: 1614231134837
+*************************** 2. row ***************************
+checksWritten: 23
+balance: 10902
+id: "CHK2"
+creationTime: 1614231134852
+*************************** 3. row ***************************
+interestRate: 0.04500000178813934
+numDeposits: 11
+balance: 99
+id: "SVNG2"
+creationTime: 1614231134851
+*************************** 4. row ***************************
+checksWritten: 4
+balance: 600
+id: "CHK1"
+creationTime: 1614231134852
+PK: "Account1"
+*************************** 5. row ***************************
+balance: 927
+id: "Account1"
+creationTime: 1614231134853
+```
+
+As you can see, the savings and checking accounts are intermingled in the same set, each with the appropriate fields.
+
+In order to show how these items are referenced, we create a contrived Container class:
+
+```java
+@AerospikeRecord(namespace = "test", set = "container")
+private class Container {
+	@AerospikeKey
+	private long id;
+	private Account account;
+	private Savings savings;
+	private Checking checking;
+	private List<Account> accountList = new ArrayList<>();
+	private Account primaryAccount;
+}
+```
+
+And then populate and save it:
+
+```java
+Container container = new Container();
+container.account = account;
+container.checking = checkingAccount1;
+container.savings = savingsAccount1;
+container.primaryAccount = savingsAccount1;
+container.accountList.add(account);
+container.accountList.add(savingsAccount1);
+container.accountList.add(checkingAccount1);
+mapper.save(container);
+```
+
+then looking at the database we see:
+
+```
+aql> select * from test.container
+*************************** 1. row ***************************
+account: "Account1"
+accountList: LIST('["Account1", ["SVNG1", "SVG"], ["CHK1", "CHK"]]')
+checking: "CHK1"
+id: 0
+primaryAccount: LIST('["SVNG1", "SVG"]')
+savings: "SVNG1"
+```
+
+Note that if an object is mapped to the actual type (eg Account to Account) then the reference simply contains the id. However, if a subclass is mapped to a variable declared as the supertype (eg Savings to Account) then the reference must contain the type of the subclass as well as the key, and hence is contained within a list. If the AeroMapper didn't do this, when it went to load the record from the database it would not know which class to instantiate and hence could not determine the how to map the data to the record.
+
+For this reason, it is strongly recommended that all attributes use a parameterized type, eg `List<Account>` rather than `List`
+
+It should be noted that the use of subclasses 
+
+
 
 ----
 

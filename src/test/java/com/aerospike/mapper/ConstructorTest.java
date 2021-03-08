@@ -14,6 +14,24 @@ import com.aerospike.mapper.tools.AeroMapper;
 
 public class ConstructorTest extends AeroMapperBaseTest {
 
+	@AerospikeRecord(namespace = "test", set = "testSet") 
+	public static class NoArgConstructorClass {
+		@AerospikeKey 
+		public final int id;
+		public String name;
+		
+		public NoArgConstructorClass() {
+			this.name ="";
+			this.id = 0;
+		}
+
+		public NoArgConstructorClass(int id, String name) {
+			super();
+			this.id = id;
+			this.name = name;
+		}
+	}
+	
 	@AerospikeRecord(namespace = "test", set = "testSet")
 	public static class ConstructoredClass {
 		@AerospikeKey
@@ -81,5 +99,15 @@ public class ConstructorTest extends AeroMapperBaseTest {
 		assertEquals(data.a, data2.a);
 		assertEquals(data.b, data2.b);
 		assertEquals(data.c, data2.c);
+	}
+	
+	@Test
+	public void test3() {
+		NoArgConstructorClass data = new NoArgConstructorClass(12, "tim");
+		AeroMapper mapper = new AeroMapper.Builder(client).build();
+		mapper.save(data);
+		NoArgConstructorClass data2 = mapper.read(NoArgConstructorClass.class, data.id);
+		assertEquals(data.id, data2.id);
+		assertEquals(data.name, data2.name);
 	}
 }
