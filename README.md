@@ -703,7 +703,7 @@ Note that storing the digest as the referencing key is not compatible with lazy 
 @AerospikeReference(type = ReferenceType.DIGEST, lazy = true)
 ```
 
-will throw an exception at runtime.
+will throw an exception at runtime. 
 
 ### Aggregating by Embedding
 The other way object relationships can be modeled is by embedding the child object(s) inside the parent object. For example, in some banking systems, Accounts are based off Products. The Products are typically versioned but can have changes made to them by banking officers. Hence the product is effectively specific to a particular account, even though it is derived from a global product. In this case, it makes sense to encapsulate the product into the account object.
