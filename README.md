@@ -685,7 +685,7 @@ public static class Person {
 } 
 ```
 
-This is will store the digest of the primary account in the database instead of the id:
+This is will store the digest of the primary account in the database instead of the id: 
 
 ```
 *************************** 1. row ***************************
