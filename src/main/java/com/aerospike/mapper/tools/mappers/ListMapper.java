@@ -1,8 +1,10 @@
 package com.aerospike.mapper.tools.mappers;
 
+import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.TreeMap;
 
 import com.aerospike.client.AerospikeException;
@@ -10,6 +12,7 @@ import com.aerospike.mapper.annotations.AerospikeEmbed.EmbedType;
 import com.aerospike.mapper.tools.AeroMapper;
 import com.aerospike.mapper.tools.ClassCache;
 import com.aerospike.mapper.tools.ClassCacheEntry;
+import com.aerospike.mapper.tools.ThreadLocalKeySaver;
 import com.aerospike.mapper.tools.TypeMapper;
 import com.aerospike.mapper.tools.TypeUtils;
 import com.aerospike.mapper.tools.TypeUtils.AnnotatedType;
@@ -55,6 +58,43 @@ public class ListMapper extends TypeMapper {
 		}
 	}
 	
+	public Object toAerospikeInstanceFormat(Object obj) {
+		if (embedType == null || embedType == EmbedType.LIST) {
+			if (instanceClass == null) {
+			// We don't have any hints as to how to translate them, we have to look up each type
+				if (obj == null) {
+					return null;
+				}
+				else {
+					TypeMapper thisMapper = TypeUtils.getMapper(obj.getClass(), null, mapper);
+					return thisMapper == null ? obj : thisMapper.toAerospikeFormat(obj, false);
+				}
+			}
+			else {
+				if (obj == null || obj.getClass().equals(instanceClass)) {
+					return this.instanceClassMapper.toAerospikeFormat(obj);
+				}
+				else {
+					// This class must be a subclass of the annotated type
+					return this.instanceClassMapper.toAerospikeFormat(obj, false);
+				}
+			}
+		}
+		else {
+			Object key = subTypeEntry.getKey(obj);
+			Object item;
+			if (obj == null || obj.getClass().equals(instanceClass)) {
+				item = this.instanceClassMapper.toAerospikeFormat(obj);
+			}
+			else {
+				// This class must be a subclass of the annotated type
+				item = this.instanceClassMapper.toAerospikeFormat(obj, false);
+			}
+			return new AbstractMap.SimpleEntry<Object, Object>(key, item);
+		}
+	}
+	
+	
 	@Override
 	public Object toAerospikeFormat(Object value) {
 		if (value == null) {
@@ -66,28 +106,8 @@ public class ListMapper extends TypeMapper {
 		}
 		if (embedType == null || embedType == EmbedType.LIST) {
 			List<Object> results = new ArrayList<>();
-			if (instanceClass == null) {
-				// We don't have any hints as to how to translate them, we have to look up each type
-				for (Object obj : list) {
-					if (obj == null) {
-						results.add(null);
-					}
-					else {
-						TypeMapper thisMapper = TypeUtils.getMapper(obj.getClass(), null, mapper);
-						results.add(thisMapper == null ? obj : thisMapper.toAerospikeFormat(obj, false));
-					}
-				}
-			}
-			else {
-				for (Object obj : list) {
-					if (obj == null || obj.getClass().equals(instanceClass)) {
-						results.add(this.instanceClassMapper.toAerospikeFormat(obj));
-					}
-					else {
-						// This class must be a subclass of the annotated type
-						results.add(this.instanceClassMapper.toAerospikeFormat(obj, false));
-					}
-				}
+			for (Object obj : list) {
+				results.add(this.toAerospikeInstanceFormat(obj));
 			}
 			return results;
 		}
@@ -110,13 +130,38 @@ public class ListMapper extends TypeMapper {
 		}
 	}
 
+	public Object fromAerospikeInstanceFormat(Object obj) {
+		if (embedType == null || embedType == EmbedType.LIST) {
+			if (instanceClass == null) {
+			// We don't have any hints as to how to translate them, we have to look up each type
+				if (obj == null) {
+					return null;
+				}
+				else {
+					TypeMapper thisMapper = TypeUtils.getMapper(obj.getClass(), AnnotatedType.getDefaultAnnotateType(), mapper);
+					return thisMapper == null ? obj : thisMapper.fromAerospikeFormat(obj);
+				}
+			}
+			else {
+				return this.instanceClassMapper.fromAerospikeFormat(obj);
+			}
+		}
+		else {
+			Entry<Object, Object> entry = (Entry<Object, Object>) obj;
+			Object result = this.instanceClassMapper.fromAerospikeFormat(entry.getValue());
+			subTypeEntry.setKey(result, entry.getKey());
+			return result;
+		}
+	}
+	
+
 	@Override
 	public Object fromAerospikeFormat(Object value) {
 		if (value == null) {
 			return null;
 		}
 		List<Object> results = new ArrayList<>();
-		if (embedType == EmbedType.DEFAULT || embedType == EmbedType.LIST) {
+		if (embedType == null || embedType == EmbedType.LIST) {
 			List<?> list = (List<?>)value;
 			if (list.size() == 0 || this.supportedWithoutTranslation) {
 				return value;

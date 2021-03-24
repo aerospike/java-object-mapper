@@ -82,6 +82,18 @@ public class TypeUtils {
 		public boolean isParameterizedType() {
 			return paramterizedType != null;
 		}
+		
+		public <T> T getAnnotation(Class<T> clazz) {
+			if (this.annotations == null) {
+				return null;
+			}
+			for (Annotation annotation : this.annotations) {
+				if (annotation.annotationType().equals(clazz)) {
+					return (T) annotation;
+				}
+			}
+			return null;
+		}
 	}
 	
 	// package visibility

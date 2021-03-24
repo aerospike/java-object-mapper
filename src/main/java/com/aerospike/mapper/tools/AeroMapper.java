@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.function.Function;
 
 import javax.validation.constraints.NotNull;
@@ -15,8 +16,15 @@ import com.aerospike.client.AerospikeException;
 import com.aerospike.client.Bin;
 import com.aerospike.client.IAerospikeClient;
 import com.aerospike.client.Key;
+import com.aerospike.client.Operation;
 import com.aerospike.client.Record;
 import com.aerospike.client.Value;
+import com.aerospike.client.cdt.ListOperation;
+import com.aerospike.client.cdt.ListReturnType;
+import com.aerospike.client.cdt.MapOperation;
+import com.aerospike.client.cdt.MapOrder;
+import com.aerospike.client.cdt.MapPolicy;
+import com.aerospike.client.cdt.MapReturnType;
 import com.aerospike.client.policy.BatchPolicy;
 import com.aerospike.client.policy.Policy;
 import com.aerospike.client.policy.QueryPolicy;
@@ -25,9 +33,13 @@ import com.aerospike.client.policy.ScanPolicy;
 import com.aerospike.client.policy.WritePolicy;
 import com.aerospike.client.query.RecordSet;
 import com.aerospike.client.query.Statement;
+import com.aerospike.mapper.annotations.AerospikeEmbed;
+import com.aerospike.mapper.annotations.AerospikeEmbed.EmbedType;
 import com.aerospike.mapper.tools.ClassCache.PolicyType;
+import com.aerospike.mapper.tools.TypeUtils.AnnotatedType;
 import com.aerospike.mapper.tools.configuration.ClassConfig;
 import com.aerospike.mapper.tools.configuration.Configuration;
+import com.aerospike.mapper.tools.mappers.ListMapper;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
@@ -335,7 +347,107 @@ public class AeroMapper {
         }
         return mClient.delete(writePolicy, key);
     }
+    
+    public <T> VirtualList<T> asBackedList(@NotNull Object object, @NotNull String binName, Class<T> clazz) {
+    	return new VirtualList<T>(this, object, binName, clazz);
+    }
+    
+    public static class VirtualList<E> {
+    	private final AeroMapper mapper;
+    	private final ValueType value;
+    	private final ClassCacheEntry<?> owningEntry;
+    	private final ClassCacheEntry<?> elementEntry;
+    	private final String binName;
+    	private final ListMapper listMapper;
+    	private final Key key;
+    	private final EmbedType listType;
+    	private final EmbedType elementType;
+    	
+    	public VirtualList(@NotNull AeroMapper mapper, @NotNull Object object, @NotNull String binName, @NotNull Class<E> clazz) {
+    		Class<?> owningClazz = object.getClass();
+            this.owningEntry = (ClassCacheEntry<?>) ClassCache.getInstance().loadClass(owningClazz, mapper);
+            this.elementEntry = (ClassCacheEntry<?>) ClassCache.getInstance().loadClass(clazz, mapper);
+            this.mapper = mapper;
+            this.binName = binName;
+            this.value = owningEntry.getValueFromBinName(binName);
+            if (value == null) {
+            	throw new AerospikeException(String.format("Class %s has no bin called %s", clazz.getSimpleName(), binName));
+            }
+            String set = owningEntry.getSetName();
+            if ("".equals(set)) {
+            	// Use the null set
+            	set = null;
+            }
+            key = new Key(owningEntry.getNamespace(), set, Value.get(owningEntry.getKey(object)));
 
+            AnnotatedType annotatedType = value.getAnnotatedType();
+            AerospikeEmbed embed = annotatedType.getAnnotation(AerospikeEmbed.class);
+            if (embed == null) {
+            	throw new AerospikeException(String.format("Bin %s on class %s is not specified as a embedded", binName, clazz.getSimpleName()));
+            }
+            listType = embed.type() == EmbedType.DEFAULT ? EmbedType.LIST : embed.type();
+            elementType = embed.elementType() == EmbedType.DEFAULT ? EmbedType.MAP : embed.elementType();
+            Class<?> binClazz = value.getType();
+            if (!(binClazz.isArray() || (Map.class.isAssignableFrom(binClazz)) || List.class.isAssignableFrom(binClazz))) {
+            	throw new AerospikeException(String.format("Bin %s on class %s is not a collection class", binName, clazz.getSimpleName()));
+            }
+            
+            TypeMapper typeMapper = value.getTypeMapper();
+            if (typeMapper instanceof ListMapper) {
+            	listMapper = ((ListMapper)typeMapper);
+            }
+            else {
+            	throw new AerospikeException(String.format("Bin %s on class %s is not mapped via a listMapper. This is unexpected", binName, clazz.getSimpleName()));
+            }
+		}
+    	
+    	public VirtualList<E> keptInSync(boolean inSync) {
+    		return this;
+    	}
+    	
+
+    	private Operation getAppendOperation(Object aerospikeObject) {
+        	if (aerospikeObject instanceof Entry) {
+        		Entry<Object, Object> entry = (Entry) aerospikeObject;
+        		return MapOperation.put(new MapPolicy(MapOrder.KEY_ORDERED, 0), binName, Value.get(entry.getKey()), Value.get(entry.getValue()));
+        	}
+        	else {
+        		return ListOperation.append(binName, Value.get(aerospikeObject));
+        	}
+    	}
+    	public VirtualList<E> append(E element) {
+    		return this.append(null, element);
+    	}
+    	
+    	public VirtualList<E> append(WritePolicy writePolicy, E element) {
+        	Object result = listMapper.toAerospikeInstanceFormat(element);
+        	if (writePolicy == null) {
+            	writePolicy = new WritePolicy(owningEntry.getWritePolicy());
+        		writePolicy.recordExistsAction = RecordExistsAction.UPDATE;
+        	}
+    		this.mapper.mClient.operate(writePolicy, key, getAppendOperation(result));
+        	return this;
+    	}
+    	
+    	public E get(int index) {
+    		// TODO
+    		//Object aerospikeKey = elementEntry.translateKeyToAerospikeKey(key);
+    		Operation operation;
+    		if (listType == EmbedType.LIST) {
+    			operation = ListOperation.getByIndex(binName, index, ListReturnType.VALUE);
+    		}
+    		else {
+    			operation = MapOperation.getByIndex(binName, index, MapReturnType.KEY_VALUE);
+    		}
+    		Record record = this.mapper.mClient.operate(null, key, operation);
+    		List<Object> list = (List<Object>) record.getList(binName);
+    		Object result = listMapper.fromAerospikeInstanceFormat(list.get(0));
+    		
+    		return (E) result;
+    	}
+    }
+    
+    
     public <T> void find(@NotNull Class<T> clazz, Function<T, Boolean> function) throws AerospikeException {
         ClassCacheEntry<T> entry = getEntryAndValidateNamespace(clazz);
 
@@ -362,7 +474,6 @@ public class AeroMapper {
                 recordSet.close();
             }
         }
-
     }
 
     // --------------------------------------------------------------------------------------------------

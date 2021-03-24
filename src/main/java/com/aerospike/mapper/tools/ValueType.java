@@ -8,6 +8,7 @@ import javax.validation.constraints.NotNull;
 import com.aerospike.client.AerospikeException;
 import com.aerospike.client.Key;
 import com.aerospike.mapper.annotations.AerospikeVersion;
+import com.aerospike.mapper.tools.TypeUtils.AnnotatedType;
 
 /**
  * Implementation of a value, which can be either a method on a class (getter) or a field
@@ -17,9 +18,11 @@ public abstract class ValueType {
 	private int minimumVersion = 1;
 	private int maximumVersion = Integer.MAX_VALUE;
 	private final TypeMapper mapper;
+	private final AnnotatedType annotatedType;
 	
-	public ValueType(@NotNull final TypeMapper mapper) {
+	public ValueType(@NotNull final TypeMapper mapper, final AnnotatedType annotatedType) {
 		this.mapper = mapper;
+		this.annotatedType = annotatedType;
 	}
 	public abstract Object get(Object obj) throws ReflectiveOperationException;
 	public abstract void set(Object obj, Object value) throws ReflectiveOperationException;
@@ -43,11 +46,15 @@ public abstract class ValueType {
 		return this.mapper;
 	}
 	
+	public AnnotatedType getAnnotatedType() {
+		return annotatedType;
+	}
+	
 	
 	public static class FieldValue extends ValueType {
 		private Field field;
-		public FieldValue(Field field, TypeMapper typeMapper) {
-			super(typeMapper);
+		public FieldValue(Field field, TypeMapper typeMapper, AnnotatedType annotatedType) {
+			super(typeMapper, annotatedType);
 			this.field = field;
 			this.field.setAccessible(true);
 			if (this.field.isAnnotationPresent(AerospikeVersion.class)) {
@@ -79,8 +86,8 @@ public abstract class ValueType {
 	public static class MethodValue extends ValueType {
 		private PropertyDefinition property;
 		
-		public MethodValue(PropertyDefinition property, TypeMapper typeMapper) {
-			super(typeMapper);
+		public MethodValue(PropertyDefinition property, TypeMapper typeMapper, AnnotatedType annotatedType) {
+			super(typeMapper, annotatedType);
 			this.property = property;
 		}
 		

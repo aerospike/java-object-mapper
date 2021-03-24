@@ -71,6 +71,7 @@ public class ClassCacheEntry<T> {
 	private final QueryPolicy queryPolicy;
 	private final ScanPolicy scanPolicy;
 	private String[] constructorParamBins;
+	private Object[] constructorParamDefaults;
 	private Constructor<T> constructor;
 	/** 
 	 * When there are subclasses, we need to store the type information to be able to re-create an instance of the same type. As the
@@ -350,6 +351,7 @@ public class ClassCacheEntry<T> {
 		
 		Parameter[] params = desiredConstructor.getParameters();
 		this.constructorParamBins = new String[params.length];
+		this.constructorParamDefaults = new Object[params.length];
 			
 		int count = 0;
 		for (Parameter thisParam : params) {
@@ -373,6 +375,7 @@ public class ClassCacheEntry<T> {
 						" is of type " + type + " but assigned from bin \"" + binName + "\" of type " +values.get(binName).getType()+ ". These types are incompatible.");
 			}
 			constructorParamBins[count-1] = binName;
+			constructorParamDefaults[count-1] = PrimitiveDefaults.getDefaultValue(thisParam.getType());
 		}
 		this.constructor = (Constructor<T>) desiredConstructor;
 		this.constructor.setAccessible(true);
@@ -447,8 +450,9 @@ public class ClassCacheEntry<T> {
 			if (key != null) {
 				throw new AerospikeException("Class " + clazz.getName() + " cannot have a more than one key");
 			}
-			TypeMapper typeMapper = TypeUtils.getMapper(keyProperty.getType(), new AnnotatedType(config, keyProperty.getGetter()), this.mapper);
-			this.key = new ValueType.MethodValue(keyProperty, typeMapper);
+			AnnotatedType annotatedType = new AnnotatedType(config, keyProperty.getGetter());
+			TypeMapper typeMapper = TypeUtils.getMapper(keyProperty.getType(), annotatedType, this.mapper);
+			this.key = new ValueType.MethodValue(keyProperty, typeMapper, annotatedType);
 		}
 		for (String thisPropertyName : properties.keySet()) {
 			PropertyDefinition thisProperty = properties.get(thisPropertyName);
@@ -456,8 +460,9 @@ public class ClassCacheEntry<T> {
 			if (this.values.get(thisPropertyName) != null) {
 				throw new AerospikeException("Class " + clazz.getName() + " cannot define the mapped name " + thisPropertyName + " more than once");
 			}
-			TypeMapper typeMapper = TypeUtils.getMapper(thisProperty.getType(), new AnnotatedType(config, thisProperty.getGetter()), this.mapper);
-			ValueType value = new ValueType.MethodValue(thisProperty, typeMapper);
+			AnnotatedType annotatedType = new AnnotatedType(config, thisProperty.getGetter());
+			TypeMapper typeMapper = TypeUtils.getMapper(thisProperty.getType(), annotatedType, this.mapper);
+			ValueType value = new ValueType.MethodValue(thisProperty, typeMapper, annotatedType);
 			values.put(thisPropertyName, value);
 		}
 	}
@@ -475,8 +480,9 @@ public class ClassCacheEntry<T> {
 				if (key != null) {
 					throw new AerospikeException("Class " + clazz.getName() + " cannot have a more than one key");
 				}
-				TypeMapper typeMapper = TypeUtils.getMapper(thisField.getType(), new AnnotatedType(config, thisField), this.mapper);
-				this.key = new ValueType.FieldValue(thisField, typeMapper);
+				AnnotatedType annotatedType = new AnnotatedType(config, thisField);
+				TypeMapper typeMapper = TypeUtils.getMapper(thisField.getType(), annotatedType, this.mapper);
+				this.key = new ValueType.FieldValue(thisField, typeMapper, annotatedType);
 				isKey = true;
 			}
 
@@ -507,8 +513,9 @@ public class ClassCacheEntry<T> {
 				if (this.values.get(name) != null) {
 					throw new AerospikeException("Class " + clazz.getName() + " cannot define the mapped name " + name + " more than once");
 				}
-				TypeMapper typeMapper = TypeUtils.getMapper(thisField.getType(), new AnnotatedType(config, thisField), this.mapper);
-				ValueType valueType = new ValueType.FieldValue(thisField, typeMapper);
+				AnnotatedType annotatedType = new AnnotatedType(config, thisField);
+				TypeMapper typeMapper = TypeUtils.getMapper(thisField.getType(), annotatedType, this.mapper);
+				ValueType valueType = new ValueType.FieldValue(thisField, typeMapper, annotatedType);
 				values.put(name, valueType);
 			}
 		}
@@ -815,7 +822,12 @@ public class ClassCacheEntry<T> {
 		else {
 			Object[] args = new Object[constructorParamBins.length];
 			for (int i = 0; i < constructorParamBins.length; i++) {
-				args[i] = javaValuesMap.get(constructorParamBins[i]);;
+				if (javaValuesMap.containsKey(constructorParamBins[i])) {
+					args[i] = javaValuesMap.get(constructorParamBins[i]);
+				}
+				else {
+					args[i] = constructorParamDefaults[i];
+				}
 				javaValuesMap.remove(constructorParamBins[i]);
 			}
 			result = constructor.newInstance(args);
@@ -929,6 +941,11 @@ public class ClassCacheEntry<T> {
 		catch (ReflectiveOperationException ref) {
 			throw new AerospikeException(ref);
 		}
+	}
+	
+	// package visible
+	ValueType getValueFromBinName(String name) {
+		return this.values.get(name);
 	}
 	
 	@Override

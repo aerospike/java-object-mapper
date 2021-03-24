@@ -2,11 +2,15 @@ package com.aerospike.mapper;
 
 import static org.junit.Assert.assertEquals;
 
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 import org.junit.Test;
 
 import com.aerospike.mapper.annotations.AerospikeConstructor;
+import com.aerospike.mapper.annotations.AerospikeEmbed;
+import com.aerospike.mapper.annotations.AerospikeEmbed.EmbedType;
 import com.aerospike.mapper.annotations.AerospikeKey;
 import com.aerospike.mapper.annotations.AerospikeRecord;
 import com.aerospike.mapper.annotations.ParamFrom;
@@ -109,5 +113,51 @@ public class ConstructorTest extends AeroMapperBaseTest {
 		NoArgConstructorClass data2 = mapper.read(NoArgConstructorClass.class, data.id);
 		assertEquals(data.id, data2.id);
 		assertEquals(data.name, data2.name);
+	}
+	
+	@AerospikeRecord 
+	public static class ConstructoredClass3 {
+		@AerospikeKey
+		public final String id;
+		public final int a;
+		public final int b;
+		public final int c;
+		
+		@AerospikeConstructor
+		public ConstructoredClass3(@ParamFrom("id") String id, @ParamFrom("a") int a, @ParamFrom("b") int b, @ParamFrom("c") int c) {
+			this.id = id;
+			this.a = a;
+			this.b = b;
+			this.c = c;
+		}
+	}
+	
+	@AerospikeRecord(namespace = "test", set = "testSet1") 
+	public static class ConstructorContainerClass {
+		@AerospikeKey
+		public int id;
+		@AerospikeEmbed(type = EmbedType.MAP, elementType = EmbedType.LIST)
+		public List<ConstructoredClass3> list;
+	}
+	
+	@Test
+	public void test4() {
+		ConstructorContainerClass ccc = new ConstructorContainerClass();
+		ccc.id = 1;
+		ccc.list = new ArrayList<>();
+		ccc.list.add(new ConstructoredClass3("a", 1, 1, 4));
+		ccc.list.add(new ConstructoredClass3("b", 2, 2, 3));
+		ccc.list.add(new ConstructoredClass3("c", 3, 4, 2));
+		ccc.list.add(new ConstructoredClass3("d", 4, 3, 1));
+		
+		AeroMapper mapper = new AeroMapper.Builder(client).build();
+		mapper.save(ccc);
+		ConstructorContainerClass ccc2 = mapper.read(ConstructorContainerClass.class, 1);
+		assertEquals(ccc.id, ccc2.id);
+		assertEquals(ccc.list.size(), ccc2.list.size());
+		assertEquals(ccc.list.get(0).id, ccc2.list.get(0).id);
+		assertEquals(ccc.list.get(0).a, ccc2.list.get(0).a);
+		assertEquals(ccc.list.get(0).b, ccc2.list.get(0).b);
+		assertEquals(ccc.list.get(0).c, ccc2.list.get(0).c);
 	}
 }
