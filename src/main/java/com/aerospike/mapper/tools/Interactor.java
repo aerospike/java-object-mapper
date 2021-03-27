@@ -2,20 +2,40 @@ package com.aerospike.mapper.tools;
 
 import javax.validation.constraints.NotNull;
 
+import com.aerospike.client.AerospikeException;
 import com.aerospike.client.Operation;
 
 public class Interactor {
-	private final Operation operation;
-	private final ResultsUnpacker []resultsUnpackers;
+	private Operation operation;
+	private DeferredOperation deferredOperation;
+	private final OperationParameters deferredParameters;
+	private ResultsUnpacker []resultsUnpackers;
 
 	public Interactor(@NotNull Operation operation, @NotNull ResultsUnpacker ... resultsUnpackers) {
 		super();
 		this.operation = operation;
 		this.resultsUnpackers = resultsUnpackers;
+		this.deferredParameters = null;
+	}
+	public Interactor(@NotNull DeferredOperation deferredOperation) {
+		super();
+		this.deferredOperation = deferredOperation;
+		this.deferredParameters = new OperationParameters();
+	}
+	
+	public void setNeedsResult(boolean needsResult) {
+		if (this.deferredParameters != null) {
+			this.deferredParameters.setNeedsResult(needsResult);
+		}
 	}
 	public Operation getOperation() {
+		if (operation == null && deferredOperation != null) {
+			operation = deferredOperation.getOperation(this.deferredParameters);
+			resultsUnpackers = deferredOperation.getUnpackers(this.deferredParameters);
+		}
 		return operation;
 	}
+	
 	public Object getResult(Object rawResult) {
 		Object result = rawResult;
 		for (ResultsUnpacker thisUnpacker : resultsUnpackers) {

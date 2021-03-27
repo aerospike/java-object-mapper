@@ -71,7 +71,7 @@ public class CollectionMapperTest extends AeroMapperBaseTest {
 		AeroMapper mapper = new AeroMapper.Builder(client).build();
 		mapper.save(collection);
 		
-		VirtualList<CollectionElement> list = mapper.asBackedList(collection, "elements", CollectionElement.class).keptInSync(true);
+		VirtualList<CollectionElement> list = mapper.asBackedList(collection, "elements", CollectionElement.class);
 //		list.append(new CollectionElement(103, "tom", 45678));
 //		System.out.println("Get by index returned: " + list.get(2));
 //		System.out.println("Delete by Key Range returned: " + list.removeByKeyRange(100, 102, true));

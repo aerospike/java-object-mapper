@@ -362,15 +362,31 @@ public class AeroMapper {
     	private final ClassCacheEntry<?> elementEntry;
     	private final String binName;
     	private final ListMapper listMapper;
-    	private final Key key;
+    	private Key key;
     	private final EmbedType listType;
     	private final EmbedType elementType;
     	private final Function<Object, Object> instanceMapper; 
 
+    	public VirtualList(@NotNull AeroMapper mapper, @NotNull Class<?> owningClazz, @NotNull Object key, @NotNull String binName, @NotNull Class<E> clazz) {
+    		this(mapper, null, owningClazz, key, binName, clazz);
+    	}
     	
     	public VirtualList(@NotNull AeroMapper mapper, @NotNull Object object, @NotNull String binName, @NotNull Class<E> clazz) {
-    		Class<?> owningClazz = object.getClass();
+    		this(mapper, object, null, null, binName, clazz);
+		}
+
+    	private VirtualList(@NotNull AeroMapper mapper, Object object, Class<?> owningClazz, Object key, @NotNull String binName, @NotNull Class<E> clazz) {
+    		if (object != null) {
+    			owningClazz = object.getClass();
+    		}
             this.owningEntry = (ClassCacheEntry<?>) ClassCache.getInstance().loadClass(owningClazz, mapper);
+            Object aerospikeKey;
+            if (key == null) {
+            	aerospikeKey = owningEntry.getKey(object);
+            }
+            else {
+            	aerospikeKey = owningEntry.translateKeyToAerospikeKey(key);
+            }
             this.elementEntry = (ClassCacheEntry<?>) ClassCache.getInstance().loadClass(clazz, mapper);
             this.mapper = mapper;
             this.binName = binName;
@@ -383,7 +399,7 @@ public class AeroMapper {
             	// Use the null set
             	set = null;
             }
-            key = new Key(owningEntry.getNamespace(), set, Value.get(owningEntry.getKey(object)));
+            this.key = new Key(owningEntry.getNamespace(), set, Value.get(aerospikeKey));
 
             AnnotatedType annotatedType = value.getAnnotatedType();
             AerospikeEmbed embed = annotatedType.getAnnotation(AerospikeEmbed.class);
@@ -405,8 +421,18 @@ public class AeroMapper {
             	throw new AerospikeException(String.format("Bin %s on class %s is not mapped via a listMapper. This is unexpected", binName, clazz.getSimpleName()));
             }
             this.instanceMapper = src -> listMapper.fromAerospikeInstanceFormat(src);
-		}
+
+    	}
     	
+    	public VirtualList<E> changeKey(Object newKey) {
+            String set = owningEntry.getSetName();
+            if ("".equals(set)) {
+            	// Use the null set
+            	set = null;
+            }
+            this.key = new Key(owningEntry.getNamespace(), set, Value.get(owningEntry.translateKeyToAerospikeKey(key)));
+            return this;
+    	}
     	public VirtualList<E> keptInSync(boolean inSync) {
     		return this;
     	}
@@ -429,8 +455,7 @@ public class AeroMapper {
     			return this;
     		}
     		public MultiOperation<E> removeByKeyRange(Object startKey, Object endKey) {
-    			// TODO: Be able to change the return type based on the asResult() function call
-    			this.interactions.add(getRemoveRangeInteractor(startKey, endKey, true));
+    			this.interactions.add(getRemoveRangeInteractor(startKey, endKey));
     			return this;
     		}
     		
@@ -453,6 +478,7 @@ public class AeroMapper {
     			}
     			else {
     				this.indexToReturn = this.interactions.size() - 1;
+    				this.interactions.get(indexToReturn).setNeedsResult(true);
     			}
     			return this;
     		}
@@ -526,33 +552,49 @@ public class AeroMapper {
             	writePolicy = new WritePolicy(owningEntry.getWritePolicy());
         		writePolicy.recordExistsAction = RecordExistsAction.UPDATE;
         	}
-    		Interactor interactor = getRemoveRangeInteractor(startKey, endKey, returnResults);
+    		Interactor interactor = getRemoveRangeInteractor(startKey, endKey);
+    		interactor.setNeedsResult(returnResults);
     		Record record = this.mapper.mClient.operate(writePolicy, key, interactor.getOperation());
 
     		return (List<E>)interactor.getResult(record.getList(binName));
     	}
     	
-    	private Interactor getRemoveRangeInteractor(Object startKey, Object endKey, boolean returnResults) {
+    	private Interactor getRemoveRangeInteractor(Object startKey, Object endKey) {
     		Object aerospikeStartKey = elementEntry.translateKeyToAerospikeKey(startKey);
     		Object aerospikeEndKey = elementEntry.translateKeyToAerospikeKey(endKey);
-    		Interactor interactor;
-    		if (listType == EmbedType.LIST) {
-    			if (returnResults) {
-    				interactor = new Interactor(ListOperation.removeByValueRange(binName, Value.get(aerospikeStartKey), Value.get(aerospikeEndKey), ListReturnType.VALUE), new ArrayUnpacker(instanceMapper));
-    			}
-    			else {
-    				interactor = new Interactor(ListOperation.removeByValueRange(binName, Value.get(aerospikeStartKey), Value.get(aerospikeEndKey), ListReturnType.NONE));
-    			}
-			}
-    		else {
-    			if (returnResults) {
-    				interactor = new Interactor( MapOperation.removeByKeyRange(binName, Value.get(aerospikeStartKey), Value.get(aerospikeEndKey), MapReturnType.KEY_VALUE), new ArrayUnpacker(instanceMapper));
-    			}
-    			else {
-    				interactor = new Interactor( MapOperation.removeByKeyRange(binName, Value.get(aerospikeStartKey), Value.get(aerospikeEndKey), MapReturnType.NONE));    				
-    			}
-    		}
-    		return interactor;
+    		DeferredOperation deferred = new DeferredOperation() {
+				
+				@Override
+				public ResultsUnpacker[] getUnpackers(OperationParameters operationParams) {
+					if (operationParams.needsResult()) {
+						return new ResultsUnpacker[] { new ArrayUnpacker(instanceMapper) };
+					}
+					else {
+						return new ResultsUnpacker[0];
+					}
+				}
+				
+				@Override
+				public Operation getOperation(OperationParameters operationParams) {
+		    		if (listType == EmbedType.LIST) {
+		    			if (operationParams.needsResult()) {
+		    				return ListOperation.removeByValueRange(binName, Value.get(aerospikeStartKey), Value.get(aerospikeEndKey), ListReturnType.VALUE);
+		    			}
+		    			else {
+		    				return ListOperation.removeByValueRange(binName, Value.get(aerospikeStartKey), Value.get(aerospikeEndKey), ListReturnType.NONE);
+		    			}
+					}
+		    		else {
+		    			if (operationParams.needsResult()) {
+		    				return MapOperation.removeByKeyRange(binName, Value.get(aerospikeStartKey), Value.get(aerospikeEndKey), MapReturnType.KEY_VALUE);
+		    			}
+		    			else {
+		    				return MapOperation.removeByKeyRange(binName, Value.get(aerospikeStartKey), Value.get(aerospikeEndKey), MapReturnType.NONE);    				
+		    			}
+		    		}
+				}
+			};
+    		return new Interactor(deferred);
     	}
     	
     	private Operation getAppendOperation(Object aerospikeObject) {
