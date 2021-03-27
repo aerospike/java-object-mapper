@@ -40,17 +40,20 @@ public class CollectionMapperTest extends AeroMapperBaseTest {
 		public long getDate() {
 			return date;
 		}
+		@Override
+		public String toString() {
+			return String.format("{id=%d, name=%s, date=%d}",  id, name, date);
+		}
 	}
 	
-	@AerospikeRecord(namespace = "test", set = "testSet")
+	@AerospikeRecord(namespace = "test", set = "testSet1")
 	public static class Collection {
-		@AerospikeEmbed(type = EmbedType.MAP, elementType = EmbedType.LIST)
-//		@AerospikeEmbed
+		@AerospikeEmbed(type = EmbedType.MAP, elementType = EmbedType.MAP)
 		public List<CollectionElement> elements;
 		
 		@AerospikeKey 
 		public int id;
-		
+
 		public Collection() {
 			elements = new ArrayList<>();
 		}
@@ -61,16 +64,25 @@ public class CollectionMapperTest extends AeroMapperBaseTest {
 		Collection collection = new Collection();
 		collection.id = 1;
 		
-		collection.elements.add(new CollectionElement(100, "bob", 12345));
+		collection.elements.add(new CollectionElement(102, "bob", 12345));
 		collection.elements.add(new CollectionElement(101, "joe", 23456));
-		collection.elements.add(new CollectionElement(102, "sue", 34567));
+		collection.elements.add(new CollectionElement(100, "sue", 34567));
 
 		AeroMapper mapper = new AeroMapper.Builder(client).build();
 		mapper.save(collection);
 		
 		VirtualList<CollectionElement> list = mapper.asBackedList(collection, "elements", CollectionElement.class).keptInSync(true);
-		list.append(new CollectionElement(103, "tom", 45678));
-		System.out.println(list.get(2));
+//		list.append(new CollectionElement(103, "tom", 45678));
+//		System.out.println("Get by index returned: " + list.get(2));
+//		System.out.println("Delete by Key Range returned: " + list.removeByKeyRange(100, 102, true));
+		Object results = list.beginMulti()
+				.append(new CollectionElement(103, "tom", 45678))
+				.removeByKeyRange(100, 102)
+				.get(0).asResult()
+				.size()
+			.end();
+		
+		System.out.println(results);
 	}
 }
 
