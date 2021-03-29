@@ -1602,6 +1602,9 @@ classes:
  - **setter**:
  
   
+## Virtual Lists
+
+When mapping a Java object to Aerospike the most common operations to do are to save the whole object and load the whole object. The AeroMapper is set up primarily for these use cases. However, there are cases where it makes sense to manipulate objects directly in the database, particularly when it comes to manipulating lists and maps. This functionality is provided via virtual lists.  
 
 ----
 
@@ -1610,7 +1613,7 @@ classes:
 - maps of embedded objects
 - lists of referenced objects
 - maps of referenced objects
-- Add in a method to add an entry to a collection, get a range from a collection, delete from a collection
+- Document virtual lists
 - Validate some of the limits, eg bin name length, set name length, etc.
 - Make all maps (esp Embedded ones) K_ORDERED
 - Add interface to adaptiveMap, including changing EmbedType

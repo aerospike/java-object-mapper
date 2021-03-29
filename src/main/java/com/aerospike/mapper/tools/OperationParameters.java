@@ -1,18 +1,18 @@
 package com.aerospike.mapper.tools;
 
 public class OperationParameters {
-	private boolean needsResult;
+	private ReturnType needsResultOfType = ReturnType.NONE;
 	
 	public OperationParameters() {
 	}
-	public OperationParameters(boolean needsResult) {
+	public OperationParameters(ReturnType needsResultOfType) {
 		super();
-		this.needsResult = needsResult;
+		this.needsResultOfType = needsResultOfType;
 	}
-	public boolean needsResult() {
-		return needsResult;
+	public ReturnType getNeedsResultOfType() {
+		return needsResultOfType;
 	}
-	public void setNeedsResult(boolean needsResult) {
-		this.needsResult = needsResult;
+	public void setNeedsResultOfType(ReturnType needsResultOfType) {
+		this.needsResultOfType = needsResultOfType;
 	}
 }

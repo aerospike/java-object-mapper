@@ -12,7 +12,8 @@ import com.aerospike.mapper.annotations.AerospikeKey;
 import com.aerospike.mapper.annotations.AerospikeRecord;
 import com.aerospike.mapper.annotations.ParamFrom;
 import com.aerospike.mapper.tools.AeroMapper;
-import com.aerospike.mapper.tools.AeroMapper.VirtualList;
+import com.aerospike.mapper.tools.ReturnType;
+import com.aerospike.mapper.tools.VirtualList;
 
 public class CollectionMapperTest extends AeroMapperBaseTest {
 	@AerospikeRecord
@@ -48,7 +49,7 @@ public class CollectionMapperTest extends AeroMapperBaseTest {
 	
 	@AerospikeRecord(namespace = "test", set = "testSet1")
 	public static class Collection {
-		@AerospikeEmbed(type = EmbedType.MAP, elementType = EmbedType.MAP)
+		@AerospikeEmbed(type = EmbedType.MAP, elementType = EmbedType.LIST)
 		public List<CollectionElement> elements;
 		
 		@AerospikeKey 
@@ -75,11 +76,15 @@ public class CollectionMapperTest extends AeroMapperBaseTest {
 //		list.append(new CollectionElement(103, "tom", 45678));
 //		System.out.println("Get by index returned: " + list.get(2));
 //		System.out.println("Delete by Key Range returned: " + list.removeByKeyRange(100, 102, true));
-		Object results = list.beginMulti()
+		Object results = list.beginMultiOperation()
 				.append(new CollectionElement(103, "tom", 45678))
-				.removeByKeyRange(100, 102)
-				.get(0).asResult()
-				.size()
+				.append(new CollectionElement(104, "tim", 22222))
+				.append(new CollectionElement(105, "sam", 33333))
+				.append(new CollectionElement(106, "rob", 44444))
+				.getByKeyRange(101, 105)
+//				.removeByKeyRange(100, 102).asResult()
+//				.get(0)
+//				.size()
 			.end();
 		
 		System.out.println(results);

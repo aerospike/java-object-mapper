@@ -56,14 +56,10 @@ public class ObjectEmbedMapper extends ObjectMapper {
 			case LIST:
 				List<Object> listValue = (List<Object>) value;
 				instance = entry.constructAndHydrate((Class)this.referencedClass, listValue, skipKey);
-//				instance = this.referencedClass.newInstance();
-//				entry.hydrateFromList(listValue, instance, skipKey);
 				break;
 			case MAP:	// Fall through
 			case DEFAULT:
 				instance = entry.constructAndHydrate((Class)this.referencedClass, (Map<String,Object>)value);
-//				instance = this.referencedClass.newInstance();
-//				entry.hydrateFromMap((Map<String,Object>)value, instance);
 				break;
 			default:
 				throw new AerospikeException("Unspecified EmbedType");

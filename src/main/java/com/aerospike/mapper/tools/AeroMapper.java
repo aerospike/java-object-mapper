@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.function.Function;
 
 import javax.validation.constraints.NotNull;
@@ -16,15 +15,8 @@ import com.aerospike.client.AerospikeException;
 import com.aerospike.client.Bin;
 import com.aerospike.client.IAerospikeClient;
 import com.aerospike.client.Key;
-import com.aerospike.client.Operation;
 import com.aerospike.client.Record;
 import com.aerospike.client.Value;
-import com.aerospike.client.cdt.ListOperation;
-import com.aerospike.client.cdt.ListReturnType;
-import com.aerospike.client.cdt.MapOperation;
-import com.aerospike.client.cdt.MapOrder;
-import com.aerospike.client.cdt.MapPolicy;
-import com.aerospike.client.cdt.MapReturnType;
 import com.aerospike.client.policy.BatchPolicy;
 import com.aerospike.client.policy.Policy;
 import com.aerospike.client.policy.QueryPolicy;
@@ -33,16 +25,10 @@ import com.aerospike.client.policy.ScanPolicy;
 import com.aerospike.client.policy.WritePolicy;
 import com.aerospike.client.query.RecordSet;
 import com.aerospike.client.query.Statement;
-import com.aerospike.mapper.annotations.AerospikeEmbed;
-import com.aerospike.mapper.annotations.AerospikeEmbed.EmbedType;
 import com.aerospike.mapper.tools.ClassCache.PolicyType;
-import com.aerospike.mapper.tools.ResultsUnpacker.ArrayUnpacker;
-import com.aerospike.mapper.tools.ResultsUnpacker.ElementUnpacker;
-import com.aerospike.mapper.tools.ResultsUnpacker.ListUnpacker;
 import com.aerospike.mapper.tools.TypeUtils.AnnotatedType;
 import com.aerospike.mapper.tools.configuration.ClassConfig;
 import com.aerospike.mapper.tools.configuration.Configuration;
-import com.aerospike.mapper.tools.mappers.ListMapper;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
@@ -51,7 +37,7 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 
 public class AeroMapper {
 
-    private IAerospikeClient mClient;
+    IAerospikeClient mClient;
 
     public static class Builder {
         private AeroMapper mapper;
@@ -233,6 +219,33 @@ public class AeroMapper {
     }
 
     /**
+     * Translate a Java object to an Aerospike format object. Note that this could potentially have performance issues as
+     * the type information of the passed object must be determined on every call.
+     * @param obj
+     * @return
+     */
+    public Object translateToAerospike(Object obj) {
+    	if (obj == null) {
+    		return null;
+    	}
+    	TypeMapper thisMapper = TypeUtils.getMapper(obj.getClass(), AnnotatedType.getDefaultAnnotateType(), this);
+    	return thisMapper == null ? obj : thisMapper.toAerospikeFormat(obj);
+    }
+
+    /**
+     * Translate an Aerospike object to a Java object. Note that this could potentially have performance issues as
+     * the type information of the passed object must be determined on every call.
+     * @param obj
+     * @return
+     */
+    @SuppressWarnings("unchecked")
+	public <T> T translateFromAerospike(Object obj, Class<T> expectedClazz) {
+    	TypeMapper thisMapper = TypeUtils.getMapper(expectedClazz, AnnotatedType.getDefaultAnnotateType(), this);
+    	return (T)(thisMapper == null ? obj : thisMapper.fromAerospikeFormat(obj));
+    }
+
+
+    /**
      * Save an object in the database. This method will perform a REPLACE on the existing record so any existing
      * data will be overwritten by the data in the passed object
      * @param object
@@ -351,319 +364,52 @@ public class AeroMapper {
         return mClient.delete(writePolicy, key);
     }
     
-    public <T> VirtualList<T> asBackedList(@NotNull Object object, @NotNull String binName, Class<T> clazz) {
-    	return new VirtualList<T>(this, object, binName, clazz);
+    /**
+     * Create a virtual list against an attribute on a class. The list does all operations to the database and does not affect the underlying
+     * class, and is useful for situation when operations are needed to affect the database without having to return all the elements on the
+     * list each time.
+     * <p/>
+     * For example, consider a set of transactions associated with a credit card. Common operations might be
+     * <ul>
+     * 	<li>Return the last N transactions </li>
+     * 	<li>insert a new transaction into the list</li>
+     * </ul>
+     * These operation can all be done without having the full set of transactions
+     * @param <T> the type of the elements in the list.
+     * @param object
+     * @param binName
+     * @param elementClazz
+     * @return
+     */
+    public <T> VirtualList<T> asBackedList(@NotNull Object object, @NotNull String binName, Class<T> elementClazz) {
+    	return new VirtualList<T>(this, object, binName, elementClazz);
     }
     
-    public static class VirtualList<E> {
-    	private final AeroMapper mapper;
-    	private final ValueType value;
-    	private final ClassCacheEntry<?> owningEntry;
-    	private final ClassCacheEntry<?> elementEntry;
-    	private final String binName;
-    	private final ListMapper listMapper;
-    	private Key key;
-    	private final EmbedType listType;
-    	private final EmbedType elementType;
-    	private final Function<Object, Object> instanceMapper; 
-
-    	public VirtualList(@NotNull AeroMapper mapper, @NotNull Class<?> owningClazz, @NotNull Object key, @NotNull String binName, @NotNull Class<E> clazz) {
-    		this(mapper, null, owningClazz, key, binName, clazz);
-    	}
-    	
-    	public VirtualList(@NotNull AeroMapper mapper, @NotNull Object object, @NotNull String binName, @NotNull Class<E> clazz) {
-    		this(mapper, object, null, null, binName, clazz);
-		}
-
-    	private VirtualList(@NotNull AeroMapper mapper, Object object, Class<?> owningClazz, Object key, @NotNull String binName, @NotNull Class<E> clazz) {
-    		if (object != null) {
-    			owningClazz = object.getClass();
-    		}
-            this.owningEntry = (ClassCacheEntry<?>) ClassCache.getInstance().loadClass(owningClazz, mapper);
-            Object aerospikeKey;
-            if (key == null) {
-            	aerospikeKey = owningEntry.getKey(object);
-            }
-            else {
-            	aerospikeKey = owningEntry.translateKeyToAerospikeKey(key);
-            }
-            this.elementEntry = (ClassCacheEntry<?>) ClassCache.getInstance().loadClass(clazz, mapper);
-            this.mapper = mapper;
-            this.binName = binName;
-            this.value = owningEntry.getValueFromBinName(binName);
-            if (value == null) {
-            	throw new AerospikeException(String.format("Class %s has no bin called %s", clazz.getSimpleName(), binName));
-            }
-            String set = owningEntry.getSetName();
-            if ("".equals(set)) {
-            	// Use the null set
-            	set = null;
-            }
-            this.key = new Key(owningEntry.getNamespace(), set, Value.get(aerospikeKey));
-
-            AnnotatedType annotatedType = value.getAnnotatedType();
-            AerospikeEmbed embed = annotatedType.getAnnotation(AerospikeEmbed.class);
-            if (embed == null) {
-            	throw new AerospikeException(String.format("Bin %s on class %s is not specified as a embedded", binName, clazz.getSimpleName()));
-            }
-            listType = embed.type() == EmbedType.DEFAULT ? EmbedType.LIST : embed.type();
-            elementType = embed.elementType() == EmbedType.DEFAULT ? EmbedType.MAP : embed.elementType();
-            Class<?> binClazz = value.getType();
-            if (!(binClazz.isArray() || (Map.class.isAssignableFrom(binClazz)) || List.class.isAssignableFrom(binClazz))) {
-            	throw new AerospikeException(String.format("Bin %s on class %s is not a collection class", binName, clazz.getSimpleName()));
-            }
-            
-            TypeMapper typeMapper = value.getTypeMapper();
-            if (typeMapper instanceof ListMapper) {
-            	listMapper = ((ListMapper)typeMapper);
-            }
-            else {
-            	throw new AerospikeException(String.format("Bin %s on class %s is not mapped via a listMapper. This is unexpected", binName, clazz.getSimpleName()));
-            }
-            this.instanceMapper = src -> listMapper.fromAerospikeInstanceFormat(src);
-
-    	}
-    	
-    	public VirtualList<E> changeKey(Object newKey) {
-            String set = owningEntry.getSetName();
-            if ("".equals(set)) {
-            	// Use the null set
-            	set = null;
-            }
-            this.key = new Key(owningEntry.getNamespace(), set, Value.get(owningEntry.translateKeyToAerospikeKey(key)));
-            return this;
-    	}
-    	public VirtualList<E> keptInSync(boolean inSync) {
-    		return this;
-    	}
-    	
-    	public class MultiOperation<E> {
-    		private VirtualList<E> virtualList;
-    		private List<Interactor> interactions;
-    		private int indexToReturn = -1;
-    		private WritePolicy writePolicy;
-    		
-    		private MultiOperation(@NotNull VirtualList<E> virtualList, @NotNull WritePolicy writePolicy) {
-    			this.virtualList = virtualList;
-    			this.interactions = new ArrayList<>();
-    			this.writePolicy = writePolicy;
-			}
-    		
-    		public MultiOperation<E> append(E item) {
-    			Object aerospikeItem = listMapper.toAerospikeInstanceFormat(item);
-				this.interactions.add(new Interactor(virtualList.getAppendOperation(aerospikeItem)));
-    			return this;
-    		}
-    		public MultiOperation<E> removeByKeyRange(Object startKey, Object endKey) {
-    			this.interactions.add(getRemoveRangeInteractor(startKey, endKey));
-    			return this;
-    		}
-    		
-    		public MultiOperation<E> get(int index) {
-    			this.interactions.add(getIndexInteractor(index));
-    			return this;
-    		}
-    		
-    		public MultiOperation<E> size() {
-    			this.interactions.add(getSizeInteractor());
-    			return this;
-    		}
-    		
-    		public MultiOperation<E> asResult() {
-    			if (interactions.isEmpty()) {
-    				throw new AerospikeException("asResult() cannot mark an item as the function result if there are no items to process");
-    			}
-    			else if (this.indexToReturn >= 0) {
-    				throw new AerospikeException("asResult() can only be called once in a multi operation");
-    			}
-    			else {
-    				this.indexToReturn = this.interactions.size() - 1;
-    				this.interactions.get(indexToReturn).setNeedsResult(true);
-    			}
-    			return this;
-    		}
-    		
-    		public Object end() {
-    			if (this.interactions.isEmpty()) {
-    				return null;
-    			}
-    			this.writePolicy.respondAllOps = true;
-    			Operation[] operations = new Operation[this.interactions.size()];
-    			int count = 0;
-    			for (Interactor thisInteractor : this.interactions) {
-    				operations[count++] = thisInteractor.getOperation();
-    			}
-    			
-        		Record record = this.virtualList.mapper.mClient.operate(writePolicy, key, operations);
-
-        		if (count == 1) {
-        			Object resultObj = record.getValue(binName);
-        			return this.interactions.get(0).getResult(resultObj);
-        		}
-    			else {
-    				List<?> resultList = record.getList(binName);
-    				if (indexToReturn < 0) {
-    					int listSize = this.interactions.size();
-    					indexToReturn = listSize-1;
-    					// Determine the last GET operation
-    					for (int i = listSize-1; i >= 0; i--) {
-    						if (!this.interactions.get(i).isWriteOperation()) {
-    							indexToReturn = i;
-    							break;
-    						}
-    					}
-    				}
-    				return this.interactions.get(indexToReturn).getResult(resultList.get(indexToReturn));
-    			}
-    		}
-    	}
-
-    	public MultiOperation<E> beginMulti() {
-    		return this.beginMulti(null);
-    	}
-    	
-    	public MultiOperation<E> beginMulti(WritePolicy writePolicy) {
-        	if (writePolicy == null) {
-            	writePolicy = new WritePolicy(owningEntry.getWritePolicy());
-        		writePolicy.recordExistsAction = RecordExistsAction.UPDATE;
-        	}
-    		return new MultiOperation<E>(this, writePolicy);
-    	}
-    	
-
-    	/**
-    	 * Remove items from the list matching the specified key. If the list is mapped to a MAP in Aerospike, the start key and end key will dictate the range of keys to be removed,
-    	 * inclusive of the start, exclusive of the end.
-    	 * <p/>
-    	 * If the list is mapped to a LIST in Aerospike however, the start and end range represent values to be removed from the list.
-    	 * <p/>
-    	 * The result of the method is a list of the records which have been removed from the database if returnResults is true, null otherwise.
-    	 * @param startKey
-    	 * @param endKey
-    	 * @param returnResults
-    	 * @return
-    	 */
-    	public List<E> removeByKeyRange(Object startKey, Object endKey, boolean returnResults) {
-    		return this.removeByKeyRange(null, startKey, endKey, returnResults);
-    	}
-    	
-    	public List<E> removeByKeyRange(WritePolicy writePolicy, Object startKey, Object endKey, boolean returnResults) {
-        	if (writePolicy == null) {
-            	writePolicy = new WritePolicy(owningEntry.getWritePolicy());
-        		writePolicy.recordExistsAction = RecordExistsAction.UPDATE;
-        	}
-    		Interactor interactor = getRemoveRangeInteractor(startKey, endKey);
-    		interactor.setNeedsResult(returnResults);
-    		Record record = this.mapper.mClient.operate(writePolicy, key, interactor.getOperation());
-
-    		return (List<E>)interactor.getResult(record.getList(binName));
-    	}
-    	
-    	private Interactor getRemoveRangeInteractor(Object startKey, Object endKey) {
-    		Object aerospikeStartKey = elementEntry.translateKeyToAerospikeKey(startKey);
-    		Object aerospikeEndKey = elementEntry.translateKeyToAerospikeKey(endKey);
-    		DeferredOperation deferred = new DeferredOperation() {
-				
-				@Override
-				public ResultsUnpacker[] getUnpackers(OperationParameters operationParams) {
-					if (operationParams.needsResult()) {
-						return new ResultsUnpacker[] { new ArrayUnpacker(instanceMapper) };
-					}
-					else {
-						return new ResultsUnpacker[0];
-					}
-				}
-				
-				@Override
-				public Operation getOperation(OperationParameters operationParams) {
-		    		if (listType == EmbedType.LIST) {
-		    			if (operationParams.needsResult()) {
-		    				return ListOperation.removeByValueRange(binName, Value.get(aerospikeStartKey), Value.get(aerospikeEndKey), ListReturnType.VALUE);
-		    			}
-		    			else {
-		    				return ListOperation.removeByValueRange(binName, Value.get(aerospikeStartKey), Value.get(aerospikeEndKey), ListReturnType.NONE);
-		    			}
-					}
-		    		else {
-		    			if (operationParams.needsResult()) {
-		    				return MapOperation.removeByKeyRange(binName, Value.get(aerospikeStartKey), Value.get(aerospikeEndKey), MapReturnType.KEY_VALUE);
-		    			}
-		    			else {
-		    				return MapOperation.removeByKeyRange(binName, Value.get(aerospikeStartKey), Value.get(aerospikeEndKey), MapReturnType.NONE);    				
-		    			}
-		    		}
-				}
-			};
-    		return new Interactor(deferred);
-    	}
-    	
-    	private Operation getAppendOperation(Object aerospikeObject) {
-        	if (aerospikeObject instanceof Entry) {
-        		Entry<Object, Object> entry = (Entry) aerospikeObject;
-        		return MapOperation.put(new MapPolicy(MapOrder.KEY_ORDERED, 0), binName, Value.get(entry.getKey()), Value.get(entry.getValue()));
-        	}
-        	else {
-        		return ListOperation.append(binName, Value.get(aerospikeObject));
-        	}
-    	}
-    	public long append(E element) {
-    		return this.append(null, element);
-    	}
-    	
-    	public long append(WritePolicy writePolicy, E element) {
-        	Object result = listMapper.toAerospikeInstanceFormat(element);
-        	if (writePolicy == null) {
-            	writePolicy = new WritePolicy(owningEntry.getWritePolicy());
-        		writePolicy.recordExistsAction = RecordExistsAction.UPDATE;
-        	}
-    		Record record = this.mapper.mClient.operate(writePolicy, key, getAppendOperation(result));
-        	return record.getLong(binName);
-    	}
-    	
-    	
-    	
-    	public E get(int index) {
-    		return get(null, index);
-    	}
-    	
-    	private Interactor getIndexInteractor(int index) {
-    		if (listType == EmbedType.LIST) {
-    			return new Interactor(ListOperation.getByIndex(binName, index, ListReturnType.VALUE), new ElementUnpacker(instanceMapper));
-    		}
-    		else {
-    			return new Interactor(MapOperation.getByIndex(binName, index, MapReturnType.KEY_VALUE), ListUnpacker.instance, new ElementUnpacker(instanceMapper));
-    		}
-    	}
-    	
-    	public E get(Policy policy, int index) {
-        	if (policy == null) {
-        		policy = new Policy(owningEntry.getReadPolicy());
-        	}
-
-        	Interactor interactor = getIndexInteractor(index);
-    		Record record = this.mapper.mClient.operate(null, key, interactor.getOperation());
-    		return (E)interactor.getResult(record.getList(binName));
-    	}
-    	
-    	private Interactor getSizeInteractor() {
-    		if (listType == EmbedType.LIST) {
-    			 return new Interactor(ListOperation.size(binName));
-    		}
-    		else {
-    			return new Interactor(MapOperation.size(binName));
-    		}
-    	}
-
-    	public long size(Policy policy) {
-        	if (policy == null) {
-        		policy = new Policy(owningEntry.getReadPolicy());
-        	}
-        	Interactor interactor = getSizeInteractor();
-    		Record record = this.mapper.mClient.operate(null, key, interactor.getOperation());
-    		return record.getLong(binName);
-    	}
+    /**
+     * Create a virtual list against an attribute on a class. The list does all operations to the database and does not affect the underlying
+     * class, and is useful for situation when operations are needed to affect the database without having to return all the elements on the
+     * list each time.
+     * <p/>
+     * Note that the object being mapped does not need to actually exist in this case. The owning class is used purely for the definitions
+     * of how to map the list elements (are they to be mapped in the database as a list or a map, is each element a list or a map, etc), as
+     * well as using the namespace / set definition for the location to map into the database.  The 
+     * passed key is used to map the object to the database. 
+     * <p/>
+     * For example, consider a set of transactions associated with a credit card. Common operations might be
+     * <ul>
+     * 	<li>Return the last N transactions </li>
+     * 	<li>insert a new transaction into the list</li>
+     * </ul>
+     * These operation can all be done without having the full set of transactions
+     * @param <T> the type of the elements in the list.
+     * @param object
+     * @param binName
+     * @param elementClazz
+     * @return
+     */
+    public <T> VirtualList<T> asBackedList(@NotNull Class<?> owningClazz, @NotNull Object key, @NotNull String binName, Class<T> elementClazz) {
+    	return new VirtualList<T>(this, owningClazz, key, binName, elementClazz);
     }
-    
     
     public <T> void find(@NotNull Class<T> clazz, Function<T, Boolean> function) throws AerospikeException {
         ClassCacheEntry<T> entry = getEntryAndValidateNamespace(clazz);

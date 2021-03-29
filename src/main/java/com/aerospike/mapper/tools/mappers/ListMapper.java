@@ -101,9 +101,9 @@ public class ListMapper extends TypeMapper {
 			return null;
 		}
 		List<?> list = (List<?>)value;
-		if (list.size() == 0 || this.supportedWithoutTranslation) {
-			return value;
-		}
+//		if (list.size() == 0 || this.supportedWithoutTranslation) {
+//			return value;
+//		}
 		if (embedType == null || embedType == EmbedType.LIST) {
 			List<Object> results = new ArrayList<>();
 			for (Object obj : list) {
