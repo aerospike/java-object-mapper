@@ -17,6 +17,12 @@ public @interface AerospikeReference {
 	 * @return
 	 */
 	boolean lazy() default false;
+	/**
+	 * When a reference is to be loaded, it can either be loaded inline or it can be loaded via a batch load. The
+	 * batch load is typically significantly more efficient. Set this flag to <pre>false</pre> to prevent the batch load
+	 * @return
+	 */
+	boolean batchLoad() default true;
 	
 	public static enum ReferenceType {
 		ID,

@@ -4,7 +4,9 @@ import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 
-import com.aerospike.client.AerospikeClient;
+import com.aerospike.client.DebugAerospikeClient;
+import com.aerospike.client.DebugAerospikeClient.Granularity;
+import com.aerospike.client.DebugAerospikeClient.Options;
 import com.aerospike.client.IAerospikeClient;
 import com.aerospike.mapper.tools.ClassCache;
 
@@ -15,7 +17,8 @@ public abstract class AeroMapperBaseTest {
 
     @BeforeClass
     public static void setupClass() {
-        client = new AerospikeClient("localhost", 3000);
+//        client = new AerospikeClient("localhost", 3000);
+    	client = new DebugAerospikeClient("localhost", 3000, new Options(Granularity.EVERY_CALL));
     }
 
     @AfterClass

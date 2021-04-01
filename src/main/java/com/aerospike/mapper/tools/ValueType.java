@@ -2,12 +2,16 @@ package com.aerospike.mapper.tools;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 
 import javax.validation.constraints.NotNull;
 
 import com.aerospike.client.AerospikeException;
 import com.aerospike.client.Key;
 import com.aerospike.mapper.annotations.AerospikeVersion;
+import com.aerospike.mapper.tools.DeferredObjectLoader.DeferredObject;
+import com.aerospike.mapper.tools.DeferredObjectLoader.DeferredObjectSetter;
+import com.aerospike.mapper.tools.DeferredObjectLoader.DeferredSetter;
 import com.aerospike.mapper.tools.TypeUtils.AnnotatedType;
 
 /**
@@ -68,8 +72,24 @@ public abstract class ValueType {
 			return this.field.get(obj);
 		}
 		@Override
-		public void set(Object obj, Object value) throws ReflectiveOperationException {
-			this.field.set(obj, value);
+		public void set(final Object obj, final Object value) throws ReflectiveOperationException {
+			if (value != null && value instanceof DeferredObject) {
+				DeferredSetter setter = new DeferredSetter() {
+					@Override
+					public void setValue(Object object) {
+						try {
+							field.set(obj, object);
+						} catch (IllegalArgumentException | IllegalAccessException e) {
+							throw new AerospikeException(String.format("Could not set field %s on %s to %s", field, obj, value));
+						}
+					}
+				};
+				DeferredObjectSetter objectSetter = new DeferredObjectSetter(setter, (DeferredObject)value);
+				DeferredObjectLoader.add(objectSetter);
+			}
+			else {
+				this.field.set(obj, value);
+			}
 		}
 
 		@Override
@@ -80,6 +100,11 @@ public abstract class ValueType {
 		@Override
 		public Annotation[] getAnnotations() {
 			return this.field.getAnnotations();
+		}
+		
+		@Override
+		public String toString() {
+			return String.format("Value(Field): %s (%s)", this.field.getName(), this.field.getType().getSimpleName());
 		}
 	}
 
@@ -99,24 +124,74 @@ public abstract class ValueType {
 			return this.property.getGetter().invoke(obj);
 		}
 		@Override
-		public void set(Object obj, Object value) throws ReflectiveOperationException {
+		public void set(final Object obj, final Object value) throws ReflectiveOperationException {
 			if (this.property.getSetter() == null) {
 				throw new AerospikeException("Lazy loading cannot be used on objects with a property key type and no annotated key setter method");
 			}
 			else {
 				switch (this.property.getSetterParamType()) {
-				case KEY:
-					Key key = ThreadLocalKeySaver.get();
-					this.property.getSetter().invoke(obj, value, key);
+				case KEY: {
+					final Key key = ThreadLocalKeySaver.get();
+					if (value != null && value instanceof DeferredObject) {
+						DeferredSetter setter = new DeferredSetter() {
+							@Override
+							public void setValue(Object object) {
+								try {
+									property.getSetter().invoke(obj, value, key);
+								} catch (ReflectiveOperationException e) {
+									throw new AerospikeException(String.format("Could not set field %s on %s to %s", property, obj, value));
+								}
+							}
+						};
+						DeferredObjectSetter objectSetter = new DeferredObjectSetter(setter, (DeferredObject)value);
+						DeferredObjectLoader.add(objectSetter);
+					}
+					else {
+						this.property.getSetter().invoke(obj, value, key);
+					}
 					break;
+				}
 					
-				case VALUE:
-					key = ThreadLocalKeySaver.get();
-					this.property.getSetter().invoke(obj, value, key.userKey);
+				case VALUE: {
+					final Key key = ThreadLocalKeySaver.get();
+					if (value != null && value instanceof DeferredObject) {
+						DeferredSetter setter = new DeferredSetter() {
+							@Override
+							public void setValue(Object object) {
+								try {
+									property.getSetter().invoke(obj, value, key.userKey);
+								} catch (ReflectiveOperationException e) {
+									throw new AerospikeException(String.format("Could not set field %s on %s to %s", property, obj, value));
+								}
+							}
+						};
+						DeferredObjectSetter objectSetter = new DeferredObjectSetter(setter, (DeferredObject)value);
+						DeferredObjectLoader.add(objectSetter);
+					}
+					else {
+						this.property.getSetter().invoke(obj, value, key.userKey);
+					}
 					break;
+				}
 					
 				default:
-					this.property.getSetter().invoke(obj, value);
+					if (value != null && value instanceof DeferredObject) {
+						DeferredSetter setter = new DeferredSetter() {
+							@Override
+							public void setValue(Object object) {
+								try {
+									property.getSetter().invoke(obj, value);
+								} catch (ReflectiveOperationException e) {
+									throw new AerospikeException(String.format("Could not set field %s on %s to %s", property, obj, value));
+								}
+							}
+						};
+						DeferredObjectSetter objectSetter = new DeferredObjectSetter(setter, (DeferredObject)value);
+						DeferredObjectLoader.add(objectSetter);
+					}
+					else {
+						this.property.getSetter().invoke(obj, value);
+					}
 				}
 			}
 		}
@@ -130,5 +205,11 @@ public abstract class ValueType {
 		public Annotation[] getAnnotations() {
 			return this.property.getAnnotations();
 		}
+		
+		@Override
+		public String toString() {
+			return String.format("Value(Method): %s/%s (%s)", this.property.getGetter(), this.property.getSetter(), this.property.getType().getSimpleName());
+		}
+
 	}
 }

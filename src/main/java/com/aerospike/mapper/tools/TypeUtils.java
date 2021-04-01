@@ -156,8 +156,16 @@ public class TypeUtils {
 					// TODO: The type mapped into this type mapper should be the element type
 //					ClassConfig config = ClassCache.getInstance().getClassConfig(elementType.getClass());
 //					AnnotatedType elementAnnotateType = type.replaceClassConfig(config);
+					boolean allowBatch = true;
+					if (type != null) {
+						AerospikeReference reference = type.getAnnotation(AerospikeReference.class);
+						if (reference != null) {
+							allowBatch = reference.batchLoad();
+						}
+						
+					}
 					TypeMapper subMapper = getMapper(elementType, type, mapper, true);
-					typeMapper = new ArrayMapper(elementType, subMapper);
+					typeMapper = new ArrayMapper(elementType, subMapper, allowBatch);
 					addToMap = false;
 				}
 			}
@@ -184,14 +192,16 @@ public class TypeUtils {
 			else if (List.class.isAssignableFrom(clazz)) {
 				EmbedType embedType = EmbedType.DEFAULT;
 				boolean saveKey = true;
+				boolean allowBatch = true;
 				if (type != null && type.getAnnotations() != null) {
-					for (Annotation annotation : type.getAnnotations()) {
-						if (annotation.annotationType().equals(AerospikeEmbed.class)) {
-							AerospikeEmbed embed = (AerospikeEmbed)annotation;
-							embedType = embed.type();
-							saveKey = embed.saveKey();
-							break;
-						}
+					AerospikeEmbed embed = type.getAnnotation(AerospikeEmbed.class);
+					if (embed != null) {
+						embedType = embed.type();
+						saveKey = embed.saveKey();
+					}
+					AerospikeReference reference = type.getAnnotation(AerospikeReference.class);
+					if (reference != null) {
+						allowBatch = reference.batchLoad();
 					}
 				}
 				BinConfig binConfig = type != null ? type.getBinConfig() : null;
@@ -201,6 +211,11 @@ public class TypeUtils {
 					}
 					if (binConfig.getEmbed().getType() != null) {
 						embedType = binConfig.getEmbed().getType();
+					}
+				}
+				if (binConfig != null && binConfig.getReference() != null) {
+					if (binConfig.getReference().getBatchLoad() != null) { 
+						allowBatch = binConfig.getReference().getBatchLoad();
 					}
 				}
 				
@@ -213,10 +228,10 @@ public class TypeUtils {
 					
 					Class<?> subClazz = (Class<?>)types[0];
 					TypeMapper subMapper = getMapper(subClazz, type, mapper, true);
-					typeMapper = new ListMapper(clazz, subClazz, subMapper,  mapper, embedType, saveKey);
+					typeMapper = new ListMapper(clazz, subClazz, subMapper,  mapper, embedType, saveKey, allowBatch);
 				}
 				else {
-					typeMapper = new ListMapper(clazz, null, null, mapper, embedType, saveKey);
+					typeMapper = new ListMapper(clazz, null, null, mapper, embedType, saveKey, allowBatch);
 				}
 				addToMap = false;
 			}
@@ -247,7 +262,7 @@ public class TypeUtils {
 						else {
 							// Reference
 							ReferenceConfig ref = binConfig.getReference();
-							typeMapper = new ObjectReferenceMapper(ClassCache.getInstance().loadClass(clazz, mapper), ref.getLazy(), ref.getType(), mapper);
+							typeMapper = new ObjectReferenceMapper(ClassCache.getInstance().loadClass(clazz, mapper), ref.getLazy(), ref.getBatchLoad(), ref.getType(), mapper);
 							addToMap = false;
 						}
 					}
@@ -260,7 +275,7 @@ public class TypeUtils {
 								}
 								else {
 									AerospikeReference ref = (AerospikeReference)annotation;
-									typeMapper = new ObjectReferenceMapper(ClassCache.getInstance().loadClass(clazz, mapper), ref.lazy(), ref.type(), mapper);
+									typeMapper = new ObjectReferenceMapper(ClassCache.getInstance().loadClass(clazz, mapper), ref.lazy(), ref.batchLoad(), ref.type(), mapper);
 									addToMap = false;
 								}
 							}
@@ -285,7 +300,7 @@ public class TypeUtils {
 				}
 				if (typeMapper == null) {
 					// No annotations were specified, so use the ObjectReferenceMapper with non-lazy references
-					typeMapper = new ObjectReferenceMapper(ClassCache.getInstance().loadClass(clazz, mapper), false, ReferenceType.ID, mapper);
+					typeMapper = new ObjectReferenceMapper(ClassCache.getInstance().loadClass(clazz, mapper), false, true, ReferenceType.ID, mapper);
 					addToMap = false;
 				}
 			}

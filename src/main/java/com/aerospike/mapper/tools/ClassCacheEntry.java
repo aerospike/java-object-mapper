@@ -20,7 +20,9 @@ import org.apache.commons.lang3.StringUtils;
 
 import com.aerospike.client.AerospikeException;
 import com.aerospike.client.Bin;
+import com.aerospike.client.Key;
 import com.aerospike.client.Record;
+import com.aerospike.client.Value;
 import com.aerospike.client.cdt.MapOrder;
 import com.aerospike.client.policy.BatchPolicy;
 import com.aerospike.client.policy.Policy;
@@ -36,6 +38,8 @@ import com.aerospike.mapper.annotations.AerospikeOrdinal;
 import com.aerospike.mapper.annotations.AerospikeRecord;
 import com.aerospike.mapper.annotations.AerospikeSetter;
 import com.aerospike.mapper.annotations.ParamFrom;
+import com.aerospike.mapper.tools.DeferredObjectLoader.DeferredObject;
+import com.aerospike.mapper.tools.DeferredObjectLoader.DeferredObjectSetter;
 import com.aerospike.mapper.tools.TypeUtils.AnnotatedType;
 import com.aerospike.mapper.tools.configuration.BinConfig;
 import com.aerospike.mapper.tools.configuration.ClassConfig;
@@ -136,6 +140,15 @@ public class ClassCacheEntry<T> {
 	}
 	public WritePolicy getWritePolicy() {
 		return writePolicy;
+	}
+	public BatchPolicy getBatchPolicy() {
+		return batchPolicy;
+	}
+	public QueryPolicy getQueryPolicy() {
+		return queryPolicy;
+	}
+	public ScanPolicy getScanPolicy() {
+		return scanPolicy;
 	}
 	
 	public Class<?> getUnderlyingClass() {
@@ -752,6 +765,7 @@ public class ClassCacheEntry<T> {
 				valueMap.clear();
 				thisClass = thisClass.superClazz;
 			}
+			
 			return result;
 		}
 		catch (ReflectiveOperationException ref) {
@@ -909,7 +923,7 @@ public class ClassCacheEntry<T> {
 		try {
 			int index = 0;
 			int endIndex = list.size();
-			ClassCacheEntry thisClass = this;
+			ClassCacheEntry<?> thisClass = this;
 			while (thisClass != null) {
 				if (index < endIndex) {
 					Object lastValue = list.get(endIndex-1);

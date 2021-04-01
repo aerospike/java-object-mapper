@@ -1625,3 +1625,10 @@ When mapping a Java object to Aerospike the most common operations to do are to 
 - Document creation of builder -- multiple configuration files are allowed, if the same class is declared in both the first one encountered wins. 
 - Document methods with 2 parameters for keys and setters, the second one either a Key or a Value
 - Document subclasses and the mapping to tables + references stored as lists
+- Batch load of child items on Maps and References. Ensure testing of non-parameterized classes too. Also of methods on Virtual LIsts
+- Test (and fix) batch loading of children on virtual lists.
+- Document batch loading
+- Ensure batchloading option exists in AerospikeReference Configuration
+- handle object graph circularities (A->B->C). Be careful of: A->B(Lazy), A->C->B: B should end up fully hydrated in both instances, not lazy in both instances
+- Consider the items on virtual list which return a list to be able to return a map as well (ELEMENT_LIST, ELEMENT_MAP) 
+- Test if map supports lazy loading of referenced objects.

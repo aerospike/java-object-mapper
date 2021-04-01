@@ -10,6 +10,7 @@ import com.aerospike.mapper.annotations.AerospikeReference.ReferenceType;
 import com.aerospike.mapper.tools.AeroMapper;
 import com.aerospike.mapper.tools.ClassCache;
 import com.aerospike.mapper.tools.ClassCacheEntry;
+import com.aerospike.mapper.tools.DeferredObjectLoader.DeferredObject;
 import com.aerospike.mapper.tools.TypeMapper;
 
 public class ObjectReferenceMapper extends ObjectMapper {
@@ -17,13 +18,15 @@ public class ObjectReferenceMapper extends ObjectMapper {
 	private final ClassCacheEntry<?> referencedClass;
 	private final AeroMapper mapper;
 	private final boolean lazy;
+	private final boolean allowBatch;
 	private final ReferenceType type;
 	
-	public ObjectReferenceMapper(ClassCacheEntry<?> entry, boolean lazy, ReferenceType type, AeroMapper mapper) {
+	public ObjectReferenceMapper(ClassCacheEntry<?> entry, boolean lazy, boolean allowBatch, ReferenceType type, AeroMapper mapper) {
 		this.referencedClass = entry;
 		this.mapper = mapper;
 		this.lazy = lazy;
 		this.type = type;
+		this.allowBatch = allowBatch;
 		
 		if (ReferenceType.DIGEST.equals(this.type) && this.lazy) {
 			throw new AerospikeException("An object reference to a " + entry.getClass().getSimpleName() + " cannot be both lazy and map to a digest");
@@ -91,14 +94,15 @@ public class ObjectReferenceMapper extends ObjectMapper {
 				throw new AerospikeException(e);
 			}
 		}
+		else if (allowBatch) {
+			DeferredObject defObject = new DeferredObject(key, classToUse.getUnderlyingClass(), ReferenceType.DIGEST.equals(type));
+			return defObject;
+		}
+		else if (ReferenceType.DIGEST.equals(type)) {
+			return mapper.readFromDigest(classToUse.getUnderlyingClass(), (byte[]) key, false);
+		}
 		else {
-			if (ReferenceType.DIGEST.equals(type)) {
-				return mapper.readFromDigest(classToUse.getUnderlyingClass(), (byte[]) key);
-			}
-			else {
-				return mapper.read(classToUse.getUnderlyingClass(), key);
-			}
+			return mapper.read(classToUse.getUnderlyingClass(), key, false);
 		}
 	}
-
 }

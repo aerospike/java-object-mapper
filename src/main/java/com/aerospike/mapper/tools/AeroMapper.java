@@ -26,6 +26,8 @@ import com.aerospike.client.policy.WritePolicy;
 import com.aerospike.client.query.RecordSet;
 import com.aerospike.client.query.Statement;
 import com.aerospike.mapper.tools.ClassCache.PolicyType;
+import com.aerospike.mapper.tools.DeferredObjectLoader.DeferredObject;
+import com.aerospike.mapper.tools.DeferredObjectLoader.DeferredObjectSetter;
 import com.aerospike.mapper.tools.TypeUtils.AnnotatedType;
 import com.aerospike.mapper.tools.configuration.ClassConfig;
 import com.aerospike.mapper.tools.configuration.Configuration;
@@ -239,9 +241,11 @@ public class AeroMapper {
      * @return
      */
     @SuppressWarnings("unchecked")
-	public <T> T translateFromAerospike(Object obj, Class<T> expectedClazz) {
+	public <T> T translateFromAerospike(@NotNull Object obj, @NotNull Class<T> expectedClazz) {
     	TypeMapper thisMapper = TypeUtils.getMapper(expectedClazz, AnnotatedType.getDefaultAnnotateType(), this);
-    	return (T)(thisMapper == null ? obj : thisMapper.fromAerospikeFormat(obj));
+    	T result = (T)(thisMapper == null ? obj : thisMapper.fromAerospikeFormat(obj));
+		resolveDependencies(ClassCache.getInstance().loadClass(expectedClazz, this));
+		return result;
     }
 
 
@@ -276,34 +280,61 @@ public class AeroMapper {
         save(null, object, RecordExistsAction.UPDATE, binNames);
     }
 
-
     public <T> T readFromDigest(Policy readPolicy, @NotNull Class<T> clazz, @NotNull byte[] digest) throws AerospikeException {
+    	return this.readFromDigest(readPolicy, clazz, digest, true);
+    }
+    
+    /**
+     * This method should not be used except by mappers
+     */
+    public <T> T readFromDigest(Policy readPolicy, @NotNull Class<T> clazz, @NotNull byte[] digest, boolean resolveDependencies) throws AerospikeException {
         ClassCacheEntry<T> entry = getEntryAndValidateNamespace(clazz);
         Key key = new Key(entry.getNamespace(), digest, entry.getSetName(), null);
-        return this.read(readPolicy, clazz, key, entry);
+        return this.read(readPolicy, clazz, key, entry, resolveDependencies);
     }
 
     public <T> T readFromDigest(@NotNull Class<T> clazz, @NotNull byte[] digest) throws AerospikeException {
+    	return this.readFromDigest(clazz, digest, true);
+    }
+    
+    /**
+     * This method should not be used except by mappers
+     */
+    public <T> T readFromDigest(@NotNull Class<T> clazz, @NotNull byte[] digest, boolean resolveDependencies) throws AerospikeException {
         ClassCacheEntry<T> entry = getEntryAndValidateNamespace(clazz);
         Key key = new Key(entry.getNamespace(), digest, entry.getSetName(), null);
-        return this.read(null, clazz, key, entry);
+        return this.read(null, clazz, key, entry, resolveDependencies);
     }
 
     public <T> T read(Policy readPolicy, @NotNull Class<T> clazz, @NotNull Object userKey) throws AerospikeException {
+    	return this.read(readPolicy, clazz, userKey, true);
+    }
+    
+    /**
+     * This method should not be used except by mappers
+     */
+    public <T> T read(Policy readPolicy, @NotNull Class<T> clazz, @NotNull Object userKey, boolean resolveDependencies) throws AerospikeException {
         ClassCacheEntry<T> entry = getEntryAndValidateNamespace(clazz);
         String set = entry.getSetName();
         Key key = new Key(entry.getNamespace(), set, Value.get(entry.translateKeyToAerospikeKey(userKey)));
-        return read(readPolicy, clazz, key, entry);
+        return read(readPolicy, clazz, key, entry, resolveDependencies);
     }
 
     public <T> T read(@NotNull Class<T> clazz, @NotNull Object userKey) throws AerospikeException {
+    	return this.read(clazz, userKey, true);
+    }
+    
+    /**
+     * This method should not be used: It is used by mappers to correctly resolved dependencies. Use read(clazz, userkey) instead
+     */
+    public <T> T read(@NotNull Class<T> clazz, @NotNull Object userKey, boolean resolveDependencies) throws AerospikeException {
         ClassCacheEntry<T> entry = getEntryAndValidateNamespace(clazz);
         String set = entry.getSetName();
         Key key = new Key(entry.getNamespace(), set, Value.get(entry.translateKeyToAerospikeKey(userKey)));
-        return read(null, clazz, key, entry);
+        return read(null, clazz, key, entry, resolveDependencies);
     }
 
-    private <T> T read(Policy readPolicy, @NotNull Class<T> clazz, @NotNull Key key, @NotNull ClassCacheEntry<T> entry) {
+    private <T> T read(Policy readPolicy, @NotNull Class<T> clazz, @NotNull Key key, @NotNull ClassCacheEntry<T> entry, boolean resolveDepenencies) {
     	if (readPolicy == null) {
     		readPolicy = entry.getReadPolicy();
     	}
@@ -314,7 +345,7 @@ public class AeroMapper {
         } else {
             try {
             	ThreadLocalKeySaver.save(key);
-                T result = (T) convertToObject(clazz, record, entry);
+                T result = (T) convertToObject(clazz, record, entry, resolveDepenencies);
                 return result;
             } catch (ReflectiveOperationException e) {
                 throw new AerospikeException(e);
@@ -325,6 +356,7 @@ public class AeroMapper {
         }
     }
 
+    
     public <T> boolean delete(@NotNull Class<T> clazz, @NotNull Object userKey) throws AerospikeException {
     	return this.delete(null, clazz, userKey);
     }
@@ -461,18 +493,39 @@ public class AeroMapper {
     }
 
     public <T> T convertToObject(Class<T> clazz, Record record, ClassCacheEntry<T> entry) throws ReflectiveOperationException {
+    	return this.convertToObject(clazz, record, entry, true);
+    }
+    
+    /**
+     * This method should not be used, it is public only to allow mappers to see it.
+     */
+    public <T> T convertToObject(Class<T> clazz, Record record, ClassCacheEntry<T> entry, boolean resolveDependencies) throws ReflectiveOperationException {
         if (entry == null) {
             entry = ClassCache.getInstance().loadClass(clazz, this);
         }
-        return entry.constructAndHydrate(clazz, record);
+        T result = entry.constructAndHydrate(clazz, record);
+        if (resolveDependencies) {
+        	resolveDependencies(entry);
+        }
+		return result;
     }
 
     public <T> T convertToObject(Class<T> clazz, List<Object> record)  {
+    	return this.convertToObject(clazz, record, true);
+    }
+
+    /**
+     * This method should not be used, it is public only to allow mappers to see it.
+     */
+    public <T> T convertToObject(Class<T> clazz, List<Object> record, boolean resolveDependencies)  {
 		try {
 	        ClassCacheEntry<T> entry = ClassCache.getInstance().loadClass(clazz, this);
 	        T result;
 			result = clazz.getConstructor().newInstance();
 			entry.hydrateFromList(record, result);
+			if (resolveDependencies) {
+				resolveDependencies(entry);
+			}
 			return result;
 		} catch (ReflectiveOperationException e) {
 			throw new AerospikeException(e);
@@ -499,4 +552,74 @@ public class AeroMapper {
     	ClassCacheEntry<T> entry = (ClassCacheEntry<T>) ClassCache.getInstance().loadClass(instance.getClass(), this);
     	return entry.getMap(instance, false);
     }
+    
+    /**
+     * If an object refers to other objects (eg A has a list of B via references), then reading the object will populate the
+     * ids. If configured to do so, these objects can be loaded via a batch load and populated back into the references which
+     * contain them. This method performs this batch load, translating the records to objects and mapping them back to the
+     * references.
+     * <p/>
+     * These loaded child objects can themselves have other references to other objects, so we iterate through this until
+     * the list of deferred objects is empty. The deferred objects are stored in a <pre>ThreadLocalData<pre> list, so are thread safe
+     * @param parentEntity - the ClassCacheEntry of the parent entity. This is used to get the batch policy to use.
+     */
+    private void resolveDependencies(ClassCacheEntry<?> parentEntity) {
+    	List<DeferredObjectSetter> deferredObjects = DeferredObjectLoader.getAndClear();
+    	
+    	if (deferredObjects.size() == 0) {
+    		return;
+    	}
+    	
+    	BatchPolicy batchPolicy = parentEntity == null ? mClient.getBatchPolicyDefault() : parentEntity.getBatchPolicy();
+    	BatchPolicy batchPolicyClone = new BatchPolicy(batchPolicy);
+    	
+    	while (deferredObjects != null && !deferredObjects.isEmpty()) {
+    		int size = deferredObjects.size();
+    		
+    		ClassCacheEntry<?>[] classCaches = new ClassCacheEntry<?>[size];
+    		Key[] keys = new Key[size];
+    		
+    		for (int i = 0; i < size; i++) {
+    			DeferredObjectSetter thisObjectSetter = deferredObjects.get(i);
+    			DeferredObject deferredObject = thisObjectSetter.getObject();
+    			Class<?> clazz = deferredObject.getType();
+    			ClassCacheEntry<?> entry = (ClassCacheEntry<?>) ClassCache.getInstance().loadClass(clazz, this);
+    			classCaches[i] = entry; 
+    			
+    			if (deferredObject.isDigest()) {
+    				keys[i] = new Key(entry.getNamespace(), (byte[])deferredObject.getKey(), entry.getSetName(), null);
+    			}
+    			else {
+    				keys[i] = new Key(entry.getNamespace(), entry.getSetName(), Value.get(entry.translateKeyToAerospikeKey(deferredObject.getKey())));
+    			}
+    		}
+    		
+    		// Load the data
+    		if (keys.length <= 2) {
+    			// Just single-thread these keys for speed
+    			batchPolicyClone.maxConcurrentThreads = 1;
+    		}
+    		else {
+    			batchPolicyClone.maxConcurrentThreads = batchPolicy.maxConcurrentThreads;
+    		}
+    		Record[] records = this.mClient.get(batchPolicyClone, keys);
+    		
+    		for (int i = 0; i < size; i++) {
+    			DeferredObjectSetter thisObjectSetter = deferredObjects.get(i);
+    			try {
+                	ThreadLocalKeySaver.save(keys[i]);
+                	Object result = this.convertToObject((Class)thisObjectSetter.getObject().getType(), records[i], classCaches[i], false);
+                	thisObjectSetter.getSetter().setValue(result);
+	            } catch (ReflectiveOperationException e) {
+	                throw new AerospikeException(e);
+	            }
+	            finally {
+	            	ThreadLocalKeySaver.clear();
+	            }
+    		}
+        	deferredObjects = DeferredObjectLoader.getAndClear();
+    	}
+    }
+    
+
 }

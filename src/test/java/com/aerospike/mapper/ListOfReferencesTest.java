@@ -10,6 +10,8 @@ import org.junit.Test;
 
 import com.aerospike.mapper.annotations.AerospikeKey;
 import com.aerospike.mapper.annotations.AerospikeRecord;
+import com.aerospike.mapper.annotations.AerospikeReference;
+import com.aerospike.mapper.annotations.AerospikeReference.ReferenceType;
 import com.aerospike.mapper.tools.AeroMapper;
 
 public class ListOfReferencesTest extends AeroMapperBaseTest {
@@ -36,6 +38,7 @@ public class ListOfReferencesTest extends AeroMapperBaseTest {
 		@AerospikeKey
 		private int id;
 		private String name;
+		@AerospikeReference(type = ReferenceType.ID, lazy = false)
 		private List<Item> items;
 		
 		public Container() {

@@ -8,11 +8,15 @@ import java.util.Map.Entry;
 import java.util.TreeMap;
 
 import com.aerospike.client.AerospikeException;
+import com.aerospike.mapper.annotations.AerospikeReference;
 import com.aerospike.mapper.annotations.AerospikeEmbed.EmbedType;
 import com.aerospike.mapper.tools.AeroMapper;
 import com.aerospike.mapper.tools.ClassCache;
 import com.aerospike.mapper.tools.ClassCacheEntry;
-import com.aerospike.mapper.tools.ThreadLocalKeySaver;
+import com.aerospike.mapper.tools.DeferredObjectLoader;
+import com.aerospike.mapper.tools.DeferredObjectLoader.DeferredObject;
+import com.aerospike.mapper.tools.DeferredObjectLoader.DeferredObjectSetter;
+import com.aerospike.mapper.tools.DeferredObjectLoader.DeferredSetter;
 import com.aerospike.mapper.tools.TypeMapper;
 import com.aerospike.mapper.tools.TypeUtils;
 import com.aerospike.mapper.tools.TypeUtils.AnnotatedType;
@@ -28,14 +32,16 @@ public class ListMapper extends TypeMapper {
 	private final EmbedType embedType;
 	private final ClassCacheEntry<?> subTypeEntry;
 	private final boolean saveKey;
+	private final boolean allowBatchLoad;
 	
-	public ListMapper(final Class<?> clazz, final Class<?> instanceClass, final TypeMapper instanceClassMapper, final AeroMapper mapper, final EmbedType embedType, final boolean saveKey) {
+	public ListMapper(final Class<?> clazz, final Class<?> instanceClass, final TypeMapper instanceClassMapper, final AeroMapper mapper, final EmbedType embedType, final boolean saveKey, boolean allowBatchLoad) {
 		this.referencedClass = clazz;
 		this.mapper = mapper;
 		this.instanceClass = instanceClass;
 		this.supportedWithoutTranslation = TypeUtils.isAerospikeNativeType(instanceClass);
 		this.instanceClassMapper = instanceClassMapper;
 		this.saveKey = saveKey;
+		this.allowBatchLoad = allowBatchLoad;
 		
 		if (embedType == EmbedType.DEFAULT) {
 			this.embedType = EmbedType.LIST;
@@ -101,9 +107,6 @@ public class ListMapper extends TypeMapper {
 			return null;
 		}
 		List<?> list = (List<?>)value;
-//		if (list.size() == 0 || this.supportedWithoutTranslation) {
-//			return value;
-//		}
 		if (embedType == null || embedType == EmbedType.LIST) {
 			List<Object> results = new ArrayList<>();
 			for (Object obj : list) {
@@ -180,8 +183,31 @@ public class ListMapper extends TypeMapper {
 				}
 			}
 			else {
+				int index = 0;
 				for (Object obj : list) {
-					results.add(this.instanceClassMapper.fromAerospikeFormat(obj));
+					if (!allowBatchLoad) {
+						results.add(this.instanceClassMapper.fromAerospikeFormat(obj));
+					}
+					else {
+						Object result = this.instanceClassMapper.fromAerospikeFormat(obj);
+						if (result instanceof DeferredObject) {
+							final int thisIndex = index;
+							DeferredSetter setter = new DeferredSetter() {
+								@Override
+								public void setValue(Object object) {
+									results.set(thisIndex, object);
+								}
+							};
+							DeferredObjectSetter objectSetter = new DeferredObjectSetter(setter, (DeferredObject)result);
+							DeferredObjectLoader.add(objectSetter);
+							// add a placeholder to maintain the index
+							results.add(null);
+						}
+						else {
+							results.add(result);
+						}
+					}
+					index++;
 				}
 			}
 		}
