@@ -184,7 +184,7 @@ public class AeroMapper {
 	        namespace = entry.getNamespace();
         }
         if (StringUtils.isBlank(namespace)) {
-            throw new AerospikeException("Namespace not specified to save a record of type " + clazz.getName());
+            throw new AerospikeException("Namespace not specified to perform database operation on a record of type " + clazz.getName());
         }
         return entry;
     }
@@ -563,7 +563,7 @@ public class AeroMapper {
      * the list of deferred objects is empty. The deferred objects are stored in a <pre>ThreadLocalData<pre> list, so are thread safe
      * @param parentEntity - the ClassCacheEntry of the parent entity. This is used to get the batch policy to use.
      */
-    private void resolveDependencies(ClassCacheEntry<?> parentEntity) {
+    void resolveDependencies(ClassCacheEntry<?> parentEntity) {
     	List<DeferredObjectSetter> deferredObjects = DeferredObjectLoader.getAndClear();
     	
     	if (deferredObjects.size() == 0) {
@@ -583,7 +583,7 @@ public class AeroMapper {
     			DeferredObjectSetter thisObjectSetter = deferredObjects.get(i);
     			DeferredObject deferredObject = thisObjectSetter.getObject();
     			Class<?> clazz = deferredObject.getType();
-    			ClassCacheEntry<?> entry = (ClassCacheEntry<?>) ClassCache.getInstance().loadClass(clazz, this);
+    			ClassCacheEntry<?> entry = getEntryAndValidateNamespace(clazz);
     			classCaches[i] = entry; 
     			
     			if (deferredObject.isDigest()) {

@@ -1,6 +1,7 @@
 package com.aerospike.mapper.tools;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -178,6 +179,14 @@ public class VirtualList<E> {
 		 * @return
 		 */
 		public Object end() {
+			return end(null);
+		}
+		
+		/**
+		 * Finish the multi operation and process it. 
+		 * @return
+		 */
+		public <T> T end(Class<T> resultType) {
 			if (this.interactions.isEmpty()) {
 				return null;
 			}
@@ -202,9 +211,10 @@ public class VirtualList<E> {
 						
     		Record record = this.virtualList.mapper.mClient.operate(writePolicy, key, operations);
 
+    		T result;
     		if (count == 1) {
     			Object resultObj = record.getValue(binName);
-    			return this.interactions.get(0).getResult(resultObj);
+    			result = (T)this.interactions.get(0).getResult(resultObj);
     		}
 			else {
 				List<?> resultList = record.getList(binName);
@@ -218,8 +228,17 @@ public class VirtualList<E> {
 						}
 					}
 				}
-				return this.interactions.get(indexToReturn).getResult(resultList.get(indexToReturn));
+				result = (T)this.interactions.get(indexToReturn).getResult(resultList.get(indexToReturn));
 			}
+    		if (result != null) {
+    			Object object = result;
+    			if (result instanceof Collection) {
+    				Collection<T> collection = (Collection<T>)result;
+    				object = collection.isEmpty() ? null : collection.iterator().next();
+    			}
+    			mapper.resolveDependencies(ClassCache.getInstance().loadClass(object.getClass(), mapper));
+    		}
+			return result;
 		}
 	}
 
