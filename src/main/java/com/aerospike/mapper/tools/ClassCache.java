@@ -45,7 +45,7 @@ public class ClassCache {
 	}
 
 	public <T> ClassCacheEntry<T> loadClass(@NotNull Class<T> clazz, AeroMapper mapper) {
-		if (clazz.isPrimitive() || clazz.equals(Object.class) || clazz.equals(String.class) || Number.class.isAssignableFrom(clazz)) {
+		if (clazz.isPrimitive() || clazz.equals(Object.class) || clazz.equals(String.class) || clazz.equals(Character.class) || Number.class.isAssignableFrom(clazz)) {
 			return null;
 		}
 		ClassCacheEntry<T> entry = cacheMap.get(clazz);

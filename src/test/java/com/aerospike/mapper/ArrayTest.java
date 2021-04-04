@@ -17,7 +17,7 @@ public class ArrayTest extends AeroMapperBaseTest {
 		@AerospikeKey
 		public int id;
 		
-		public A() {}
+		A() {}
 
 		public A(String name, int age, int id) {
 			super();

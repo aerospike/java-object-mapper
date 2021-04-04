@@ -101,7 +101,7 @@ public class ClassCacheEntry<T> {
 
 		AerospikeRecord recordDescription = clazz.getAnnotation(AerospikeRecord.class);
 		if (recordDescription == null && config == null) {
-			throw new IllegalArgumentException("Class " + clazz.getName() + " is not augmented by the @AerospikeRecord annotation");
+			throw new AerospikeException("Class " + clazz.getName() + " is not augmented by the @AerospikeRecord annotation");
 		}
 		else if (recordDescription != null) {
 			this.namespace = ParserUtils.getInstance().get(recordDescription.namespace());
@@ -723,14 +723,14 @@ public class ClassCacheEntry<T> {
 		}
 	}
 	
-	public T constructAndHydrate(Class<T> clazz, Map<String, Object> map) {
-		return constructAndHydrate(clazz, null, map);
+	public T constructAndHydrate(Map<String, Object> map) {
+		return constructAndHydrate(null, map);
 	}
-	public T constructAndHydrate(Class<T> clazz, Record record) {
-		return constructAndHydrate(clazz, record, null);
+	public T constructAndHydrate(Record record) {
+		return constructAndHydrate(record, null);
 	}
 	
-	private T constructAndHydrate(Class<T> clazz, Record record, Map<String, Object> map) {
+	private T constructAndHydrate(Record record, Map<String, Object> map) {
 		Map<String, Object> valueMap = new HashMap<>();
 		try {
 			ClassCacheEntry<?> thisClass = this;
@@ -754,7 +754,7 @@ public class ClassCacheEntry<T> {
 					valueMap.put(name, value.getTypeMapper().fromAerospikeFormat(aerospikeValue));
 				}
 				if (result == null) {
-					result = (T)thisClass.constructAndHydrate(valueMap);
+					result = (T)thisClass.constructAndHydrateFromJavaMap(valueMap);
 				}
 				else {
 					for (String field : valueMap.keySet()) {
@@ -827,33 +827,32 @@ public class ClassCacheEntry<T> {
 		this.hydrateFromList(list, instance, false);
 	}
 	
-	private T constructAndHydrate(Map<String, Object> javaValuesMap) throws ReflectiveOperationException {
+	private T constructAndHydrateFromJavaMap(Map<String, Object> javaValuesMap) throws ReflectiveOperationException {
 		// Now form the values which satisfy the constructor
 		T result;
-		if (constructorParamBins.length == 0) {
-			result = clazz.newInstance();				
-		}
-		else {
-			Object[] args = new Object[constructorParamBins.length];
-			for (int i = 0; i < constructorParamBins.length; i++) {
-				if (javaValuesMap.containsKey(constructorParamBins[i])) {
-					args[i] = javaValuesMap.get(constructorParamBins[i]);
-				}
-				else {
-					args[i] = constructorParamDefaults[i];
-				}
-				javaValuesMap.remove(constructorParamBins[i]);
+		Object[] args = new Object[constructorParamBins.length];
+		for (int i = 0; i < constructorParamBins.length; i++) {
+			if (javaValuesMap.containsKey(constructorParamBins[i])) {
+				args[i] = javaValuesMap.get(constructorParamBins[i]);
 			}
-			result = constructor.newInstance(args);
+			else {
+				args[i] = constructorParamDefaults[i];
+			}
+			javaValuesMap.remove(constructorParamBins[i]);
 		}
+		result = constructor.newInstance(args);
 		for (String field : javaValuesMap.keySet()) {
 			ValueType value = this.values.get(field);
-			value.set(result, javaValuesMap.get(field));
+			Object object = javaValuesMap.get(field);
+			if (object == null && value.getType().isPrimitive()) {
+				object = PrimitiveDefaults.getDefaultValue(value.getType());
+			}
+			value.set(result, object);
 		}
 		return result;
 	}
 	
-	public T constructAndHydrate(Class<T> clazz, List<Object> list, boolean skipKey) {
+	public T constructAndHydrate(List<Object> list, boolean skipKey) {
 		Map<String, Object> valueMap = new HashMap<>();
 		try {
 			ClassCacheEntry<?> thisClass = this;
@@ -900,7 +899,7 @@ public class ClassCacheEntry<T> {
 						}
 					}
 					if (result == null) {
-						result = (T)thisClass.constructAndHydrate(valueMap);
+						result = (T)thisClass.constructAndHydrateFromJavaMap(valueMap);
 					}
 					else {
 						for (String field : valueMap.keySet()) {
@@ -964,7 +963,7 @@ public class ClassCacheEntry<T> {
 	
 	@Override
 	public String toString() {
-		return String.format("ClassCacheEntry<%s> (ns=%s, set=%s,subclass=%b,shortName=%s)", this.getUnderlyingClass().getSimpleName(), this.namespace, this.setName, this.isChildClass, this.shortenedClassName);
+		return String.format("ClassCacheEntry<%s> (ns=%s,set=%s,subclass=%b,shortName=%s)", this.getUnderlyingClass().getSimpleName(), this.namespace, this.setName, this.isChildClass, this.shortenedClassName);
 	}
 
 }

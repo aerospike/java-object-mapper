@@ -503,7 +503,7 @@ public class AeroMapper {
         if (entry == null) {
             entry = ClassCache.getInstance().loadClass(clazz, this);
         }
-        T result = entry.constructAndHydrate(clazz, record);
+        T result = entry.constructAndHydrate(record);
         if (resolveDependencies) {
         	resolveDependencies(entry);
         }
@@ -608,7 +608,7 @@ public class AeroMapper {
     			DeferredObjectSetter thisObjectSetter = deferredObjects.get(i);
     			try {
                 	ThreadLocalKeySaver.save(keys[i]);
-                	Object result = this.convertToObject((Class)thisObjectSetter.getObject().getType(), records[i], classCaches[i], false);
+                	Object result = records[i] == null ? null : this.convertToObject((Class)thisObjectSetter.getObject().getType(), records[i], classCaches[i], false);
                 	thisObjectSetter.getSetter().setValue(result);
 	            } catch (ReflectiveOperationException e) {
 	                throw new AerospikeException(e);

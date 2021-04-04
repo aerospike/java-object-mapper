@@ -791,7 +791,7 @@ The elements in the list are (in order): createdDate, name, productId, version.
 
 This is far more compact and wastes less space, but has an issue: How do you add new items to the product? The answer is to use versioning.
 
-#### Versioning Links
+#### Versioning Lists
 
 Maps and Aerospike records are self-describing -- each value has a name, so it is obvious how to map the data to the database and back. For example, if we have a class
 
@@ -1032,6 +1032,10 @@ Multiple ordinals can be specified for a single class, but these must be sequent
 
 **Note**: Ordinal fields cannot be versioned.
   
+#### The importance of Generic Types
+
+When using the object mapper, it is important to 
+
 ----
 
 ## Advanced Features
@@ -1609,10 +1613,6 @@ When mapping a Java object to Aerospike the most common operations to do are to 
 ----
 
 ## To finish
-- lists of embedded objects
-- maps of embedded objects
-- lists of referenced objects
-- maps of referenced objects
 - Document virtual lists
 - Validate some of the limits, eg bin name length, set name length, etc.
 - Make all maps (esp Embedded ones) K_ORDERED
@@ -1623,7 +1623,7 @@ When mapping a Java object to Aerospike the most common operations to do are to 
 - Document creation of builder -- multiple configuration files are allowed, if the same class is declared in both the first one encountered wins. 
 - Document methods with 2 parameters for keys and setters, the second one either a Key or a Value
 - Document subclasses and the mapping to tables + references stored as lists
-- Batch load of child items on Maps and References. Ensure testing of non-parameterized classes too. Also of methods on Virtual LIsts
+- Batch load of child items on Maps and References. Ensure testing of non-parameterized classes too.
 - Document batch loading
 - Ensure batch loading option exists in AerospikeReference Configuration
 - handle object graph circularities (A->B->C). Be careful of: A->B(Lazy), A->C->B: B should end up fully hydrated in both instances, not lazy in both instances

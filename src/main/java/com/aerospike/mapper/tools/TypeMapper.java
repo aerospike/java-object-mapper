@@ -10,7 +10,7 @@ public abstract class TypeMapper {
 	 * @param isExpectedType
 	 * @return
 	 */
-	public Object toAerospikeFormat(Object value, boolean isExpectedType) {
+	public Object toAerospikeFormat(Object value, boolean isUnknownType, boolean isSubclassOfKnownType) {
 		return toAerospikeFormat(value);
 	}
 }

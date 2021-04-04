@@ -1,7 +1,9 @@
 package com.aerospike.mapper.tools.mappers;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import com.aerospike.client.AerospikeException;
 import com.aerospike.client.Value;
@@ -11,10 +13,10 @@ import com.aerospike.mapper.tools.AeroMapper;
 import com.aerospike.mapper.tools.ClassCache;
 import com.aerospike.mapper.tools.ClassCacheEntry;
 import com.aerospike.mapper.tools.DeferredObjectLoader.DeferredObject;
-import com.aerospike.mapper.tools.TypeMapper;
 
 public class ObjectReferenceMapper extends ObjectMapper {
 
+	// Package visibility
 	private final ClassCacheEntry<?> referencedClass;
 	private final AeroMapper mapper;
 	private final boolean lazy;
@@ -35,11 +37,11 @@ public class ObjectReferenceMapper extends ObjectMapper {
 	
 	@Override
 	public Object toAerospikeFormat(Object value) {
-		return toAerospikeFormat(value, true);
+		return toAerospikeFormat(value, false, false);
 	}
 	
 	@Override
-	public Object toAerospikeFormat(Object value, boolean expectedType) {
+	public Object toAerospikeFormat(Object value, boolean isUnknownType, boolean isSubclassOfKnownType) {
 		if (value == null) {
 			return null;
 		}
@@ -50,17 +52,23 @@ public class ObjectReferenceMapper extends ObjectMapper {
 		}
 		else {
 			classToUse = ClassCache.getInstance().loadClass(value.getClass(), mapper);
-			expectedType = false;
+			isSubclassOfKnownType = true;
 		}
 		Object key = classToUse.getKey(value);
 		if (ReferenceType.DIGEST.equals(type)) {
 			key = Crypto.computeDigest(classToUse.getSetName(), Value.get(key));
 		}
-		if (/*classToUse.isChildClass() || */ !expectedType) {
+		if (isSubclassOfKnownType || isUnknownType) {
 			// Need to put the class name in the key so we can recreate the class
 			List<Object> keyParts = new ArrayList<>();
 			keyParts.add(key);
-			keyParts.add(classToUse.getShortenedClassName());
+			if (isUnknownType) {
+				// Must put in an identifier to mark this as an unknown type
+				keyParts.add(ClassCacheEntry.TYPE_PREFIX + classToUse.getShortenedClassName());
+			}
+			else {
+				keyParts.add(classToUse.getShortenedClassName());
+			}
 			return keyParts;
 		}
 		return key;
@@ -78,21 +86,22 @@ public class ObjectReferenceMapper extends ObjectMapper {
 		if (value instanceof List) {
 			List<?> list = (List<?>)value;
 			key = list.get(0);
-			classToUse = ClassCache.getInstance().getCacheEntryFromStoredName((String)list.get(1));
+			String typeName = (String) list.get(1);
+			if (typeName.startsWith(ClassCacheEntry.TYPE_PREFIX)) {
+				typeName = typeName.substring(ClassCacheEntry.TYPE_PREFIX.length());
+			}
+			classToUse = ClassCache.getInstance().getCacheEntryFromStoredName(typeName);
 		}
 		else {
 			key = value;
 		}
 		
 		if (this.lazy) {
-			Object instance;
-			try {
-				instance = classToUse.getUnderlyingClass().newInstance();
-				classToUse.setKey(instance, key);
-				return instance;
-			} catch (InstantiationException | IllegalAccessException e) {
-				throw new AerospikeException(e);
-			}
+//				Object instance = classToUse.getUnderlyingClass().newInstance();
+			Map<String, Object> map = new HashMap<>();
+			Object instance = classToUse.constructAndHydrate(map);
+			classToUse.setKey(instance, key);
+			return instance;
 		}
 		else if (allowBatch) {
 			DeferredObject defObject = new DeferredObject(key, classToUse.getUnderlyingClass(), ReferenceType.DIGEST.equals(type));

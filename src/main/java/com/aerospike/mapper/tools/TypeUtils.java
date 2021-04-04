@@ -267,29 +267,31 @@ public class TypeUtils {
 						}
 					}
 					else {
-						for (Annotation annotation : type.getAnnotations()) {
-							if (annotation.annotationType().equals(AerospikeReference.class)) {
-								if (typeMapper != null) {
-									throwError = true;
-									break;
+						if (type.getAnnotations() != null) {
+							for (Annotation annotation : type.getAnnotations()) {
+								if (annotation.annotationType().equals(AerospikeReference.class)) {
+									if (typeMapper != null) {
+										throwError = true;
+										break;
+									}
+									else {
+										AerospikeReference ref = (AerospikeReference)annotation;
+										typeMapper = new ObjectReferenceMapper(ClassCache.getInstance().loadClass(clazz, mapper), ref.lazy(), ref.batchLoad(), ref.type(), mapper);
+										addToMap = false;
+									}
 								}
-								else {
-									AerospikeReference ref = (AerospikeReference)annotation;
-									typeMapper = new ObjectReferenceMapper(ClassCache.getInstance().loadClass(clazz, mapper), ref.lazy(), ref.batchLoad(), ref.type(), mapper);
-									addToMap = false;
-								}
-							}
-							if (annotation.annotationType().equals(AerospikeEmbed.class)) {
-								AerospikeEmbed embed = (AerospikeEmbed)annotation;
-								if (typeMapper != null) {
-									throwError = true;
-									break;
-								}
-								else {
-									EmbedType embedType = isForSubType ? embed.elementType() : embed.type();
-									boolean skipKey = isForSubType && (embed.type() == EmbedType.MAP && embed.elementType() == EmbedType.LIST && (!embed.saveKey()));
-									typeMapper = new ObjectEmbedMapper(clazz, embedType, mapper, skipKey);
-									addToMap = false;
+								if (annotation.annotationType().equals(AerospikeEmbed.class)) {
+									AerospikeEmbed embed = (AerospikeEmbed)annotation;
+									if (typeMapper != null) {
+										throwError = true;
+										break;
+									}
+									else {
+										EmbedType embedType = isForSubType ? embed.elementType() : embed.type();
+										boolean skipKey = isForSubType && (embed.type() == EmbedType.MAP && embed.elementType() == EmbedType.LIST && (!embed.saveKey()));
+										typeMapper = new ObjectEmbedMapper(clazz, embedType, mapper, skipKey);
+										addToMap = false;
+									}
 								}
 							}
 						}

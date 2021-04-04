@@ -73,7 +73,7 @@ public class ListMapper extends TypeMapper {
 				}
 				else {
 					TypeMapper thisMapper = TypeUtils.getMapper(obj.getClass(), null, mapper);
-					return thisMapper == null ? obj : thisMapper.toAerospikeFormat(obj, false);
+					return thisMapper == null ? obj : thisMapper.toAerospikeFormat(obj, true, false);
 				}
 			}
 			else {
@@ -82,7 +82,7 @@ public class ListMapper extends TypeMapper {
 				}
 				else {
 					// This class must be a subclass of the annotated type
-					return this.instanceClassMapper.toAerospikeFormat(obj, false);
+					return this.instanceClassMapper.toAerospikeFormat(obj, false, true);
 				}
 			}
 		}
@@ -94,7 +94,7 @@ public class ListMapper extends TypeMapper {
 			}
 			else {
 				// This class must be a subclass of the annotated type
-				item = this.instanceClassMapper.toAerospikeFormat(obj, false);
+				item = this.instanceClassMapper.toAerospikeFormat(obj, false, true);
 			}
 			return new AbstractMap.SimpleEntry<Object, Object>(key, item);
 		}
@@ -124,7 +124,7 @@ public class ListMapper extends TypeMapper {
 				}
 				else {
 					// This class must be a subclass of the annotated type
-					item = this.instanceClassMapper.toAerospikeFormat(obj, false);
+					item = this.instanceClassMapper.toAerospikeFormat(obj, false, true);
 				}
 				results.put(key, item);
 			}
@@ -133,6 +133,24 @@ public class ListMapper extends TypeMapper {
 		}
 	}
 
+	private Class<?> getClassToUse(Object obj) {
+		if (List.class.isAssignableFrom(obj.getClass())) {
+			List<Object> list = (List<Object>) obj;
+			int lastElementIndex = list.size()-1;
+			if ((!list.isEmpty()) && (list.get(lastElementIndex) instanceof String)) {
+				String lastElement = (String)list.get(lastElementIndex);
+				if (lastElement.startsWith(ClassCacheEntry.TYPE_PREFIX)) {
+					String className = lastElement.substring(ClassCacheEntry.TYPE_PREFIX.length());
+					ClassCacheEntry<?> thisClass = ClassCache.getInstance().getCacheEntryFromStoredName(className);
+					if (thisClass != null) {
+						return thisClass.getUnderlyingClass();
+					}
+				}
+			}
+		}
+		return obj.getClass();
+	}
+	
 	public Object fromAerospikeInstanceFormat(Object obj) {
 		if (embedType == null || embedType == EmbedType.LIST) {
 			if (instanceClass == null) {
@@ -141,7 +159,7 @@ public class ListMapper extends TypeMapper {
 					return null;
 				}
 				else {
-					TypeMapper thisMapper = TypeUtils.getMapper(obj.getClass(), AnnotatedType.getDefaultAnnotateType(), mapper);
+					TypeMapper thisMapper = TypeUtils.getMapper(getClassToUse(obj), AnnotatedType.getDefaultAnnotateType(), mapper);
 					return thisMapper == null ? obj : thisMapper.fromAerospikeFormat(obj);
 				}
 			}
@@ -172,14 +190,32 @@ public class ListMapper extends TypeMapper {
 
 			if (instanceClass == null) {
 				// We don't have any hints as to how to translate them, we have to look up each type
+				int index = 0;
 				for (Object obj : list) {
 					if (obj == null) {
 						results.add(null);
 					}
 					else {
-						TypeMapper thisMapper = TypeUtils.getMapper(obj.getClass(), AnnotatedType.getDefaultAnnotateType(), mapper);
-						results.add(thisMapper == null ? obj : thisMapper.fromAerospikeFormat(obj));
+						TypeMapper thisMapper = TypeUtils.getMapper(getClassToUse(obj), AnnotatedType.getDefaultAnnotateType(), mapper);
+						Object result = thisMapper == null ? obj : thisMapper.fromAerospikeFormat(obj);
+						if (result instanceof DeferredObject) {
+							final int thisIndex = index;
+							DeferredSetter setter = new DeferredSetter() {
+								@Override
+								public void setValue(Object object) {
+									results.set(thisIndex, object);
+								}
+							};
+							DeferredObjectSetter objectSetter = new DeferredObjectSetter(setter, (DeferredObject)result);
+							DeferredObjectLoader.add(objectSetter);
+							// add a placeholder to maintain the index
+							results.add(null);
+						}
+						else {
+							results.add(result);
+						}
 					}
+					index++;
 				}
 			}
 			else {

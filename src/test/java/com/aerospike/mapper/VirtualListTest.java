@@ -51,6 +51,8 @@ public class VirtualListTest extends AeroMapperBaseTest {
 		public long date;
 		public C thisC;
 		public List<C> Cs;
+		public List<C> otherCs;
+		public C anonC;
 		
 		@AerospikeConstructor
 		public B(@ParamFrom("id") int id, @ParamFrom("name") String name, @ParamFrom("date") long date) {
@@ -59,13 +61,16 @@ public class VirtualListTest extends AeroMapperBaseTest {
 			this.name = name;
 			this.date = date;
 			this.Cs = new ArrayList<>();
+			this.otherCs = new ArrayList<>();
 		}
 
 		public B(int id, String name, long date, C thisC, C ... listCs) {
 			this(id, name, date);
 			this.thisC = thisC;
+			this.anonC = thisC;
 			for (C aC : listCs) {
 				this.Cs.add(aC);
+				this.otherCs.add(aC);
 			}
 		}
 
@@ -114,13 +119,13 @@ public class VirtualListTest extends AeroMapperBaseTest {
 			if (id != b2.id || date != b2.date) {
 				return false;
 			}
-			return compare(name, b2.name) && compare(thisC, b2.thisC) && compare(Cs, b2.Cs);
+			return compare(name, b2.name) && compare(thisC, b2.thisC) && compare(Cs, b2.Cs) && compare(otherCs, b2.otherCs) && compare(anonC, b2.anonC);
 		}
 	}
 	
 	@AerospikeRecord(namespace = "test", set = "A")
 	public static class A {
-		@AerospikeEmbed(type = EmbedType.MAP, elementType = EmbedType.LIST)
+		@AerospikeEmbed(type = EmbedType.MAP, elementType = EmbedType.MAP)
 		public List<B> elements;
 		
 		@AerospikeKey 
