@@ -1661,7 +1661,7 @@ Top level is an array of classes. Each class has:
  - **shortName**: When this class name must be stored in the database, this is the name to store instead of the full class names. This is used particularly for sub-classes. For example, if an Account class has a Checking class and Savings class as subclasses, an object might store a reference to an Account (compiled type of Account), but this really is a Checking account (runtime type of Checking). If the reference to the account is persisted, a list storing the key and the type will be saved, and this name will be used as the type.
  - **key**: a [key structure](key-structure), specified below
  - **bins**: a list of [bin structure](bin-structure), specified below
- - **version**: The version of the record. Must be an integer with a positive value. If not specified, will default to 1. See [Versioning Links](versioning-links) for more details. 
+ - **version**: The version of the record. Must be an integer with a positive value. If not specified, will default to 1. See [Versioning Links](#versioning-lists) for more details. 
  
 #### Key Structure
  The key structure contains:
@@ -1672,13 +1672,13 @@ Top level is an array of classes. Each class has:
  
 #### Bin Structure
 The bin structure contains:
-- **embed**: An [embed structure](embed-structure) used for specifying that the contents of this bin should be included in the parent record, rather than being a reference to a child record. There can only be one embed structure per field, and if an embed structure is present, a [reference structure](reference-structure) cannot be. If a field refers to another AerospikeRecord, either in a collection or in it's own right, and neither an embed or reference structure is specified, a reference will be assumed by default.
+- **embed**: An [embed structure](#embed-structure) used for specifying that the contents of this bin should be included in the parent record, rather than being a reference to a child record. There can only be one embed structure per field, and if an embed structure is present, a [reference structure](#reference-structure) cannot be. If a field refers to another AerospikeRecord, either in a collection or in it's own right, and neither an embed or reference structure is specified, a reference will be assumed by default.
 - **exclude**: A boolean value as to whether this bin should be mapped to the database. Defaults to true.
 - **field**: The name of the field which to which this bin is mapped. If this is provided, the getter and setter cannot be provided.
 - **getter**: The getter method used to populate the bin. This must be used in conjunction with a setter method, and excludes the use of the field attribute.
 - **name**: The name of the bin to map to. If this is not provided and a field is, this will default to the field name. The name must be provided if this bin maps to a getter/setter combination.
 - **ordinal**: For items mapped as lists, this ordinal specifies the location of this bin in the list. If this is not provided, the position of the bins in the list will be determined by alphabetical ordering.
-- **reference**: A [reference structure](reference-structure) detailing that a child object referenced by this bin should be stored as the key of the child rather than embedding it in the parent object. The use of a reference precludes the use of the embed attribute, and if neither is specified then reference is assumed as the default.
+- **reference**: A [reference structure](#reference-structure) detailing that a child object referenced by this bin should be stored as the key of the child rather than embedding it in the parent object. The use of a reference precludes the use of the embed attribute, and if neither is specified then reference is assumed as the default.
 - **setter**: The setter method used to map data back to the Java POJO. This is used in conjunction with the getter method and precludes the use of the field attribute. Note that the return type of the getter must match the type of the first parameter of the setter, and the setter can have either 1 or 2 parameters, with the second (optional) parameter being either of type [com.aerospike.client.Key](https://www.aerospike.com/apidocs/java/com/aerospike/client/Key.html) or Object.
  
 #### Key Structure
