@@ -191,6 +191,8 @@ The Builder constructor simply takes an IAerospikeClient which it uses for acces
 
 `withConfigurationFile`: Whilst mapping information from POJOs via annotations is efficient and has the mapping code inline with the POJO code, there are times when this is not available. For example, if an external library with POJOs is being used and it is desired to map those POJOs to the database, there is no easy way of annotating the source code. Another case this applies is if different mapping parameters are needed between different environments. For example, embedded objects might be stored in a map in development for ease of debugging, but stored in a list in production for compaction of stored data. In these cases an external configuration YAML file can be used to specify how to map the data to the database. See [External Configuration File](#external-configuration-file) for more details. There is an overload of this method which takes an additional boolean parameter -- if this is `true` and the configuration file is not valid, errors will be logged to `stderr` and the process continue. It is normally not recommended to set this parameter to true.
 
+If multiple configuration files are used and the same class is defined in multiple configuration files, the definitions in the first configuration file for a class will be used. 
+
 `withConfiguration`: Similar to the `withConfigurationFile` above, this allows configuration to be externally specified. In this case, the configuration is passed as a YAML string.
 
 `withReadPolicy`, `withWritePolicy`, `withBatchPolicy`, `withScanPolicy`, `withQueryPolicy`: This allows setting of the appropriate policy type. The following discussion uses read policies, but applies equally to all the other policies.
@@ -1034,7 +1036,77 @@ Multiple ordinals can be specified for a single class, but these must be sequent
   
 #### The importance of Generic Types
 
-When using the object mapper, it is important to 
+When using the object mapper, it is important to use generics to describe the types as fully as possible. For example instead of `List accounts;` this should be `List<Account> accounts;`. Not only is this best practices for Java, but it gives the AeroMapper hints about what is mapped so it can optimize the type and minimize the amount of reflection needed at runtime and hence minimize the performance cost. 
+
+For example, assume there is a mapped type "B", and another "A" which has a list of B's:
+
+```java
+@AerospikeRecord(namespace = "test", set = "A")
+public static class A {
+	@AerospikeKey
+	public int id;
+	public List<B> listB;
+	
+	public A() {
+		listB = new ArrayList<>();
+	}
+}
+
+@AerospikeRecord(namespace = "test", set = "B")
+public static class B {
+	@AerospikeKey
+	public int id;
+	public String name;
+}
+```
+
+In this case, the AeroMapper knows that the `listB` object contains either B's or sub-classes of B's. If they're B's, it knows the type (it assumes they're of the declared type by default) and hence needs no extra information to describe it. If an element is a subclass of B it would include the type name in the object reference. In this case we store a B:
+
+```java
+	B b = new B();
+	b.id = 2;
+	b.name = "test";
+	mapper.save(b);
+	
+	A a = new A();
+	a.id = 1;
+	a.listB.add(b);
+	mapper.save(a);
+```
+
+
+But in this case, the object is of the declared type (B) so this needs no type information. Hence, the object stored in the database is:
+
+```
+id: 1
+listB: LIST('[2]')
+```
+
+However, if the class A was declared as:
+
+```java
+public static class A {
+	@AerospikeKey
+	public int id;
+	public List listB;
+	
+	
+	public A() {
+		listB = new ArrayList<>();
+	}
+}
+```
+
+(Note the only difference is that the `List<B> listB` has now become `List listB`).
+
+In this case, the AeroMapper no longer has any type information so it needs to store full type information against each element in the list:
+
+```
+id: 1
+listB: LIST('[[2, "@T:B"]]')
+```
+
+Note that the element is annotated with `@T:` and the short name of the type. (The short name of the type must be unique within the system, and can be changed using the `shortName` attribute of the `AerospikeRecord` annotation.
 
 ----
 
@@ -1575,37 +1647,83 @@ classes:
         name: data
 ```
  
- The structure of the file is: 
+### File Structure
+The structure of the file is: 
  
- Top level is an array of classes. Each class has:
- - **class**: the name of the class. This must match the full class name to which you want to apply the configuration
- - **namespace**: The namespace to map this class to. Can be unspecified if the class is only ever used for embedding in another object
- - **set**: The set to map this class to. Can be unspecified if the class is only ever used for embedding in another object
- - **durableDelete** (boolean): If set to `true`, any deletes on this class will use [durable deletes](https://www.aerospike.com/docs/guide/durable_deletes.html). If not set, it will use the flag from the policy for this class
+Top level is an array of classes. Each class has:
+- **class**: the name of the class. This must match the full class name to which you want to apply the configuration
+- **namespace**: The namespace to map this class to. Can be unspecified if the class is only ever used for embedding in another object
+- **set**: The set to map this class to. Can be unspecified if the class is only ever used for embedding in another object
+- **durableDelete** (boolean): If set to `true`, any deletes on this class will use [durable deletes](https://www.aerospike.com/docs/guide/durable_deletes.html). If not set, it will use the flag from the policy for this class
  - **mapAll** (boolean, default `true`): If true, all fields of this class will automatically be mapped to the database. Fields can be excluded using `exclude` on the bin config. If this is set to false, only the fields specified with an explicit bin configuration will be stored.
  - **sendKey** (boolean): If true, the key of the record will be stored in Aerospike. See [send key](https://www.aerospike.com/docs/guide/policies.html#send-key) for more details. If this is false, the key will not be stored in Aerospike. If not set, the `sendKey` field from the policy will be used.
  - **ttl**: the time to live for the record, mapped to the expiration time on the policy. If not set, the expiration from the policy will be used.
  - **shortName**: When this class name must be stored in the database, this is the name to store instead of the full class names. This is used particularly for sub-classes. For example, if an Account class has a Checking class and Savings class as subclasses, an object might store a reference to an Account (compiled type of Account), but this really is a Checking account (runtime type of Checking). If the reference to the account is persisted, a list storing the key and the type will be saved, and this name will be used as the type.
- - **key**: a key structure, specified below
- - **bins**: a list of bin structure, specified below
+ - **key**: a [key structure](key-structure), specified below
+ - **bins**: a list of [bin structure](bin-structure), specified below
+ - **version**: The version of the record. Must be an integer with a positive value. If not specified, will default to 1. See [Versioning Links](versioning-links) for more details. 
  
+#### Key Structure
  The key structure contains:
  - **field**: the field for the key. Can be unspecified if methods are being used for the key
  - **getter**: the name of the method to be used as the getter for the key. 
  - **setter**: the name of the method to be used as the setter for the key. This is optional -- if lazy loading of referenced objects is used, a setter must be specified for the child class if a getter is
  Note that either a field should be specified, or a getter (potentially with a setter). Using both a field and a getter will throw an error. Also note that the method is specified by names only, not parameters so it is a good idea to us a unique method. 
  
- The bin structure contains:
- - **embed**:
- - **exclude**:
- - **field**:
- - **getter**:
- - **name**:
- - **ordinal**:
- - **reference**:
- - **setter**:
+#### Bin Structure
+The bin structure contains:
+- **embed**: An [embed structure](embed-structure) used for specifying that the contents of this bin should be included in the parent record, rather than being a reference to a child record. There can only be one embed structure per field, and if an embed structure is present, a [reference structure](reference-structure) cannot be. If a field refers to another AerospikeRecord, either in a collection or in it's own right, and neither an embed or reference structure is specified, a reference will be assumed by default.
+- **exclude**: A boolean value as to whether this bin should be mapped to the database. Defaults to true.
+- **field**: The name of the field which to which this bin is mapped. If this is provided, the getter and setter cannot be provided.
+- **getter**: The getter method used to populate the bin. This must be used in conjunction with a setter method, and excludes the use of the field attribute.
+- **name**: The name of the bin to map to. If this is not provided and a field is, this will default to the field name. The name must be provided if this bin maps to a getter/setter combination.
+- **ordinal**: For items mapped as lists, this ordinal specifies the location of this bin in the list. If this is not provided, the position of the bins in the list will be determined by alphabetical ordering.
+- **reference**: A [reference structure](reference-structure) detailing that a child object referenced by this bin should be stored as the key of the child rather than embedding it in the parent object. The use of a reference precludes the use of the embed attribute, and if neither is specified then reference is assumed as the default.
+- **setter**: The setter method used to map data back to the Java POJO. This is used in conjunction with the getter method and precludes the use of the field attribute. Note that the return type of the getter must match the type of the first parameter of the setter, and the setter can have either 1 or 2 parameters, with the second (optional) parameter being either of type [com.aerospike.client.Key](https://www.aerospike.com/apidocs/java/com/aerospike/client/Key.html) or Object.
  
-  
+#### Key Structure
+The key structure is used to specify the key to a record. Keys are optional in some situations. For example, if Object A embeds an Object B, B does not need a key as it is not stored in Aerospike in its own right.
+
+The key structure contains:
+- **field**: The name of the field which to which this key is mapped. If this is provided, the getter and setter cannot be provided.
+- **getter**: The getter method used to populate the key. This must be used in conjunction with a setter method, and excludes the use of the field attribute.
+- **setter**: The setter method used to map data back to the Java key. This is used in conjunction with the getter method and precludes the use of the field attribute. Note that the return type of the getter must match the type of the first parameter of the setter, and the setter can have either 1 or 2 parameters, with the second (optional) parameter being either of type [com.aerospike.client.Key](https://www.aerospike.com/apidocs/java/com/aerospike/client/Key.html) or Object.
+
+#### Embed Structure
+The embed structure is used when a child object should be fully contained in the parent object without needing to be stored in the database as a separate record. For example, it might be that Customer object contains an Address, but the Address is not stored in a separate table in Aerospike, but rather put into the database as part of the customer record.
+
+The Embed structure contains:
+- **type**: The type of the top level reference. If this is just a reference to another object, eg 
+
+```java
+public class Customer {
+	...
+	@AerospikeEmbed
+	Address address;
+```
+
+then the type refers to how the child will be stored in the parent. There are 2 options: LIST or MAP. Maps are more readable in that each bin in the child object is named, but this name consumes space in the database and hence this is the less efficient storage structure.
+
+If the top level reference is a container class (List or Map), then this type refers to how the list or map is represented in the database. For example, 
+
+```java
+public class Customer {
+	...
+	List<Address> address;
+```
+
+If this has a type of LIST, then the addresses in Aerospike will be stored in a list. Lists preserve the ordering in the original list. However, it can also be stored as a MAP, in which case the key of the sub-object (Address in this case) becomes the map key and the elements become the value in the map. In this case the list ordering is NOT preserved upon retrieval -- the map elements are stored in a K_ORDERED map, so the elements will be returned sorted by their key.
+
+- **elementType**:  If the top level reference is a container (List or Map), this type specifies how the children objects are to be stored in Aerospike. For example, if `type = MAP` and `elementType = LIST` for the list of Customers in the above example, the bin in Aerospike will contain a K_ORDERED map, each of which will have an Address as the value, and the elements of the address will be stored in a list.
+
+- **saveKey**: Boolean, defaults to false. This is useful when storing a list of elements as a LIST inside a MAP. Given the map key is the key of the record, it is often redundant to have the key stored separately in the list of values for the underlying object. However, if it is desired to have the key again in the list, set this value to true.
+
+#### Reference Structure
+The reference structure is used when the object being referenced is not to be embedded in the owning object, but rather is to be stored in a separate table. 
+- **lazy**: Boolean, defaults to false. When the parent object is loaded, references marked as lazy are NOT loaded. Instead a placeholder object is created with only the primary key information populated, so those objects can be loaded later.
+- **batchLoad**: Boolean, defaults to true. When the parent object is loaded, all non-lazy children will also be loaded. If there are several children, it is more efficient to load them from the database using a batch load. if this flag is set to false, children will not be loaded via a batch load. Note that if the parent object has 2 or less children to load, it will single thread the batch load as this is typically more performant than doing a very small batch. Otherwise the batchPolicy on the parent class will dictate how many nodes are hit in the batch at once.
+- **type**: Either ID or DIGEST, defaults to ID. The ID option stores the primary key of the referred object in the referencer, the DIGEST stores the digest instead. Note that DIGEST is not compatible with `lazy=true` as there is nowhere to store the digest. (For example, if the primary key of the object is a long, the digest is 20 bytes, without dynamically creating proxies or subtypes at runtime there is nowhere to store these 20 bytes. Dynamically creating objects like this is not performant so is not allowed).
+
 ## Virtual Lists
 
 When mapping a Java object to Aerospike the most common operations to do are to save the whole object and load the whole object. The AeroMapper is set up primarily for these use cases. However, there are cases where it makes sense to manipulate objects directly in the database, particularly when it comes to manipulating lists and maps. This functionality is provided via virtual lists.  
@@ -1614,13 +1732,9 @@ When mapping a Java object to Aerospike the most common operations to do are to 
 
 ## To finish
 - Document virtual lists
-- Validate some of the limits, eg bin name length, set name length, etc.
-- Make all maps (esp Embedded ones) K_ORDERED
 - Add interface to adaptiveMap, including changing EmbedType
 - Document all parameters to annotations and examples of types
 - Document enums, dates, instants.
-- Document configuration file. 
-- Document creation of builder -- multiple configuration files are allowed, if the same class is declared in both the first one encountered wins. 
 - Document methods with 2 parameters for keys and setters, the second one either a Key or a Value
 - Document subclasses and the mapping to tables + references stored as lists
 - Batch load of child items on Maps and References. Ensure testing of non-parameterized classes too.
