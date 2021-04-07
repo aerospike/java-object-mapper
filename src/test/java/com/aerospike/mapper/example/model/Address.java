@@ -5,6 +5,7 @@ import com.aerospike.mapper.annotations.AerospikeKey;
 import com.aerospike.mapper.annotations.AerospikeRecord;
 import com.aerospike.mapper.annotations.ParamFrom;
 
+// Addresses are only ever embedded in parent records, so do not need information to map to Aerospike.
 @AerospikeRecord
 public class Address {
 	@AerospikeKey

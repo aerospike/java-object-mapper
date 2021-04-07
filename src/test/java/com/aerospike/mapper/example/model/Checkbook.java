@@ -8,9 +8,9 @@ import com.aerospike.mapper.annotations.ParamFrom;
 
 @AerospikeRecord(namespace = "test", set = "chkbook")
 public class Checkbook {
-	private final String acctId;
-	private final long first;
-	private final long last;
+	private String acctId;
+	private long first;
+	private long last;
 	private final Date issued;
 	private boolean recalled;
 	private Branch issuer;
@@ -51,6 +51,7 @@ public class Checkbook {
 		this.issuer = issuer;
 	}
 	
+	/* The checkbook class does not have a key in it's own right, it uses a composite key */
 	@AerospikeKey
 	public String getKey() {
 		return String.format("%s-%d-%d", acctId, first, last);
@@ -59,6 +60,9 @@ public class Checkbook {
 	@AerospikeKey(setter = true) 
 	public void setKey(String key) {
 		int index = key.lastIndexOf('-');
-		
+		this.last = Long.parseLong(key.substring(index+1));
+		int firstIndex = key.lastIndexOf('-', index-1);
+		this.first = Long.parseLong(key.substring(firstIndex+1, index));
+		this.acctId = key.substring(0, firstIndex);
 	}
 }
