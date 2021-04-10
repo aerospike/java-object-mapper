@@ -12,7 +12,7 @@ public class Address {
 	private String line1;
 	private String line2;
 	private String city;
-	private char[] state;
+	private String state;
 	@AerospikeBin(name = "zip")
 	private String zipCode;
 	
@@ -20,7 +20,7 @@ public class Address {
 			@ParamFrom("line1") String line1, 
 			@ParamFrom("line2") String line2, 
 			@ParamFrom("city") String city, 
-			@ParamFrom("state") char[] state, 
+			@ParamFrom("state") String state, 
 			@ParamFrom("zip") String zipCode) {
 		super();
 		this.line1 = line1;
@@ -48,10 +48,10 @@ public class Address {
 	public void setCity(String city) {
 		this.city = city;
 	}
-	public char[] getState() {
+	public String getState() {
 		return state;
 	}
-	public void setState(char[] state) {
+	public void setState(String state) {
 		this.state = state;
 	}
 	public String getZipCode() {

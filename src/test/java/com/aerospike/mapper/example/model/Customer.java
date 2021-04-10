@@ -9,6 +9,7 @@ import com.aerospike.mapper.annotations.AerospikeEmbed;
 import com.aerospike.mapper.annotations.AerospikeKey;
 import com.aerospike.mapper.annotations.AerospikeRecord;
 import com.aerospike.mapper.annotations.ParamFrom;
+import com.aerospike.mapper.example.model.accounts.Account;
 
 @AerospikeRecord(namespace = "test", set = "customer")
 public class Customer {
@@ -28,6 +29,11 @@ public class Customer {
 	@AerospikeBin(name = "dob")
 	private Date dateOfBirth;
 	private String phone;
+	private Date joinedBank;
+	private boolean vip;
+	@AerospikeBin(name = "greet")
+	private String preferredSaluation;
+	
 	
 	public Customer(@ParamFrom("id") String customerId, @ParamFrom("firstName") String firstName, @ParamFrom("lastName") String lastName) {
 		super();
@@ -88,6 +94,28 @@ public class Customer {
 	public void setPhone(String phone) {
 		this.phone = phone;
 	}
-	
-	
+
+	public Date getJoinedBank() {
+		return joinedBank;
+	}
+
+	public void setJoinedBank(Date joinedBank) {
+		this.joinedBank = joinedBank;
+	}
+
+	public boolean isVip() {
+		return vip;
+	}
+
+	public void setVip(boolean vip) {
+		this.vip = vip;
+	}
+
+	public String getPreferredSaluation() {
+		return preferredSaluation;
+	}
+
+	public void setPreferredSaluation(String preferredSaluation) {
+		this.preferredSaluation = preferredSaluation;
+	}
 }

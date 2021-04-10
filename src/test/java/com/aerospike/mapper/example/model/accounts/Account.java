@@ -1,4 +1,4 @@
-package com.aerospike.mapper.example.model;
+package com.aerospike.mapper.example.model.accounts;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -11,6 +11,8 @@ import com.aerospike.mapper.annotations.AerospikeEmbed;
 import com.aerospike.mapper.annotations.AerospikeKey;
 import com.aerospike.mapper.annotations.AerospikeRecord;
 import com.aerospike.mapper.annotations.ParamFrom;
+import com.aerospike.mapper.example.model.Address;
+import com.aerospike.mapper.example.model.Checkbook;
 
 @AerospikeRecord(namespace = "test", set = "account")
 public class Account {
@@ -18,6 +20,7 @@ public class Account {
 	@AerospikeBin(name = "id")
 	private final String accountId;
 	private final String title;
+	private final AccountType type;
 
 	@AerospikeBin(name = "custId")
 	private final String customerId;
@@ -48,11 +51,12 @@ public class Account {
 	@AerospikeBin(name = "lstLgn")
 	private Date lastLogin;
 	
-	public Account(@ParamFrom("id") String accountId, @ParamFrom("custId") String customerId, @ParamFrom("title") String title) {
+	public Account(@ParamFrom("id") String accountId, @ParamFrom("custId") String customerId, @ParamFrom("title") String title, @ParamFrom("type") AccountType type) {
 		super();
 		this.accountId = accountId;
 		this.title = title;
 		this.customerId = customerId;
+		this.type = type;
 		
 		alternateAddresses = new ArrayList<>();
 		checkbooks = new HashMap<>();
@@ -137,5 +141,8 @@ public class Account {
 		this.mailingAddress = mailingAddress;
 	}
 	
+	public AccountType getType() {
+		return type;
+	}
 	
 }

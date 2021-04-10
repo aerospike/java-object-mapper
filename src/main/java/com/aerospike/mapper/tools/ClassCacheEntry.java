@@ -366,6 +366,12 @@ public class ClassCacheEntry<T> {
 		this.constructorParamBins = new String[params.length];
 		this.constructorParamDefaults = new Object[params.length];
 			
+		Map<String, ValueType> allValues = new HashMap<>();
+		ClassCacheEntry<?> current = this;
+		while (current != null) {
+			allValues.putAll(current.values);
+			current = current.superClazz;
+		}
 		int count = 0;
 		for (Parameter thisParam : params) {
 			count++;
@@ -377,13 +383,13 @@ public class ClassCacheEntry<T> {
 			String binName = parameterDetails.value();
 			
 			// Validate that we have such a value
-			if (!values.containsKey(binName)) {
+			if (!allValues.containsKey(binName)) {
 				String valueList = String.join(",", values.keySet());
 				throw new AerospikeException("Class " + clazz.getSimpleName() + " has a preferred constructor of " + desiredConstructor.toString()+ ". However, parameter " + count + 
 						" is mapped to bin \"" + binName + "\" which is not one of the values on the class, which are: " + valueList);
 			}
 			Class<?> type = thisParam.getType();
-			if (!type.isAssignableFrom(values.get(binName).getType())) {
+			if (!type.isAssignableFrom(allValues.get(binName).getType())) {
 				throw new AerospikeException("Class " + clazz.getSimpleName() + " has a preferred constructor of " + desiredConstructor.toString()+ ". However, parameter " + count + 
 						" is of type " + type + " but assigned from bin \"" + binName + "\" of type " +values.get(binName).getType()+ ". These types are incompatible.");
 			}

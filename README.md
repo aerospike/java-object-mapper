@@ -1742,4 +1742,4 @@ When mapping a Java object to Aerospike the most common operations to do are to 
 - Ensure batch loading option exists in AerospikeReference Configuration
 - handle object graph circularities (A->B->C). Be careful of: A->B(Lazy), A->C->B: B should end up fully hydrated in both instances, not lazy in both instances
 - Consider the items on virtual list which return a list to be able to return a map as well (ELEMENT_LIST, ELEMENT_MAP) 
-- Test if map supports lazy loading of referenced objects.
+- Test a constructor which requires a sub-object. For example, Account has a Property, Property has an Address. All 3 a referenced objects. Constructor for Property requires Address
