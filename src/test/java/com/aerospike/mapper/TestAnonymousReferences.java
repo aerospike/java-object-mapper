@@ -41,12 +41,12 @@ public class TestAnonymousReferences extends AeroMapperBaseTest {
 		AeroMapper mapper = new AeroMapper.Builder(client).build();
 		B b = new B();
 		b.id = 2;
-		b.name = "test";
+		b.name = "a B";
 		mapper.save(b);
 
 		B b1 = new B();
-		b1.id = 2;
-		b1.name = "test";
+		b1.id = 3;
+		b1.name = "another B";
 		mapper.save(b1);
 
 		A a = new A();

@@ -158,16 +158,7 @@ public class VirtualListTest extends AeroMapperBaseTest {
 
 		AeroMapper mapper = new AeroMapper.Builder(client).build();
 		mapper.save(collection);
-		mapper.save(a);
-		mapper.save(b);
-		mapper.save(c);
-		mapper.save(d);
-		mapper.save(e);
-		mapper.save(f);
-		mapper.save(g);
-		mapper.save(h);
-		mapper.save(i);
-		mapper.save(j);
+		mapper.save(a,b,c,d,e,f,g,h,i,j);
 		
 		VirtualList<B> list = mapper.asBackedList(collection, "elements", B.class);
 //		list.append(new CollectionElement(103, "tom", 45678));

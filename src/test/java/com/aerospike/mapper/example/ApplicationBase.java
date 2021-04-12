@@ -96,6 +96,9 @@ public class ApplicationBase {
 
 	protected Property createAndPopulateProperty2() {
 		Property property = new Property(11567724, new Address("333 Bob Jones Street", null, "Seattle", "WA", "23152"), 1955, "Brick");
+		property
+			.addValuation(new Valuation(new Date(), 550000, 4000, "Don's Valuers", 56367, new Address("67 Dartmouth Cl", null, "Chicago", "IL", "43252")))
+			.addValuation(new Valuation(new Date(), 563000, 3000, "Tim's Valuers", 34245, null));
 		return property;
 	}
 
@@ -107,7 +110,7 @@ public class ApplicationBase {
 	protected Property createAndPopulateProperty4() {
 		Property property = new Property(8898, new Address("203 S Aneky St", null, "Denver", "CO", "82222-4321"), 1965, "Brick");
 		property.addValuation(new Valuation(new Date(), 240000, 5000, "Steve's Valuers", 5647328, null))
-				.addValuation(new Valuation(new Date(), 220000, 7000, "John's Valuers", 65462, new Address("67 Dartmouth Cl", null, "Smithfield", "IL", "43252")))
+				.addValuation(new Valuation(new Date(), 220000, 7000, "John's Valuers", 65462, new Address("88 Dartmouth Cl", null, "Smithfield", "IL", "43252")))
 				.addValuation(new Valuation(new Date(), 255000, 3000, "Wilma's Valuers", 254665, null));
 
 		return property;

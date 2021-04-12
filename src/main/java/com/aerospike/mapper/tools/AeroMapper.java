@@ -250,6 +250,25 @@ public class AeroMapper {
 
 
     /**
+     * Save each object in the database. This method will perform a REPLACE on the existing record so any existing
+     * data will be overwritten by the data in the passed object. This is a convenience method for
+     * <pre>
+     * save(A);
+     * save(B);
+     * save(C);
+     * </pre>
+     * Not that no transactionality is implied by this method -- if any of the save methods fail, the exception will be
+     * thrown without trying the other objects, nor attempting to roll back previously saved objects
+     * @param object
+     * @throws AerospikeException
+     */
+    public void save(@NotNull Object ... objects) throws AerospikeException {
+    	for (Object thisObject : objects) {
+    		this.save(thisObject);
+    	}
+    }
+
+    /**
      * Save an object in the database. This method will perform a REPLACE on the existing record so any existing
      * data will be overwritten by the data in the passed object
      * @param object

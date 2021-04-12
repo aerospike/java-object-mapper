@@ -1,5 +1,7 @@
 package com.aerospike.mapper;
 
+import static org.junit.Assert.assertEquals;
+
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -9,6 +11,9 @@ import com.aerospike.client.DebugAerospikeClient.Granularity;
 import com.aerospike.client.DebugAerospikeClient.Options;
 import com.aerospike.client.IAerospikeClient;
 import com.aerospike.mapper.tools.ClassCache;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectWriter;
 
 public abstract class AeroMapperBaseTest {
 
@@ -32,5 +37,18 @@ public abstract class AeroMapperBaseTest {
     public void clearCache() {
 		ClassCache.getInstance().clear();
 
+    }
+    
+    public void compare(Object original, Object read) {
+    	try {
+			ObjectWriter objectWriter = new ObjectMapper().writerWithDefaultPrettyPrinter();
+			String readString = objectWriter.writeValueAsString(read);
+			System.out.println(readString);
+			String originalObject = objectWriter.writeValueAsString(original);
+			assertEquals(originalObject, readString);
+    	} catch (JsonProcessingException jpe) {
+    		throw new RuntimeException(jpe);
+    	}
+    	
     }
 }

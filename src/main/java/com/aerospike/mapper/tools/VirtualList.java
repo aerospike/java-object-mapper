@@ -129,6 +129,10 @@ public class VirtualList<E> {
 			this.interactions.add(new Interactor(virtualList.getAppendOperation(aerospikeItem)));
 			return this;
 		}
+		public MultiOperation<E> removeByKey(Object key) {
+			this.interactions.add(getRemoveKeyInteractor(key));
+			return this;
+		}
 		public MultiOperation<E> removeByKeyRange(Object startKey, Object endKey) {
 			this.interactions.add(getRemoveKeyRangeInteractor(startKey, endKey));
 			return this;
@@ -473,7 +477,42 @@ public class VirtualList<E> {
 		};
 		return new Interactor(deferred);
 	}
+
+	private Interactor getRemoveKeyInteractor(Object key) {
+		DeferredOperation deferred = new DeferredOperation() {
+			
+			@Override
+			public ResultsUnpacker[] getUnpackers(OperationParameters operationParams) {
+				switch (operationParams.getNeedsResultOfType()) {
+				case DEFAULT:
+				case ELEMENTS:
+					return new ResultsUnpacker[] { new ArrayUnpacker(instanceMapper) };
+				default:
+					return new ResultsUnpacker[0];
+				}
+			}
+			
+			@Override
+			public Operation getOperation(OperationParameters operationParams) {
+	    		if (listType == EmbedType.LIST) {
+    				return ListOperation.removeByValue(binName, getValue(key, true), 
+    						returnTypeToListReturnType(operationParams.getNeedsResultOfType()));
+				}
+	    		else {
+    				return MapOperation.removeByKey(binName, getValue(key, true), 
+    						returnTypeToMapReturnType(operationParams.getNeedsResultOfType()));
+	    		}
+			}
+
+			@Override
+			public boolean isGetOperation() {
+				return false;
+			}
+		};
+		return new Interactor(deferred);
+	}
 	
+
 	private Interactor getRemoveValueRangeInteractor(Object startValue, Object endValue) {
 		DeferredOperation deferred = new DeferredOperation() {
 			

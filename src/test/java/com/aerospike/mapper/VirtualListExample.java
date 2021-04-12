@@ -12,11 +12,11 @@ import com.aerospike.mapper.annotations.AerospikeEmbed;
 import com.aerospike.mapper.annotations.AerospikeEmbed.EmbedType;
 import com.aerospike.mapper.annotations.AerospikeKey;
 import com.aerospike.mapper.annotations.AerospikeRecord;
-import com.aerospike.mapper.annotations.AerospikeReference;
-import com.aerospike.mapper.annotations.AerospikeReference.ReferenceType;
 import com.aerospike.mapper.tools.AeroMapper;
+import com.aerospike.mapper.tools.ReturnType;
+import com.aerospike.mapper.tools.VirtualList;
 
-public class ListOfReferencesTest extends AeroMapperBaseTest {
+public class VirtualListExample extends AeroMapperBaseTest {
 	
 	@AerospikeRecord(namespace = "test", set = "item")
 	public static class Item {
@@ -40,7 +40,7 @@ public class ListOfReferencesTest extends AeroMapperBaseTest {
 		@AerospikeKey
 		private int id;
 		private String name;
-		@AerospikeReference(type = ReferenceType.ID, lazy = false)
+		@AerospikeEmbed(type = EmbedType.MAP, elementType = EmbedType.LIST)
 		private List<Item> items;
 		
 		public Container() {
@@ -61,19 +61,18 @@ public class ListOfReferencesTest extends AeroMapperBaseTest {
 		
 		AeroMapper mapper = new AeroMapper.Builder(client).build();
 		mapper.save(container);
-		for (int i = 0; i < container.items.size(); i++) {
-			mapper.save(container.items.get(i));
-		}
 		
-		Container newVersion = mapper.read(Container.class, 1);
-		assertEquals(container.id, newVersion.id);
-		assertEquals(container.name, newVersion.name);
-		assertEquals(container.items.size(), newVersion.items.size());
-		for (int i = 0; i < container.items.size(); i++) {
-			assertEquals(container.items.get(i).desc, newVersion.items.get(i).desc);
-			assertEquals(container.items.get(i).id, newVersion.items.get(i).id);
-			assertEquals(container.items.get(i).due, newVersion.items.get(i).due);
-		}
+		VirtualList<Item> list = mapper.asBackedList(container, "items", Item.class);
+		// perform a single operation. NOTE: This does NOT change the backed item, just the database
+		list.append(new Item(500, new Date(), "Item5"));
+		
+		List<Item> results = (List<Item>) list.beginMultiOperation()
+				.append(new Item(600, new Date(), "Item6"))
+				.removeByKey(200)
+				.getByKeyRange(100, 450)
+			.end();
+		
+		System.out.println(results.size());
 	}
 	
 }
