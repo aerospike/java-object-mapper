@@ -1728,10 +1728,177 @@ The reference structure is used when the object being referenced is not to be em
 
 When mapping a Java object to Aerospike the most common operations to do are to save the whole object and load the whole object. The AeroMapper is set up primarily for these use cases. However, there are cases where it makes sense to manipulate objects directly in the database, particularly when it comes to manipulating lists and maps. This functionality is provided via virtual lists.  
 
+Consider a TODO list, where there are Items which contain the items to be performed and a container for these items:
+
+```java
+@AerospikeRecord(namespace = "test", set = "item")
+public class Item {
+	@AerospikeKey
+	private int id;
+	private Date due;
+	private String desc;
+	public Item(int id, Date due, String desc) {
+		super();
+		this.id = id;
+		this.due = due;
+		this.desc = desc;
+	}
+	
+	public Item() {
+	}
+}
+
+@AerospikeRecord(namespace = "test", set = "container")
+public class Container {
+	@AerospikeKey
+	private int id;
+	private String name;
+	@AerospikeEmbed(type = EmbedType.MAP, elementType = EmbedType.LIST)
+	private List<Item> items;
+	
+	public Container() {
+		this.items = new ArrayList<>();
+	}
+}
+````
+
+Note that in this case the items are embedded into the container and not refrenced. This is what is needed for virtual lists, they must have a list of items in the database associated with a single record.
+
+These items can be populated using the functionally presented above. For example:
+
+```javs
+Container container = new Container();
+container.id = 1;
+container.name = "container";
+
+container.items.add(new Item(100, new Date(), "Item 1"));
+container.items.add(new Item(200, new Date(), "Item 2"));
+container.items.add(new Item(300, new Date(), "Item 3"));
+container.items.add(new Item(400, new Date(), "Item 4"));
+
+AeroMapper mapper = new AeroMapper.Builder(client).build();
+mapper.save(container);
+````
+
+This yields a container with 4 items as expected:
+
+```
+id: 1
+items: KEY_ORDERED_MAP('{
+	100:["Item 1", 1618442036607], 
+	200:["Item 2", 1618442036607], 
+	300:["Item 3", 1618442036607], 
+	400:["Item 4", 1618442036607]}')
+name: "container"
+```
+
+Note that whilst in this case the list is pre-populated with information, this is not a requirement for using virtual list.
+
+A virtual list is created through the mapper:
+
+```java
+VirtualList<Item> list = mapper.asBackedList(container, "items", Item.class);
+```
+
+The container is passed as the first parameter, and is used for 2 things: The class type (so the annotations and field definitions can be discovered) and the primary key. It is possible to pass these 2 parameters instead of explicitly passing an object.
+
+Once a virtual list has been created, methods to manipulate the list can be executed. For example:
+
+```java
+list.append(new Item(500, new Date(), "Item5"));
+```
+
+After this, the list in the database looks like:
+
+```
+id: 1
+items: KEY_ORDERED_MAP('{
+	100:["Item 1", 1618442036607], 
+	200:["Item 2", 1618442036607], 
+	300:["Item 3", 1618442036607], 
+	400:["Item 4", 1618442036607], 
+	500:["Item5", 1618442991205]}')
+name: "container"
+```
+
+Note however that the list in the object in memory still contains only 4 items. *Virtual lists affect only the database representation of the data and not the Java POJO.*
+eVirutal Lists tend to use the (Operate)[https://www.aerospike.com/docs/client/java/usage/kvs/multiops.html] command which allows multiple operations to be performed on the same key at the same time. As a consequence, multiple commands can be done on a list with a single Aerospike operation. For example:
+
+```java
+List<Item> results = (List<Item>) list.beginMultiOperation()
+		.append(new Item(600, new Date(), "Item6"))
+		.removeByKey(200)
+		.getByKeyRange(100, 450)
+	.end();
+```
+
+This operation will add a new item (600) into the list, remove key 200 and get any keys between 100 (inclusive) and 450 (exclusive). As a result, the data in the database is:
+
+```
+id: 1
+items: KEY_ORDERED_MAP('{
+	100:["Item 1", 1618442036607], 
+	300:["Item 3", 1618442036607], 
+	400:["Item 4", 1618442036607], 
+	500:["Item5", 1618442991205], 
+	600:["Item6", 1618445996551]}')
+name: "container"
+```
+
+The result of the call is the result of the last read operation in the list of calls if one exists, otherwise it is the last write operation. So in this case, the result will be the result of the `getByKeyRange` call, which is 3 items: 100, 300, 400.
+
+However, if we changed the call to be:
+
+```java
+List<Item> results = (List<Item>) list.beginMultiOperation()
+		.append(new Item(600, new Date(), "Item6"))
+		.removeByKey(200)
+	.end();
+```
+
+Then the result would be the result of the `removeByKey`, which by default is null. (Write operations pass a ReturnType of NONE to CDT operations by default)
+
+However, if we wanted a particular operation in the list to return it's result, we can flag it with `asResult()`. For example:
+
+```java
+List<Item> results = (List<Item>) list.beginMultiOperation()
+		.append(new Item(600, new Date(), "Item6"))
+		.removeByKey(200).asResult()
+		.removeByKey(500)
+	.end();
+```
+
+In this case, the element removed with with the `removeByKey(200)` will be returned, giving the data associated with item 200..
+
+The type of the result (where supported) can also be changed with a call to `asResultOfType()`. For example:
+
+```java
+long count = (long)list.beginMultiOperation()
+		.append(new Item(600, new Date(), "Item6"))
+		.removeByKey(200)
+		.removeByKeyRange(20, 350).asResultOfType(ReturnType.COUNT)
+		.getByKeyRange(100, 450)
+	.end();
+```
+
+The return type of the method is now going to be a long as it represents the count of elements removed (2 in this case). Note that this example is not very practical -- there is no point in calling `getByKeyRange(...)` in this call as the result is ignored.
+
+Also note that virtual lists allow operations only on the list, not on other bins on the same record. To do this, you would have to use the underlying native Aerospike API. There are however convenience methods on the AeroMapper which can help map between Aerospike and Java formats.. For example:
+
+```java
+public <T> List<Object> convertToList(@NotNull T instance);
+public <T> Map<String, Object> convertToMap(@NotNull T instance);
+public <T> T convertToObject(Class<T> clazz, List<Object> record);
+public <T> T convertToObject(Class<T> clazz, Map<String,Object> record);
+public <T> T convertToObject(Class<T> clazz, Record record);
+```
+
+Note: At the moment not all CDT operations are supported, and if the underlying CDTs are of the wrong type, a different API call may be used. For example, if you invoke `getByKeyRange` on items represented in the database as a list, `getByValueRange` is invoked instead as a list has no key.
+
+
 ----
 
 ## To finish
-- Document virtual lists
 - Add interface to adaptiveMap, including changing EmbedType
 - Document all parameters to annotations and examples of types
 - Document enums, dates, instants.
@@ -1743,3 +1910,4 @@ When mapping a Java object to Aerospike the most common operations to do are to 
 - handle object graph circularities (A->B->C). Be careful of: A->B(Lazy), A->C->B: B should end up fully hydrated in both instances, not lazy in both instances
 - Consider the items on virtual list which return a list to be able to return a map as well (ELEMENT_LIST, ELEMENT_MAP) 
 - Test a constructor which requires a sub-object. For example, Account has a Property, Property has an Address. All 3 a referenced objects. Constructor for Property requires Address
+- Create a batch get method which loads sub-objects in parallel

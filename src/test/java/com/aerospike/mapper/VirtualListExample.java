@@ -1,7 +1,5 @@
 package com.aerospike.mapper;
 
-import static org.junit.Assert.assertEquals;
-
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -66,6 +64,7 @@ public class VirtualListExample extends AeroMapperBaseTest {
 		// perform a single operation. NOTE: This does NOT change the backed item, just the database
 		list.append(new Item(500, new Date(), "Item5"));
 		
+		/*
 		List<Item> results = (List<Item>) list.beginMultiOperation()
 				.append(new Item(600, new Date(), "Item6"))
 				.removeByKey(200)
@@ -73,6 +72,15 @@ public class VirtualListExample extends AeroMapperBaseTest {
 			.end();
 		
 		System.out.println(results.size());
+		*/
+		long count = (long)list.beginMultiOperation()
+				.append(new Item(600, new Date(), "Item6"))
+				.removeByKey(200)
+				.removeByKeyRange(20, 350).asResultOfType(ReturnType.COUNT)
+				.getByKeyRange(100, 450)
+			.end();
+		
+		System.out.println(count);
 	}
 	
 }
