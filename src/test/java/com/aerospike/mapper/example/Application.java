@@ -4,9 +4,7 @@ import static org.junit.Assert.assertEquals;
 
 import org.junit.Test;
 
-import com.aerospike.client.DebugAerospikeClient;
-import com.aerospike.client.DebugAerospikeClient.Granularity;
-import com.aerospike.client.DebugAerospikeClient.Options;
+import com.aerospike.client.AerospikeClient;
 import com.aerospike.client.IAerospikeClient;
 import com.aerospike.client.policy.Policy;
 import com.aerospike.client.policy.Replica;
@@ -47,7 +45,7 @@ public class Application extends ApplicationBase {
 		writePolicy.durableDelete = true;
 		writePolicy.sendKey = true;	// For ease of debugging for now
 		
-		IAerospikeClient client = new DebugAerospikeClient(null, "127.0.0.1", 3000, new Options(Granularity.EVERY_CALL));
+		IAerospikeClient client = new AerospikeClient(null, "127.0.0.1", 3000);
 		
 		AeroMapper mapper = new AeroMapper.Builder(client)
 				.withWritePolicy(writePolicy).forAll()

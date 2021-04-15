@@ -8,9 +8,6 @@ import org.junit.Test;
 
 import com.aerospike.client.AerospikeClient;
 import com.aerospike.client.Bin;
-import com.aerospike.client.DebugAerospikeClient;
-import com.aerospike.client.DebugAerospikeClient.Granularity;
-import com.aerospike.client.DebugAerospikeClient.Options;
 import com.aerospike.client.IAerospikeClient;
 import com.aerospike.client.Key;
 import com.aerospike.client.Record;
@@ -57,7 +54,7 @@ public class NonJavaMapperApplication extends ApplicationBase {
 	
 	@Test
 	public void run() throws JsonProcessingException {
-		IAerospikeClient client = new DebugAerospikeClient(null, "127.0.0.1", 3000, new Options(Granularity.EVERY_CALL));
+		IAerospikeClient client = new AerospikeClient(null, "127.0.0.1", 3000);
 		
 		Customer customer = createAndPopulateCustomer();
 		save(client, customer);
