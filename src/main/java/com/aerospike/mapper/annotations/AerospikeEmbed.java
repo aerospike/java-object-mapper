@@ -5,17 +5,19 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+/**
+ * Bins marked with AerospikeExclude will not be mapped to the database, irrespective of other annotations.
+ */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.FIELD)
-/**
- * Bins marked with AerospikeExclude will not be mapped to the database, irrespective of other annotations. 
- */
 public @interface AerospikeEmbed {
-	public static enum EmbedType {
+
+	enum EmbedType {
 		LIST,
 		MAP,
 		DEFAULT
 	}
+
 	EmbedType type() default EmbedType.DEFAULT;
 	/**
 	 * The elementType is used for sub-elements. For example, if there is:
@@ -25,8 +27,6 @@ public @interface AerospikeEmbed {
 	 * private List<Account> accounts;
 	 * </pre>
 	 * then the objects will be stored in the database as lists of lists, rather than lists of maps.
-	 * 
-	 * @return
 	 */
 	EmbedType elementType() default EmbedType.DEFAULT;
 	
@@ -79,7 +79,6 @@ public @interface AerospikeEmbed {
 	 * <pre>
 	 * KEY_ORDERED_MAP('{99:["details2", 99, 200], 101:["details1", 101, 100], 1010:["details3", 1010, 300]}')
 	 * </pre>
-	 * @return
 	 */
 	boolean saveKey() default false;
 }

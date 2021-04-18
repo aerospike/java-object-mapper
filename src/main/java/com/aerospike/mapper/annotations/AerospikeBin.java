@@ -13,7 +13,6 @@ import java.lang.annotation.Target;
 public @interface AerospikeBin {
 	/**
 	 * The name of the bin to use. If not specified, the field name is used for the bin name.
-	 * @return
 	 */
 	String name() default "";
 }
