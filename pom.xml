@@ -16,13 +16,18 @@
    		<maven.compiler.target>1.8</maven.compiler.target>
 		<maven.compiler.source>1.8</maven.compiler.source>
 		<maven.compiler.plugin.version>3.8.0</maven.compiler.plugin.version>
+		<junit.version>4.13.2</junit.version>
+		<javax.validation-api.version>2.0.1.Final</javax.validation-api.version>
+		<aerospike-client.version>5.0.7</aerospike-client.version>
+		<commons-lang3.version>3.12.0</commons-lang3.version>
+		<jackson-dataformat-yaml.version>2.12.3</jackson-dataformat-yaml.version>
 	</properties>
 
 	<dependencies>
 		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
-			<version>4.4</version>
+			<version>${junit.version}</version>
 			<scope>test</scope>
 		</dependency>
 		
@@ -30,14 +35,14 @@
 		<dependency>
 		    <groupId>javax.validation</groupId>
 		    <artifactId>validation-api</artifactId>
-		    <version>2.0.1.Final</version>
+		    <version>${javax.validation-api.version}</version>
 		</dependency>
 				
 		<!-- https://mvnrepository.com/artifact/com.aerospike/aerospike-client -->
 		<dependency>
 		    <groupId>com.aerospike</groupId>
 		    <artifactId>aerospike-client</artifactId>
-		    <version>5.0.2</version>
+		    <version>${aerospike-client.version}</version>
 		</dependency>
 		
 		
@@ -45,7 +50,7 @@
 		<dependency>
 			<groupId>org.apache.commons</groupId>
 			<artifactId>commons-lang3</artifactId>
-			<version>3.7</version>
+			<version>${commons-lang3.version}</version>
 		</dependency>
 
 		<!-- https://mvnrepository.com/artifact/com.fasterxml.jackson.dataformat/jackson-dataformat-yaml -->
@@ -53,9 +58,8 @@
 		<dependency>
 		    <groupId>com.fasterxml.jackson.dataformat</groupId>
 		    <artifactId>jackson-dataformat-yaml</artifactId>
-		    <version>2.12.1</version>
+		    <version>${jackson-dataformat-yaml.version}</version>
 		</dependency>
-
 	</dependencies>
 	<build>
 		<plugins>
