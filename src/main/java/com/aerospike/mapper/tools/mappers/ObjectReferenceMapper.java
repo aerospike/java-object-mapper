@@ -97,15 +97,14 @@ public class ObjectReferenceMapper extends ObjectMapper {
 		}
 		
 		if (this.lazy) {
-//				Object instance = classToUse.getUnderlyingClass().newInstance();
+			//Object instance = classToUse.getUnderlyingClass().newInstance();
 			Map<String, Object> map = new HashMap<>();
 			Object instance = classToUse.constructAndHydrate(map);
 			classToUse.setKey(instance, key);
 			return instance;
 		}
 		else if (allowBatch) {
-			DeferredObject defObject = new DeferredObject(key, classToUse.getUnderlyingClass(), ReferenceType.DIGEST.equals(type));
-			return defObject;
+			return new DeferredObject(key, classToUse.getUnderlyingClass(), ReferenceType.DIGEST.equals(type));
 		}
 		else if (ReferenceType.DIGEST.equals(type)) {
 			return mapper.readFromDigest(classToUse.getUnderlyingClass(), (byte[]) key, false);

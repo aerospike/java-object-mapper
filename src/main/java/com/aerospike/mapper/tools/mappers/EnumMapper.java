@@ -10,6 +10,7 @@ public class EnumMapper extends TypeMapper {
 	public EnumMapper(Class<? extends Enum<?>> clazz) {
 		this.clazz = clazz;
 	}
+
 	@Override
 	public Object toAerospikeFormat(Object value) {
 		return value.toString();
@@ -30,5 +31,4 @@ public class EnumMapper extends TypeMapper {
 		
 		throw new AerospikeException(String.format("Enum value of \"%s\" not found in type %s", stringValue, clazz.toString()));
 	}
-
 }
