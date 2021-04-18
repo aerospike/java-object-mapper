@@ -19,6 +19,10 @@ jobs:
         with:
           java-version: 1.8
 
+      # Aerospike cluster for integration tests (https://github.com/reugn/github-action-aerospike)
+      - name: Set up Aerospike Database
+        uses: reugn/github-action-aerospike@v1
+
       # See: https://github.com/actions/cache/blob/master/examples.md#java---maven
       - name: Maven cache and restore deps
         uses: actions/cache@v1
