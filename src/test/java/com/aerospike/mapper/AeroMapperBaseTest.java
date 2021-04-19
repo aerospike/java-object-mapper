@@ -46,6 +46,5 @@ public abstract class AeroMapperBaseTest {
     	} catch (JsonProcessingException jpe) {
     		throw new RuntimeException(jpe);
     	}
-    	
     }
 }

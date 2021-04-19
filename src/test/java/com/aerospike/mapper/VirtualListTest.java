@@ -104,7 +104,7 @@ public class VirtualListTest extends AeroMapperBaseTest {
 			if (a == null && b == null) {
 				return true;
 			}
-			if ((a != null && b == null) || (a == null && b!= null)) {
+			if ((a != null && b == null) || (a == null && b != null)) {
 				return false;
 			}
 			return a.equals(b);
@@ -112,7 +112,7 @@ public class VirtualListTest extends AeroMapperBaseTest {
 		
 		@Override
 		public boolean equals(Object obj) {
-			if (obj == null || (!(obj instanceof B))) {
+			if ((!(obj instanceof B))) {
 				return false;
 			}
 			B b2 = (B)obj;
@@ -193,6 +193,7 @@ public class VirtualListTest extends AeroMapperBaseTest {
 		A result = mapper.read(A.class, collection.id);
 		assertEquals(collection.id, result.id);
 		assertEquals(7, result.elements.size());
+
 		// Note that the returned results will be sorted, the inputs will not be.
 		for (int x = 0; x < collection.elements.size(); x++) {
 			boolean found = false;
@@ -207,5 +208,3 @@ public class VirtualListTest extends AeroMapperBaseTest {
 		}
 	}
 }
-
-

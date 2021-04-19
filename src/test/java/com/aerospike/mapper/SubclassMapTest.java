@@ -77,13 +77,13 @@ public class SubclassMapTest extends AeroMapperBaseTest {
 		assertEquals(((Portfolio)container.account).subAccounts.get(0), ((Portfolio)object.account).subAccounts.get(0));
 		assertEquals(((Portfolio)container.account).subAccounts.get(1), ((Portfolio)object.account).subAccounts.get(1));
 
-		assertEquals(((Portfolio)container.accounts.get(0)).id, ((Portfolio)object.accounts.get(0)).id);
-		assertEquals(((Portfolio)container.accounts.get(0)).name, ((Portfolio)object.accounts.get(0)).name);
+		assertEquals(container.accounts.get(0).id, object.accounts.get(0).id);
+		assertEquals(container.accounts.get(0).name, object.accounts.get(0).name);
 		assertEquals(((Portfolio)container.accounts.get(0)).subAccounts.get(0), ((Portfolio)object.accounts.get(0)).subAccounts.get(0));
 		assertEquals(((Portfolio)container.accounts.get(0)).subAccounts.get(1), ((Portfolio)object.accounts.get(0)).subAccounts.get(1));
 
-		assertEquals(((Savings)container.accounts.get(1)).id, ((Savings)object.accounts.get(1)).id);
-		assertEquals(((Savings)container.accounts.get(1)).name, ((Savings)object.accounts.get(1)).name);
+		assertEquals(container.accounts.get(1).id, object.accounts.get(1).id);
+		assertEquals(container.accounts.get(1).name, object.accounts.get(1).name);
 		assertEquals(((Savings)container.accounts.get(1)).balance, ((Savings)object.accounts.get(1)).balance);
 	}
 }

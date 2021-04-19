@@ -14,10 +14,10 @@ import com.aerospike.mapper.example.model.Property;
 public class PortfolioAccount extends Account {
 
 	@AerospikeBin(name = "props")
-	private List<Property> properties;
+	private final List<Property> properties;
 	@AerospikeBin(name = "excls")
 	private int[] contractClausesExcluded;
-	private Map<Long, Float> interestRates;
+	private final Map<Long, Float> interestRates;
 	
 	public PortfolioAccount(@ParamFrom("id") String accountId, @ParamFrom("custId") String customerId, @ParamFrom("title") String title, @ParamFrom("type") AccountType type) {
 		super(accountId, customerId, title, type);
@@ -26,7 +26,7 @@ public class PortfolioAccount extends Account {
 		this.interestRates = new HashMap<>();
 	}
 
-	public void setContratClausesExcluded(int ... clauseIds) {
+	public void setContractClausesExcluded(int ... clauseIds) {
 		this.contractClausesExcluded = clauseIds;
 	}
 	

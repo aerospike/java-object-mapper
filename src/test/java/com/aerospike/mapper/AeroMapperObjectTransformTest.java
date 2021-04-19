@@ -13,7 +13,7 @@ import com.aerospike.mapper.annotations.AerospikeRecord;
 import com.aerospike.mapper.tools.AeroMapper;
 
 public class AeroMapperObjectTransformTest extends AeroMapperBaseTest {
-	@AerospikeRecord(namespace = "", set = "")
+	@AerospikeRecord()
 	public static class Transaction {
 		public String name;
 		public int value;
@@ -49,7 +49,7 @@ public class AeroMapperObjectTransformTest extends AeroMapperBaseTest {
 	}
 	
 	@Test
-	public void saveTest() throws Exception {
+	public void saveTest() {
 		Account account = new Account();
 		account.accountId = 1;
 		account.txns.add(new Transaction("details1", 100, 101));
@@ -65,6 +65,5 @@ public class AeroMapperObjectTransformTest extends AeroMapperBaseTest {
 		
 		Account account2 = mapper.read(Account.class, 1);
 		System.out.println(account2);
-		
 	}
 }

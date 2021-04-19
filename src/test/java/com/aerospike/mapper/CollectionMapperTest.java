@@ -1,19 +1,16 @@
 package com.aerospike.mapper;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import org.junit.Test;
-
-import com.aerospike.mapper.annotations.AerospikeConstructor;
 import com.aerospike.mapper.annotations.AerospikeEmbed;
 import com.aerospike.mapper.annotations.AerospikeEmbed.EmbedType;
 import com.aerospike.mapper.annotations.AerospikeKey;
 import com.aerospike.mapper.annotations.AerospikeRecord;
 import com.aerospike.mapper.annotations.ParamFrom;
 import com.aerospike.mapper.tools.AeroMapper;
-import com.aerospike.mapper.tools.ReturnType;
 import com.aerospike.mapper.tools.VirtualList;
+import org.junit.Test;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class CollectionMapperTest extends AeroMapperBaseTest {
 	@AerospikeRecord
@@ -90,5 +87,3 @@ public class CollectionMapperTest extends AeroMapperBaseTest {
 		System.out.println(results);
 	}
 }
-
-

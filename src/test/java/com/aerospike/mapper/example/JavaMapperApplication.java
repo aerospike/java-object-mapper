@@ -25,7 +25,7 @@ public class JavaMapperApplication extends ApplicationBase {
 		for (int i = 0; i < 100; i++) {
 			long now = System.nanoTime();
 			customer2 = mapper.read(Customer.class, customer.getCustomerId());
-			System.out.println(String.format("Customer graph read time: %.3fms", (System.nanoTime() - now)/1000000f));
+			System.out.printf("Customer graph read time: %.3fms%n", (System.nanoTime() - now)/1000000f);
 		}
 		
 		ObjectWriter objectWriter = new ObjectMapper().writerWithDefaultPrettyPrinter();
@@ -36,5 +36,4 @@ public class JavaMapperApplication extends ApplicationBase {
 
 		client.close();
 	}
-
 }

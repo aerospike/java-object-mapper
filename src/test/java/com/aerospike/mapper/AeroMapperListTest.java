@@ -28,7 +28,7 @@ public class AeroMapperListTest extends AeroMapperBaseTest {
     @AerospikeRecord(namespace = NAMESPACE, set = "testSet")
     public static class TestV1 {
         public int a;
-        @AerospikeOrdinal(1)
+        @AerospikeOrdinal()
         public int b;
         public int c;
         public int d;
@@ -38,7 +38,7 @@ public class AeroMapperListTest extends AeroMapperBaseTest {
     @AerospikeRecord(namespace = NAMESPACE, set = "testSet", version = 2)
     public static class TestV2 {
         public int a;
-        @AerospikeOrdinal(1)
+        @AerospikeOrdinal()
         public int b;
         @AerospikeVersion(max = 1)
         public int c;
@@ -52,7 +52,7 @@ public class AeroMapperListTest extends AeroMapperBaseTest {
     public static class TestV3 {
         @AerospikeVersion(max = 2)
         public int a;
-        @AerospikeOrdinal(1)
+        @AerospikeOrdinal()
         public int b;
         @AerospikeVersion(max = 1)
         public int c;
@@ -234,7 +234,5 @@ public class AeroMapperListTest extends AeroMapperBaseTest {
     	assertEquals(value.b, value2.b);
     	assertEquals(value.c, value2.c);
     	assertEquals(value.d, value2.d);
-    	
     }
-
 }

@@ -37,15 +37,14 @@ public class ConstructorTest extends AeroMapperBaseTest {
 	}
 	
 	@AerospikeRecord(namespace = "test", set = "testSet")
-	public static class ConstructoredClass {
+	public static class ConstructedClass {
 		@AerospikeKey
 		public final int id;
 		public final int age;
 		public final String name;
 		public final Date date;
-		
-		
-		public ConstructoredClass(@ParamFrom("id") int id, @ParamFrom("age") int age, @ParamFrom("name") String name, @ParamFrom("date")Date date) {
+
+		public ConstructedClass(@ParamFrom("id") int id, @ParamFrom("age") int age, @ParamFrom("name") String name, @ParamFrom("date")Date date) {
 			super();
 			this.id = id;
 			this.age = age;
@@ -56,10 +55,10 @@ public class ConstructorTest extends AeroMapperBaseTest {
 	
 	@Test
 	public void test() {
-		ConstructoredClass data = new ConstructoredClass(1, 19, "jane", new Date());
+		ConstructedClass data = new ConstructedClass(1, 19, "jane", new Date());
 		AeroMapper mapper = new AeroMapper.Builder(client).build();
 		mapper.save(data);
-		ConstructoredClass data2 = mapper.read(ConstructoredClass.class, 1);
+		ConstructedClass data2 = mapper.read(ConstructedClass.class, 1);
 		assertEquals(data.id, data2.id);
 		assertEquals(data.age, data2.age);
 		assertEquals(data.name, data2.name);
@@ -67,21 +66,21 @@ public class ConstructorTest extends AeroMapperBaseTest {
 	}
 	
 	@AerospikeRecord(namespace = "test", set = "testSet") 
-	public static class ConstructoredClass2 {
+	public static class ConstructedClass2 {
 		@AerospikeKey
 		public final int id;
 		public final int a;
 		public int b;
 		public int c;
 		
-		public ConstructoredClass2(@ParamFrom("id") int id, @ParamFrom("a") int a) {
+		public ConstructedClass2(@ParamFrom("id") int id, @ParamFrom("a") int a) {
 			this.id = id;
 			this.a = a;
 			System.out.println("Using 2 arg");
 		}
 		
 		@AerospikeConstructor
-		public ConstructoredClass2(@ParamFrom("id") int id, @ParamFrom("a") int a, @ParamFrom("b") int b) {
+		public ConstructedClass2(@ParamFrom("id") int id, @ParamFrom("a") int a, @ParamFrom("b") int b) {
 			this.id = id;
 			this.a = a;
 			this.b = b;
@@ -91,14 +90,14 @@ public class ConstructorTest extends AeroMapperBaseTest {
 	
 	@Test
 	public void test2() {
-		ConstructoredClass2 data = new ConstructoredClass2(1, 2);
+		ConstructedClass2 data = new ConstructedClass2(1, 2);
 		data.b = 3;
 		data.c = 4;
 		
 		AeroMapper mapper = new AeroMapper.Builder(client).build();
 		mapper.save(data);
 		System.out.println("reading back");
-		ConstructoredClass2 data2 = mapper.read(ConstructoredClass2.class, 1);
+		ConstructedClass2 data2 = mapper.read(ConstructedClass2.class, 1);
 		assertEquals(data.id, data2.id);
 		assertEquals(data.a, data2.a);
 		assertEquals(data.b, data2.b);
@@ -116,7 +115,7 @@ public class ConstructorTest extends AeroMapperBaseTest {
 	}
 	
 	@AerospikeRecord 
-	public static class ConstructoredClass3 {
+	public static class ConstructedClass3 {
 		@AerospikeKey
 		public final String id;
 		public final int a;
@@ -124,7 +123,7 @@ public class ConstructorTest extends AeroMapperBaseTest {
 		public final int c;
 		
 		@AerospikeConstructor
-		public ConstructoredClass3(@ParamFrom("id") String id, @ParamFrom("a") int a, @ParamFrom("b") int b, @ParamFrom("c") int c) {
+		public ConstructedClass3(@ParamFrom("id") String id, @ParamFrom("a") int a, @ParamFrom("b") int b, @ParamFrom("c") int c) {
 			this.id = id;
 			this.a = a;
 			this.b = b;
@@ -137,7 +136,7 @@ public class ConstructorTest extends AeroMapperBaseTest {
 		@AerospikeKey
 		public int id;
 		@AerospikeEmbed(type = EmbedType.MAP, elementType = EmbedType.LIST)
-		public List<ConstructoredClass3> list;
+		public List<ConstructedClass3> list;
 	}
 	
 	@Test
@@ -145,10 +144,10 @@ public class ConstructorTest extends AeroMapperBaseTest {
 		ConstructorContainerClass ccc = new ConstructorContainerClass();
 		ccc.id = 1;
 		ccc.list = new ArrayList<>();
-		ccc.list.add(new ConstructoredClass3("a", 1, 1, 4));
-		ccc.list.add(new ConstructoredClass3("b", 2, 2, 3));
-		ccc.list.add(new ConstructoredClass3("c", 3, 4, 2));
-		ccc.list.add(new ConstructoredClass3("d", 4, 3, 1));
+		ccc.list.add(new ConstructedClass3("a", 1, 1, 4));
+		ccc.list.add(new ConstructedClass3("b", 2, 2, 3));
+		ccc.list.add(new ConstructedClass3("c", 3, 4, 2));
+		ccc.list.add(new ConstructedClass3("d", 4, 3, 1));
 		
 		AeroMapper mapper = new AeroMapper.Builder(client).build();
 		mapper.save(ccc);

@@ -20,14 +20,14 @@ public class AeroMapperListOfObjectTransformTest extends AeroMapperBaseTest {
 		@AerospikeKey
 		private int id;
 		@AerospikeEmbed(elementType = EmbedType.LIST)
-		private List<OwnedClass> children;
+		private final List<OwnedClass> children;
 		
 		public OwningClass() {
 			children = new ArrayList<>();
 		}
 	}
 	
-	@AerospikeRecord(namespace = "", set = "")
+	@AerospikeRecord()
 	public static class OwnedClass {
 		public String name;
 		public int id;
@@ -60,6 +60,4 @@ public class AeroMapperListOfObjectTransformTest extends AeroMapperBaseTest {
 		
 		mapper.save(owner);
 	}
-	
-	
 }

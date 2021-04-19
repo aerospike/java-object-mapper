@@ -3,7 +3,7 @@ package com.aerospike.mapper.model;
 import com.aerospike.mapper.annotations.AerospikeKey;
 import com.aerospike.mapper.annotations.AerospikeRecord;
 
-@AerospikeRecord(namespace = "test", set = "product", ttl = 0)
+@AerospikeRecord(namespace = "test", set = "product")
 public class Product {
 
     private long id;

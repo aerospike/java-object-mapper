@@ -56,12 +56,12 @@ public class Account {
     }
 
     @AerospikeSetter(name = "bob")
-    public void setCrazyness(int value) {
+    public void setCraziness(int value) {
         unmapped = value / 3;
     }
 
     @AerospikeGetter(name = "bob")
-    public int getCrazyness() {
+    public int getCraziness() {
         return unmapped * 3;
     }
 

@@ -20,7 +20,7 @@ public class ApplicationBase {
 		Customer customer = new Customer("cust1", "Robert", "Smith");
 		customer.setDateOfBirth(new Date(new Date().getTime() - TimeUnit.MILLISECONDS.convert(30*365, TimeUnit.DAYS)));
 		customer.setPhone("(555)555-1234");
-		customer.setPreferredSaluation("Bobby");
+		customer.setPreferredSalutation("Bobby");
 		customer.setJoinedBank(new Date());
 		customer.setVip(true);
 		return customer;
@@ -71,7 +71,7 @@ public class ApplicationBase {
 		portfolioAccount.setPaperless(false);
 		portfolioAccount.setOverdraftProtection(false);
 		portfolioAccount.setLastLogin(null);
-		portfolioAccount.setContratClausesExcluded(37,108,312,333);
+		portfolioAccount.setContractClausesExcluded(37,108,312,333);
 		return portfolioAccount;
 	}
 	
@@ -90,8 +90,7 @@ public class ApplicationBase {
 	}
 	
 	protected Property createAndPopulateProperty1() {
-		Property property = new Property(11567723, new Address("888 Yam Road", null, "Chicago", "IL", "55555"), 1977, "Stucco");
-		return property;
+		return new Property(11567723, new Address("888 Yam Road", null, "Chicago", "IL", "55555"), 1977, "Stucco");
 	}
 
 	protected Property createAndPopulateProperty2() {
@@ -103,8 +102,7 @@ public class ApplicationBase {
 	}
 
 	protected Property createAndPopulateProperty3() {
-		Property property = new Property(11567725, new Address("14003 Des Moines Blvd", null, "Austin", "TX", "78123"), 2004, "Wood");
-		return property;
+		return new Property(11567725, new Address("14003 Des Moines Blvd", null, "Austin", "TX", "78123"), 2004, "Wood");
 	}
 
 	protected Property createAndPopulateProperty4() {
@@ -115,5 +113,4 @@ public class ApplicationBase {
 
 		return property;
 	}
-
 }

@@ -1,31 +1,18 @@
 package com.aerospike.mapper;
 
-import static org.junit.Assert.fail;
-
-import java.time.Duration;
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
+import com.aerospike.client.AerospikeException;
+import com.aerospike.mapper.annotations.*;
+import com.aerospike.mapper.annotations.AerospikeEmbed.EmbedType;
+import com.aerospike.mapper.annotations.AerospikeReference.ReferenceType;
+import com.aerospike.mapper.tools.AeroMapper;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.aerospike.client.AerospikeException;
-import com.aerospike.mapper.annotations.AerospikeBin;
-import com.aerospike.mapper.annotations.AerospikeConstructor;
-import com.aerospike.mapper.annotations.AerospikeEmbed;
-import com.aerospike.mapper.annotations.AerospikeEmbed.EmbedType;
-import com.aerospike.mapper.annotations.AerospikeKey;
-import com.aerospike.mapper.annotations.AerospikeOrdinal;
-import com.aerospike.mapper.annotations.AerospikeRecord;
-import com.aerospike.mapper.annotations.AerospikeReference;
-import com.aerospike.mapper.annotations.AerospikeReference.ReferenceType;
-import com.aerospike.mapper.annotations.AerospikeVersion;
-import com.aerospike.mapper.annotations.ParamFrom;
-import com.aerospike.mapper.tools.AeroMapper;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.*;
+
+import static org.junit.Assert.fail;
 
 public class AeroMapperDocExamples extends AeroMapperBaseTest {
 
@@ -46,7 +33,6 @@ public class AeroMapperDocExamples extends AeroMapperBaseTest {
         @AerospikeEmbed(type = EmbedType.LIST)
         public Product product;
     }
-
 
     @Test
     public void runEmbed() {
@@ -198,9 +184,10 @@ public class AeroMapperDocExamples extends AeroMapperBaseTest {
     	}
     }
     
-    public static enum AccountType {
+    public enum AccountType {
     	SAVINGS, CHEQUING
     }
+
     @AerospikeRecord(namespace = "test", set = "accounts") 
     public static class Accounts {
     	@AerospikeKey
@@ -224,7 +211,7 @@ public class AeroMapperDocExamples extends AeroMapperBaseTest {
     @AerospikeRecord(namespace = "test", set = "txns")
     public static class Transactions {
     	public String txnId;
-    	@AerospikeOrdinal(value = 1)
+    	@AerospikeOrdinal()
     	public Instant date;
     	public double amt;
     	public String merchant;
@@ -252,7 +239,6 @@ public class AeroMapperDocExamples extends AeroMapperBaseTest {
     	mapper.save(account);
     	System.out.println("done");
     }
-    
     
     @AerospikeRecord(namespace = "test", set = "parent")
     public static class Parent {

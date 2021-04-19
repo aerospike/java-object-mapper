@@ -39,7 +39,7 @@ public class VirtualListExample extends AeroMapperBaseTest {
 		private int id;
 		private String name;
 		@AerospikeEmbed(type = EmbedType.MAP, elementType = EmbedType.LIST)
-		private List<Item> items;
+		private final List<Item> items;
 		
 		public Container() {
 			this.items = new ArrayList<>();
@@ -82,5 +82,4 @@ public class VirtualListExample extends AeroMapperBaseTest {
 		
 		System.out.println(count);
 	}
-	
 }

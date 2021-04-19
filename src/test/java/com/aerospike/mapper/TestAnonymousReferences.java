@@ -20,8 +20,7 @@ public class TestAnonymousReferences extends AeroMapperBaseTest {
 		public List<B> namedB;
 		public List unnamedB;
 		public List nonB;
-		
-		
+
 		public A() {
 			namedB = new ArrayList<>();
 			unnamedB = new ArrayList<>();

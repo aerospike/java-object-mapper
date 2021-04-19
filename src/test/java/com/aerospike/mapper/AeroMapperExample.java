@@ -1,21 +1,16 @@
 package com.aerospike.mapper;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.function.Function;
-
 import com.aerospike.client.AerospikeClient;
 import com.aerospike.client.IAerospikeClient;
 import com.aerospike.client.Key;
-import com.aerospike.client.policy.Policy;
 import com.aerospike.mapper.model.Account;
 import com.aerospike.mapper.model.Person;
 import com.aerospike.mapper.model.Product;
 import com.aerospike.mapper.model.ProductType;
 import com.aerospike.mapper.tools.AeroMapper;
+
+import java.util.*;
+import java.util.function.Function;
 
 public class AeroMapperExample {
 
@@ -23,7 +18,6 @@ public class AeroMapperExample {
 
         IAerospikeClient client = new AerospikeClient("localhost", 3000);
 
-        Policy readPolicy = new Policy();
         AeroMapper mapper = new AeroMapper.Builder(client)
                 // The following lines are for performance reasons only, they are not required.
                 .preLoadClass(Account.class)
@@ -99,7 +93,7 @@ public class AeroMapperExample {
 
             Account otherAccount = new Account();
             otherAccount.setBalance(150);
-            otherAccount.setCrazyness(22);
+            otherAccount.setCraziness(22);
             otherAccount.setId(17);
             otherAccount.setProduct(product);
             otherAccount.setTitle("This is an account title");
@@ -122,7 +116,7 @@ public class AeroMapperExample {
         System.out.printf("Loaded person: %s\n", p1.toString());
 
         Function<Person, Boolean> function = person -> {
-            System.out.println(String.format("\n\n:::: %s ::::", person.getSsn()));
+            System.out.printf("\n\n:::: %s ::::%n", person.getSsn());
             System.out.println(person.toString());
 
             //mapper.delete(person);

@@ -205,7 +205,5 @@ public class AeroMapperMapTest extends AeroMapperBaseTest {
     	assertEquals(value.b, value2.b);
     	assertEquals(value.c, value2.c);
     	assertEquals(value.d, value2.d);
-    	
     }
-    
 }

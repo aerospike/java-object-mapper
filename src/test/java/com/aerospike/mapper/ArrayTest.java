@@ -1,6 +1,7 @@
 package com.aerospike.mapper;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 import org.junit.Test;
 
@@ -106,7 +107,7 @@ public class ArrayTest extends AeroMapperBaseTest {
 		for (int i = 0; i < b.lazyAs.length; i++) {
 			assertEquals(0, b2.lazyAs[i].age);
 			assertEquals(b.lazyAs[i].id, b2.lazyAs[i].id);
-			assertEquals(null, b2.lazyAs[i].name);
+			assertNull(b2.lazyAs[i].name);
 		}
 	}
 }
