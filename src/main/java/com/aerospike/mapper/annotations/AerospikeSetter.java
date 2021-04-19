@@ -13,7 +13,6 @@ import java.lang.annotation.Target;
 public @interface AerospikeSetter {
 	/**
 	 * The name of the bin to use.
-	 * @return
 	 */
 	String name();
 }

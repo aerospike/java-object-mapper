@@ -15,7 +15,6 @@ public @interface AerospikeRecord {
 	int ttl() default 0;
 	/**
 	 * Determine whether to add all the bins or not. If true, all bins will be added without having to map them via @AerospikeBin
-	 * @return
 	 */
 	boolean mapAll() default true;
 	int version() default 1;
