@@ -6,7 +6,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Bins marked with AerospikeExclude will not be mapped to the database, irrespective of other annotations.
+ * Bins marked with AerospikeEmbed will have the objects they reference embedded in the parent object, either as a list or a map
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.FIELD)

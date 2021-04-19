@@ -2,6 +2,7 @@ package com.aerospike.mapper.tools;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -339,6 +340,13 @@ public class AeroMapper {
         return read(readPolicy, clazz, key, entry, resolveDependencies);
     }
 
+    /**
+     * Read a record from the repository and map it to an instance of the passed class.
+     * @param clazz - the type of be returned. 
+     * @param userKey - The key of the record. The namespace and set will be derived from the values specified on the passed class.
+     * @return
+     * @throws AerospikeException
+     */
     public <T> T read(@NotNull Class<T> clazz, @NotNull Object userKey) throws AerospikeException {
     	return this.read(clazz, userKey, true);
     }
@@ -373,6 +381,54 @@ public class AeroMapper {
             	ThreadLocalKeySaver.clear();
             }
         }
+    }
+
+    public <T> T[] read(@NotNull Class<T> clazz, @NotNull Object ... userKeys) throws AerospikeException {
+    	return this.read(null, clazz, userKeys);
+    }
+
+    public <T> T[] read(BatchPolicy batchPolicy, @NotNull Class<T> clazz, @NotNull Object ... userKeys) throws AerospikeException {
+        ClassCacheEntry<T> entry = getEntryAndValidateNamespace(clazz);
+        String set = entry.getSetName();
+        Key[] keys = new Key[userKeys.length];
+        for (int i = 0; i < userKeys.length; i++) {
+        	if (userKeys[i] == null) {
+        		throw new AerospikeException("Cannot pass null to object " + i + " in multi-read call");
+        	}
+        	else {
+        		keys[i] = new Key(entry.getNamespace(), set, Value.get(entry.translateKeyToAerospikeKey(userKeys[i])));
+        	}
+        }
+        		
+    	return this.readBatch(batchPolicy, clazz, keys, entry);
+    }
+
+    private <T> T[] readBatch(BatchPolicy batchPolicy, @NotNull Class<T> clazz, @NotNull Key[] keys, @NotNull ClassCacheEntry<T> entry) {
+    	if (batchPolicy == null) {
+    		batchPolicy = entry.getBatchPolicy();
+    	}
+        Record[] records = mClient.get(batchPolicy, keys);
+        T[] results = (T[])Array.newInstance(clazz, records.length);
+        for (int i = 0; i < records.length; i++) {
+        	if (records[i] == null) {
+        		results[i] = null;
+        	}
+        	else {
+                try {
+                	ThreadLocalKeySaver.save(keys[i]);
+                    T result = (T) convertToObject(clazz, records[i], entry, false);
+                    results[i] = result;
+                } catch (ReflectiveOperationException e) {
+                    throw new AerospikeException(e);
+                }
+                finally {
+                	ThreadLocalKeySaver.clear();
+                }
+
+        	}
+        }
+        resolveDependencies(entry);
+        return  results;
     }
 
     
