@@ -5,9 +5,6 @@ import java.util.List;
 
 import org.junit.Test;
 
-import com.aerospike.client.DebugAerospikeClient;
-import com.aerospike.client.DebugAerospikeClient.Granularity;
-import com.aerospike.client.DebugAerospikeClient.Options;
 import com.aerospike.mapper.annotations.AerospikeKey;
 import com.aerospike.mapper.annotations.AerospikeRecord;
 import com.aerospike.mapper.annotations.ParamFrom;
@@ -52,7 +49,7 @@ public class BatchLoadTest extends AeroMapperBaseTest {
 	
 	@Test
 	public void testBatchLoad() {
-		AeroMapper mapper = new AeroMapper.Builder(new DebugAerospikeClient(client, new Options(Granularity.EVERY_CALL))).build();
+		AeroMapper mapper = new AeroMapper.Builder(client).build();
 		
 		B[] bees = new B[100];
 		for (int i = 0; i < 100; i++) {
