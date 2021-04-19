@@ -22,5 +22,4 @@ public class DateMapper extends TypeMapper {
 		long longValue = (Long)value;
 		return new Date(longValue);
 	}
-
 }

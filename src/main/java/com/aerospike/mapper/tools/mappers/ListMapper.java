@@ -1,25 +1,15 @@
 package com.aerospike.mapper.tools.mappers;
 
-import java.util.AbstractMap;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.TreeMap;
-
 import com.aerospike.client.AerospikeException;
-import com.aerospike.mapper.annotations.AerospikeReference;
 import com.aerospike.mapper.annotations.AerospikeEmbed.EmbedType;
-import com.aerospike.mapper.tools.AeroMapper;
-import com.aerospike.mapper.tools.ClassCache;
-import com.aerospike.mapper.tools.ClassCacheEntry;
-import com.aerospike.mapper.tools.DeferredObjectLoader;
+import com.aerospike.mapper.tools.*;
 import com.aerospike.mapper.tools.DeferredObjectLoader.DeferredObject;
 import com.aerospike.mapper.tools.DeferredObjectLoader.DeferredObjectSetter;
 import com.aerospike.mapper.tools.DeferredObjectLoader.DeferredSetter;
-import com.aerospike.mapper.tools.TypeMapper;
-import com.aerospike.mapper.tools.TypeUtils;
 import com.aerospike.mapper.tools.TypeUtils.AnnotatedType;
+
+import java.util.*;
+import java.util.Map.Entry;
 
 public class ListMapper extends TypeMapper {
 
@@ -96,7 +86,7 @@ public class ListMapper extends TypeMapper {
 				// This class must be a subclass of the annotated type
 				item = this.instanceClassMapper.toAerospikeFormat(obj, false, true);
 			}
-			return new AbstractMap.SimpleEntry<Object, Object>(key, item);
+			return new AbstractMap.SimpleEntry<>(key, item);
 		}
 	}
 	
@@ -188,9 +178,9 @@ public class ListMapper extends TypeMapper {
 				return value;
 			}
 
+			int index = 0;
 			if (instanceClass == null) {
 				// We don't have any hints as to how to translate them, we have to look up each type
-				int index = 0;
 				for (Object obj : list) {
 					if (obj == null) {
 						results.add(null);
@@ -219,7 +209,6 @@ public class ListMapper extends TypeMapper {
 				}
 			}
 			else {
-				int index = 0;
 				for (Object obj : list) {
 					if (!allowBatchLoad) {
 						results.add(this.instanceClassMapper.fromAerospikeFormat(obj));

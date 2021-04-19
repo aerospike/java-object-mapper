@@ -12,8 +12,7 @@ public class InstantMapper extends TypeMapper {
 			return null;
 		}
 		Instant instant = (Instant)value;
-		long time = instant.getEpochSecond() * 1_000_000_000 + instant.getNano();
-		return time;
+		return instant.getEpochSecond() * 1_000_000_000 + instant.getNano();
 	}
 
 	@Override
@@ -24,5 +23,4 @@ public class InstantMapper extends TypeMapper {
 		long longValue = (Long)value;
 		return Instant.ofEpochSecond(longValue/1_000_000_000, longValue % 1_000_000_000);
 	}
-
 }

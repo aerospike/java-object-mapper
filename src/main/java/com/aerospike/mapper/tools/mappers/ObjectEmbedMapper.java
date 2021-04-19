@@ -8,7 +8,6 @@ import com.aerospike.mapper.annotations.AerospikeEmbed.EmbedType;
 import com.aerospike.mapper.tools.AeroMapper;
 import com.aerospike.mapper.tools.ClassCache;
 import com.aerospike.mapper.tools.ClassCacheEntry;
-import com.aerospike.mapper.tools.TypeMapper;
 
 public class ObjectEmbedMapper extends ObjectMapper {
 
@@ -50,7 +49,7 @@ public class ObjectEmbedMapper extends ObjectMapper {
 		}
 		ClassCacheEntry<?> entry = ClassCache.getInstance().loadClass(referencedClass, this.mapper);
 		try {
-			Object instance = null;
+			Object instance;
 			
 			switch (type) {
 			case LIST:
