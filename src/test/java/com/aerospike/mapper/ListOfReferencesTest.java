@@ -1,20 +1,17 @@
 package com.aerospike.mapper;
 
-import static org.junit.Assert.assertEquals;
-
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-
-import org.junit.Test;
-
-import com.aerospike.mapper.annotations.AerospikeEmbed;
-import com.aerospike.mapper.annotations.AerospikeEmbed.EmbedType;
 import com.aerospike.mapper.annotations.AerospikeKey;
 import com.aerospike.mapper.annotations.AerospikeRecord;
 import com.aerospike.mapper.annotations.AerospikeReference;
 import com.aerospike.mapper.annotations.AerospikeReference.ReferenceType;
 import com.aerospike.mapper.tools.AeroMapper;
+import org.junit.Test;
+
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+
+import static org.junit.Assert.assertEquals;
 
 public class ListOfReferencesTest extends AeroMapperBaseTest {
 	
@@ -40,8 +37,8 @@ public class ListOfReferencesTest extends AeroMapperBaseTest {
 		@AerospikeKey
 		private int id;
 		private String name;
-		@AerospikeReference(type = ReferenceType.ID, lazy = false)
-		private List<Item> items;
+		@AerospikeReference(type = ReferenceType.ID)
+		private final List<Item> items;
 		
 		public Container() {
 			this.items = new ArrayList<>();
@@ -75,5 +72,4 @@ public class ListOfReferencesTest extends AeroMapperBaseTest {
 			assertEquals(container.items.get(i).due, newVersion.items.get(i).due);
 		}
 	}
-	
 }

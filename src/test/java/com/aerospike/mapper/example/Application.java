@@ -85,7 +85,7 @@ public class Application extends ApplicationBase {
 		mapper.save(savingsAccount);
 		customer.getAccounts().add(savingsAccount);
 
-		/* Create a porfolio account for this customer */
+		/* Create a portfolio account for this customer */
 		Property property1 = createAndPopulateProperty1();
 		Property property2 = createAndPopulateProperty2();
 		Property property3 = createAndPopulateProperty3();
@@ -126,7 +126,7 @@ public class Application extends ApplicationBase {
 		for (int i = 0; i < 100; i++) {
 			long now = System.nanoTime();
 			readCustomer = mapper.read(Customer.class, customer.getCustomerId());
-			System.out.println(String.format("Customer graph read time: %.3fms", (System.nanoTime() - now)/1000000f));
+			System.out.printf("Customer graph read time: %.3fms%n", (System.nanoTime() - now)/1000000f);
 		}
 		ObjectWriter objectWriter = new ObjectMapper().writerWithDefaultPrettyPrinter();
 		String readString = objectWriter.writeValueAsString(readCustomer);

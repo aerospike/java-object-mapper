@@ -32,15 +32,14 @@ public class Customer {
 	private Date joinedBank;
 	private boolean vip;
 	@AerospikeBin(name = "greet")
-	private String preferredSaluation;
-	
-	
+	private String preferredSalutation;
+
 	public Customer(@ParamFrom("id") String customerId, @ParamFrom("firstName") String firstName, @ParamFrom("lastName") String lastName) {
 		super();
 		this.customerId = customerId;
 		this.firstName = firstName;
 		this.lastName = lastName;
-		this.accounts = new ArrayList<Account>();
+		this.accounts = new ArrayList<>();
 	}
 
 	public String getFirstName() {
@@ -111,11 +110,11 @@ public class Customer {
 		this.vip = vip;
 	}
 
-	public String getPreferredSaluation() {
-		return preferredSaluation;
+	public String getPreferredSalutation() {
+		return preferredSalutation;
 	}
 
-	public void setPreferredSaluation(String preferredSaluation) {
-		this.preferredSaluation = preferredSaluation;
+	public void setPreferredSalutation(String preferredSalutation) {
+		this.preferredSalutation = preferredSalutation;
 	}
 }

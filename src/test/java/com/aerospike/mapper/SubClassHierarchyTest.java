@@ -42,7 +42,7 @@ public class SubClassHierarchyTest extends AeroMapperBaseTest {
 		private Date dateJoined;
 		@AerospikeReference
 		private List<Account> accounts;
-		private Map<String, Account> accountMap;
+		private final Map<String, Account> accountMap;
 
 		private Account primaryAcc;
 		private Account secondaryAcc;
@@ -130,7 +130,7 @@ public class SubClassHierarchyTest extends AeroMapperBaseTest {
 		private Savings savings;
 		private Checking checking;
 		@AerospikeEmbed(elementType = EmbedType.LIST)
-		private List<Account> accountList = new ArrayList<>();
+		private final List<Account> accountList = new ArrayList<>();
 		private Account primaryAccount;
 	}
 	
@@ -197,10 +197,9 @@ public class SubClassHierarchyTest extends AeroMapperBaseTest {
 		
 		customer.accounts.add(savingsAccount1);
 		customer.accounts.add(checkingAccount1);
-		
-		
+
 		Portfolio portfolio = new Portfolio();
-		portfolio.subAccounts = Arrays.asList(new String[] {"sub-1", "sub-2", "sub-3"});
+		portfolio.subAccounts = Arrays.asList("sub-1", "sub-2", "sub-3");
 		portfolio.id = "PF1";
 		portfolio.balance = 1000;
 		customer.accounts.add(portfolio);

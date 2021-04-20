@@ -68,6 +68,5 @@ public class PartialRecordsTest extends AeroMapperBaseTest{
 		assertEquals(99, record.getInt("c"));
 		assertEquals(4, record.getInt("d"));
 		assertEquals(11, record.getInt("e"));
-
 	}
 }

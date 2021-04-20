@@ -27,8 +27,8 @@ public class AeroMapperCustomConverterTest extends AeroMapperBaseTest {
         client.truncate(null, NAMESPACE, "poker", null);
     }
 
-    public static enum Suit {
-        CLUBS, DIAMONDS, HEARTS, SPADES;
+    public enum Suit {
+        CLUBS, DIAMONDS, HEARTS, SPADES
     }
 
     @AerospikeRecord(namespace = NAMESPACE, set = "card")
@@ -89,7 +89,6 @@ public class AeroMapperCustomConverterTest extends AeroMapperBaseTest {
             return true;
         }
     }
-
 
     public static class CardConverter {
         @ToAerospike

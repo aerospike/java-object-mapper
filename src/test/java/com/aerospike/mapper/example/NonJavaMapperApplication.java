@@ -23,14 +23,14 @@ public class NonJavaMapperApplication extends ApplicationBase {
 		
 		Bin customerId = new Bin("id", customer.getCustomerId());
 		Bin firstName = new Bin("firstName", customer.getFirstName());
-		Bin lasttName = new Bin("lastName", customer.getFirstName());
+		Bin lastName = new Bin("lastName", customer.getFirstName());
 		Bin dateOfBirth = new Bin("dob", customer.getDateOfBirth() == null ? null : customer.getDateOfBirth().getTime());
 		Bin phone = new Bin("phone", customer.getPhone());
 		Bin joinedBank = new Bin("joinedBank", customer.getJoinedBank() == null ? null : customer.getJoinedBank().getTime());
 		Bin vip = new Bin("vip", customer.isVip());
-		Bin salutation = new Bin("greet", customer.getPreferredSaluation());
+		Bin salutation = new Bin("greet", customer.getPreferredSalutation());
 		
-		client.put(null, key, customerId, firstName, lasttName, dateOfBirth, phone, joinedBank, vip, salutation);
+		client.put(null, key, customerId, firstName, lastName, dateOfBirth, phone, joinedBank, vip, salutation);
 	}
 
 	private Customer read(IAerospikeClient client, String id) {
@@ -41,13 +41,13 @@ public class NonJavaMapperApplication extends ApplicationBase {
 				record.getString("firstName"),
 				record.getString("lastName"));
 		
-		Long date = record.getLong("dob");
-		result.setDateOfBirth(date == null ? null : new Date(date));
+		long date = record.getLong("dob");
+		result.setDateOfBirth(new Date(date));
 		result.setPhone(record.getString("phone"));
 		date = record.getLong("joinedBank");
-		result.setJoinedBank(date == null ? null : new Date(date));
+		result.setJoinedBank(new Date(date));
 		result.setVip(record.getBoolean("vip"));
-		result.setPreferredSaluation(record.getString("greet"));
+		result.setPreferredSalutation(record.getString("greet"));
 		
 		return result;
 	}
@@ -62,7 +62,7 @@ public class NonJavaMapperApplication extends ApplicationBase {
 		for (int i = 0; i < 100; i++) {
 			long now = System.nanoTime();
 			customer2 = read(client, customer.getCustomerId());
-			System.out.println(String.format("Customer graph read time: %.3fms", (System.nanoTime() - now)/1000000f));
+			System.out.printf("Customer graph read time: %.3fms%n", (System.nanoTime() - now)/1000000f);
 		}
 		
 		ObjectWriter objectWriter = new ObjectMapper().writerWithDefaultPrettyPrinter();

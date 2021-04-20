@@ -45,7 +45,7 @@ public class MapTest extends AeroMapperBaseTest {
 		A a6 = new A("f", 60, 6);
 		
 		B b = new B();
-		b.batchAs = new HashMap<Integer, A>();
+		b.batchAs = new HashMap<>();
 		b.id = 1;
 		
 		b.batchAs.put(10, a1);

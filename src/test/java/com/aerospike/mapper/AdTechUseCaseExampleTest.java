@@ -106,7 +106,7 @@ public class AdTechUseCaseExampleTest extends AeroMapperBaseTest {
 					.withReadPolicy(readPolicy).forAll()
 				.build();
 		
-		User user = new User("User1", new Date(), new ArrayList<Segment>());
+		User user = new User("User1", new Date(), new ArrayList<>());
 		mapper.save(user);
 		
 		// Create a virtual list pointing to the users' segments

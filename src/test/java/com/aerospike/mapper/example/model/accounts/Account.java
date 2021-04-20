@@ -144,5 +144,4 @@ public class Account {
 	public AccountType getType() {
 		return type;
 	}
-	
 }

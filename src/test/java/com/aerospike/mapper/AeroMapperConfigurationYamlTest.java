@@ -140,5 +140,4 @@ public class AeroMapperConfigurationYamlTest extends AeroMapperBaseTest {
 		ContainerClass container2 = mapper.read(ContainerClass.class, container.id);
 		assertEquals(container, container2);
     }
-    
 }

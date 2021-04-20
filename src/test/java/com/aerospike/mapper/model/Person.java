@@ -56,7 +56,7 @@ public class Person {
     private Account tertiaryAccount;
 
     public Person() {
-        accounts = new ArrayList<Account>();
+        accounts = new ArrayList<>();
     }
 
     public String getSsn() {

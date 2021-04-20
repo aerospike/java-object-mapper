@@ -7,7 +7,7 @@ import com.aerospike.mapper.annotations.AerospikeKey;
 import com.aerospike.mapper.annotations.AerospikeRecord;
 import com.aerospike.mapper.tools.AeroMapper;
 
-public class InheritenceTest extends AeroMapperBaseTest {
+public class InheritanceTest extends AeroMapperBaseTest {
 	@AerospikeRecord(namespace = "test", set = "A")
 	public static class A {
 		@AerospikeKey
@@ -54,7 +54,7 @@ public class InheritenceTest extends AeroMapperBaseTest {
 		C c = new C();
 		c.id = 3;
 		c.name = "c";
-		c.otherName = "maquerading as a B";
+		c.otherName = "masquerading as a B";
 		
 		D d = new D();
 		d.id = 4;
@@ -68,5 +68,4 @@ public class InheritenceTest extends AeroMapperBaseTest {
 		A a2 = mapper.read(A.class, a.id);
 		compare(a, a2);
 	}
-	
 }

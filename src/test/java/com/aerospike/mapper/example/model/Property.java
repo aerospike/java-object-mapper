@@ -17,7 +17,7 @@ public class Property {
 	@AerospikeEmbed
 	private final Address address;
 	@AerospikeEmbed
-	private List<Valuation> valuations;
+	private final List<Valuation> valuations;
 	@AerospikeBin(name = "cyear")
 	private final int constructionYear;
 	@AerospikeBin(name = "cnstrn")

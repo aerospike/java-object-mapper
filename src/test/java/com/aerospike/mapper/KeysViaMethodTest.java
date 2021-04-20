@@ -1,27 +1,20 @@
 package com.aerospike.mapper;
 
-import static org.junit.Assert.assertEquals;
-
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.GregorianCalendar;
-import java.util.List;
-import java.util.concurrent.TimeUnit;
-
-import org.junit.Test;
-
 import com.aerospike.client.Key;
 import com.aerospike.client.Value;
-import com.aerospike.mapper.annotations.AerospikeBin;
-import com.aerospike.mapper.annotations.AerospikeEmbed;
+import com.aerospike.mapper.annotations.*;
 import com.aerospike.mapper.annotations.AerospikeEmbed.EmbedType;
-import com.aerospike.mapper.annotations.AerospikeExclude;
-import com.aerospike.mapper.annotations.AerospikeKey;
-import com.aerospike.mapper.annotations.AerospikeRecord;
 import com.aerospike.mapper.tools.AeroMapper;
-import com.aerospike.mapper.tools.ClassCache;
+import org.junit.Test;
+
+import java.util.*;
+import java.util.concurrent.TimeUnit;
+
+import static org.junit.Assert.assertEquals;
 
 public class KeysViaMethodTest extends AeroMapperBaseTest {
+
+	private static final long epochTime = new GregorianCalendar(2020, Calendar.JANUARY, 1, 0, 0, 0).getTimeInMillis();
 
 	@AerospikeRecord(namespace = "test", set = "testSet", sendKey = true)
 	public static class BasicClass {
@@ -76,10 +69,6 @@ public class KeysViaMethodTest extends AeroMapperBaseTest {
 		System.out.println("Container 2 loaded");
 	}
 	
-
-	
-	private static final long epochTime = new GregorianCalendar(2020, 0, 1, 0, 0, 0).getTimeInMillis();
-	
 	// Since this record is only ever embedded, we do not need to specify a namespace or set (it would
 	// not hurt anything if we did so though)
 	@AerospikeRecord
@@ -125,7 +114,7 @@ public class KeysViaMethodTest extends AeroMapperBaseTest {
 		
 		@AerospikeBin
 		@AerospikeEmbed(elementType = EmbedType.LIST, type=EmbedType.MAP)
-		private List<Transaction> txnList;
+		private final List<Transaction> txnList;
 		
 		public AccountTxnContainer() {
 			this.txnList = new ArrayList<>();
@@ -136,7 +125,6 @@ public class KeysViaMethodTest extends AeroMapperBaseTest {
 			return accountName + "-" +daySinceEpoch;
 		}
 	}
-	
 
 	@Test
 	public void advancedTest() {
