@@ -249,7 +249,6 @@ public class AeroMapper {
 		return result;
     }
 
-
     /**
      * Save each object in the database. This method will perform a REPLACE on the existing record so any existing
      * data will be overwritten by the data in the passed object. This is a convenience method for
@@ -342,10 +341,10 @@ public class AeroMapper {
 
     /**
      * Read a record from the repository and map it to an instance of the passed class.
-     * @param clazz - the type of be returned. 
+     * @param clazz - The type of be returned.
      * @param userKey - The key of the record. The namespace and set will be derived from the values specified on the passed class.
-     * @return
-     * @throws AerospikeException
+     * @return The returned mapped record.
+     * @throws AerospikeException an AerospikeException will be thrown in case of an error.
      */
     public <T> T read(@NotNull Class<T> clazz, @NotNull Object userKey) throws AerospikeException {
     	return this.read(clazz, userKey, true);
@@ -372,7 +371,7 @@ public class AeroMapper {
         } else {
             try {
             	ThreadLocalKeySaver.save(key);
-                T result = (T) convertToObject(clazz, record, entry, resolveDepenencies);
+                T result = convertToObject(clazz, record, entry, resolveDepenencies);
                 return result;
             } catch (ReflectiveOperationException e) {
                 throw new AerospikeException(e);
@@ -383,10 +382,25 @@ public class AeroMapper {
         }
     }
 
+    /**
+     * Read a batch of records from the repository and map them to an instance of the passed class.
+     * @param clazz - The type of be returned.
+     * @param userKeys - The keys of the record. The namespace and set will be derived from the values specified on the passed class.
+     * @return The returned mapped records.
+     * @throws AerospikeException an AerospikeException will be thrown in case of an error.
+     */
     public <T> T[] read(@NotNull Class<T> clazz, @NotNull Object ... userKeys) throws AerospikeException {
     	return this.read(null, clazz, userKeys);
     }
 
+    /**
+     * Read a batch of records from the repository and map them to an instance of the passed class.
+     * @param batchPolicy A given batch policy.
+     * @param clazz - The type of be returned.
+     * @param userKeys - The keys of the record. The namespace and set will be derived from the values specified on the passed class.
+     * @return The returned mapped records.
+     * @throws AerospikeException an AerospikeException will be thrown in case of an error.
+     */
     public <T> T[] read(BatchPolicy batchPolicy, @NotNull Class<T> clazz, @NotNull Object ... userKeys) throws AerospikeException {
         ClassCacheEntry<T> entry = getEntryAndValidateNamespace(clazz);
         String set = entry.getSetName();
@@ -416,7 +430,7 @@ public class AeroMapper {
         	else {
                 try {
                 	ThreadLocalKeySaver.save(keys[i]);
-                    T result = (T) convertToObject(clazz, records[i], entry, false);
+                    T result = convertToObject(clazz, records[i], entry, false);
                     results[i] = result;
                 } catch (ReflectiveOperationException e) {
                     throw new AerospikeException(e);
@@ -424,14 +438,12 @@ public class AeroMapper {
                 finally {
                 	ThreadLocalKeySaver.clear();
                 }
-
         	}
         }
         resolveDependencies(entry);
-        return  results;
+        return results;
     }
 
-    
     public <T> boolean delete(@NotNull Class<T> clazz, @NotNull Object userKey) throws AerospikeException {
     	return this.delete(null, clazz, userKey);
     }

@@ -80,5 +80,4 @@ public class BatchLoadTest extends AeroMapperBaseTest {
 		compare(results[4], as[1]);
 		compare(results[5], null);
 	}
-
 }
