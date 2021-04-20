@@ -35,13 +35,22 @@ public abstract class AeroMapperBaseTest {
 		ClassCache.getInstance().clear();
 
     }
-    
+
     public void compare(Object original, Object read) {
+    	this.compare(original, read, false);
+    }
+
+    public void compare(Object original, Object read, boolean showObjects) {
     	try {
 			ObjectWriter objectWriter = new ObjectMapper().writerWithDefaultPrettyPrinter();
 			String readString = objectWriter.writeValueAsString(read);
-			System.out.println(readString);
+			if (showObjects) {
+				System.out.println("------ Read Data -----\n" + readString);
+			}
 			String originalObject = objectWriter.writeValueAsString(original);
+			if (showObjects) {
+				System.out.println("------ Original Data -----\n" + originalObject);
+			}
 			assertEquals(originalObject, readString);
     	} catch (JsonProcessingException jpe) {
     		throw new RuntimeException(jpe);
