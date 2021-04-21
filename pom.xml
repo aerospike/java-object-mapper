@@ -16,6 +16,7 @@
    		<maven.compiler.target>1.8</maven.compiler.target>
 		<maven.compiler.source>1.8</maven.compiler.source>
 		<maven.compiler.plugin.version>3.8.0</maven.compiler.plugin.version>
+		<maven.source.plugin.version>3.2.1</maven.source.plugin.version>
 		<junit.version>4.13.2</junit.version>
 		<javax.validation-api.version>2.0.1.Final</javax.validation-api.version>
 		<aerospike-client.version>5.0.7</aerospike-client.version>
@@ -66,6 +67,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-source-plugin</artifactId>
+				<version>${maven.source.plugin.version}</version>
 				<executions>
 					<execution>
 						<id>attach-sources</id>
