@@ -10,18 +10,26 @@ import com.aerospike.mapper.tools.DeferredObjectLoader.DeferredObjectSetter;
 import com.aerospike.mapper.tools.TypeUtils.AnnotatedType;
 import com.aerospike.mapper.tools.configuration.ClassConfig;
 import com.aerospike.mapper.tools.configuration.Configuration;
-import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import org.apache.commons.lang3.StringUtils;
+
+import javax.validation.constraints.NotNull;
+import java.io.File;
+import java.io.IOException;
+import java.lang.reflect.Array;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
 
 public class AeroMapper {
 
     final IAerospikeClient mClient;
 
     public static class Builder {
-        private AeroMapper mapper;
+        private final AeroMapper mapper;
         private List<Class<?>> classesToPreload = null;
 
         public Builder(IAerospikeClient client) {
@@ -30,9 +38,8 @@ public class AeroMapper {
         }
 
         /**
-         * Add in a custom type converter. The converter must have methods which implement the ToAerospike and FromAerospike annotation
-         *
-         * @param converter
+         * Add in a custom type converter. The converter must have methods which implement the ToAerospike and FromAerospike annotation.
+         * @param converter The custom converter
          * @return this object
          */
         public Builder addConverter(Object converter) {
@@ -50,22 +57,22 @@ public class AeroMapper {
             return this;
         }
 
-        public Builder withConfigurationFile(File file) throws JsonParseException, JsonMappingException, IOException {
+        public Builder withConfigurationFile(File file) throws IOException {
         	return this.withConfigurationFile(file, false);
         }
         
-        public Builder withConfigurationFile(File file, boolean allowsInvalid) throws JsonParseException, JsonMappingException, IOException {
+        public Builder withConfigurationFile(File file, boolean allowsInvalid) throws IOException {
         	ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory());
         	Configuration configuration = objectMapper.readValue(file, Configuration.class);
         	this.loadConfiguration(configuration, allowsInvalid);
         	return this;
         }
 
-        public Builder withConfiguration(String configurationYaml) throws JsonMappingException, JsonProcessingException {
+        public Builder withConfiguration(String configurationYaml) throws JsonProcessingException {
         	return this.withConfiguration(configurationYaml, false);
         }
         
-        public Builder withConfiguration(String configurationYaml, boolean allowsInvalid) throws JsonMappingException, JsonProcessingException {
+        public Builder withConfiguration(String configurationYaml, boolean allowsInvalid) throws JsonProcessingException {
         	ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory());
         	Configuration configuration = objectMapper.readValue(configurationYaml, Configuration.class);
         	this.loadConfiguration(configuration, allowsInvalid);
@@ -83,7 +90,7 @@ public class AeroMapper {
 	        			try {
 	        				Class.forName(config.getClassName());
 						} catch (ClassNotFoundException e) {
-							throw new AerospikeException("Canot find a class with name " + name);
+							throw new AerospikeException("Cannot find a class with name " + name);
 						}
 	        		}
         		}
@@ -202,8 +209,8 @@ public class AeroMapper {
     /**
      * Translate a Java object to an Aerospike format object. Note that this could potentially have performance issues as
      * the type information of the passed object must be determined on every call.
-     * @param obj
-     * @return
+     * @param obj A given Java object.
+     * @return An Aerospike format object.
      */
     public Object translateToAerospike(Object obj) {
     	if (obj == null) {
@@ -216,8 +223,8 @@ public class AeroMapper {
     /**
      * Translate an Aerospike object to a Java object. Note that this could potentially have performance issues as
      * the type information of the passed object must be determined on every call.
-     * @param obj
-     * @return
+     * @param obj A given Java object.
+     * @return An Aerospike format object.
      */
     @SuppressWarnings("unchecked")
 	public <T> T translateFromAerospike(@NotNull Object obj, @NotNull Class<T> expectedClazz) {
@@ -237,8 +244,8 @@ public class AeroMapper {
      * </pre>
      * Not that no transactionality is implied by this method -- if any of the save methods fail, the exception will be
      * thrown without trying the other objects, nor attempting to roll back previously saved objects
-     * @param object
-     * @throws AerospikeException
+     * @param objects One or two objects to save.
+     * @throws AerospikeException an AerospikeException will be thrown in case of an error.
      */
     public void save(@NotNull Object ... objects) throws AerospikeException {
     	for (Object thisObject : objects) {
@@ -249,8 +256,8 @@ public class AeroMapper {
     /**
      * Save an object in the database. This method will perform a REPLACE on the existing record so any existing
      * data will be overwritten by the data in the passed object
-     * @param object
-     * @throws AerospikeException
+     * @param object The object to save.
+     * @throws AerospikeException an AerospikeException will be thrown in case of an error.
      */
     public void save(@NotNull Object object, String ...binNames) throws AerospikeException {
         save(null, object, RecordExistsAction.REPLACE, binNames);
@@ -259,19 +266,19 @@ public class AeroMapper {
     /**
      * Save an object in the database with the given WritePolicy. This write policy will override any other set writePolicy so
      * is effectively an upsert operation
-     * @param object
-     * @throws AerospikeException
+     * @param writePolicy The write policy for the save operation.
+     * @param object The object to save.
+     * @throws AerospikeException an AerospikeException will be thrown in case of an error.
      */
     public void save(@NotNull WritePolicy writePolicy, @NotNull Object object, String ...binNames) throws AerospikeException {
         save(writePolicy, object, null, binNames);
     }
 
-
     /**
      * Updates the object in the database, merging the record with the existing record. This uses the RecordExistsAction
      * of UPDATE. If bins are specified, only bins with the passed names will be updated (or all of them if null is passed)
-     * @param object
-     * @throws AerospikeException
+     * @param object The object to update.
+     * @throws AerospikeException an AerospikeException will be thrown in case of an error.
      */
     public void update(@NotNull Object object, String ... binNames) throws AerospikeException {
         save(null, object, RecordExistsAction.UPDATE, binNames);
@@ -329,7 +336,7 @@ public class AeroMapper {
     }
     
     /**
-     * This method should not be used: It is used by mappers to correctly resolved dependencies. Use read(clazz, userkey) instead
+     * This method should not be used: It is used by mappers to correctly resolved dependencies. Use read(clazz, userKey) instead
      */
     public <T> T read(@NotNull Class<T> clazz, @NotNull Object userKey, boolean resolveDependencies) throws AerospikeException {
         ClassCacheEntry<T> entry = getEntryAndValidateNamespace(clazz);
@@ -338,7 +345,7 @@ public class AeroMapper {
         return read(null, clazz, key, entry, resolveDependencies);
     }
 
-    private <T> T read(Policy readPolicy, @NotNull Class<T> clazz, @NotNull Key key, @NotNull ClassCacheEntry<T> entry, boolean resolveDepenencies) {
+    private <T> T read(Policy readPolicy, @NotNull Class<T> clazz, @NotNull Key key, @NotNull ClassCacheEntry<T> entry, boolean resolveDependencies) {
     	if (readPolicy == null) {
     		readPolicy = entry.getReadPolicy();
     	}
@@ -390,7 +397,7 @@ public class AeroMapper {
         		keys[i] = new Key(entry.getNamespace(), set, Value.get(entry.translateKeyToAerospikeKey(userKeys[i])));
         	}
         }
-        		
+
     	return this.readBatch(batchPolicy, clazz, keys, entry);
     }
 
@@ -399,7 +406,7 @@ public class AeroMapper {
     		batchPolicy = entry.getBatchPolicy();
     	}
         Record[] records = mClient.get(batchPolicy, keys);
-        T[] results = (T[]) Array.newInstance(clazz, records.length);
+        T[] results = (T[])Array.newInstance(clazz, records.length);
         for (int i = 0; i < records.length; i++) {
         	if (records[i] == null) {
         		results[i] = null;
@@ -478,7 +485,7 @@ public class AeroMapper {
      * @return A virtual list.
      */
     public <T> VirtualList<T> asBackedList(@NotNull Object object, @NotNull String binName, Class<T> elementClazz) {
-    	return new VirtualList<T>(this, object, binName, elementClazz);
+    	return new VirtualList<>(this, object, binName, elementClazz);
     }
     
     /**
@@ -498,13 +505,14 @@ public class AeroMapper {
      * </ul>
      * These operation can all be done without having the full set of transactions
      * @param <T> the type of the elements in the list.
-     * @param object
-     * @param binName
-     * @param elementClazz
-     * @return
+     * @param owningClazz Used for the definitions of how to map the list elements.
+     * @param key The key to map the object to the database.
+     * @param binName The Aerospike bin name.
+     * @param elementClazz The class of the elements in the list.
+     * @return A virtual list.
      */
     public <T> VirtualList<T> asBackedList(@NotNull Class<?> owningClazz, @NotNull Object key, @NotNull String binName, Class<T> elementClazz) {
-    	return new VirtualList<T>(this, owningClazz, key, binName, elementClazz);
+    	return new VirtualList<>(this, owningClazz, key, binName, elementClazz);
     }
     
     public <T> void find(@NotNull Class<T> clazz, Function<T, Boolean> function) throws AerospikeException {
@@ -683,6 +691,4 @@ public class AeroMapper {
         	deferredObjects = DeferredObjectLoader.getAndClear();
     	}
     }
-    
-
 }

@@ -6,9 +6,6 @@ public abstract class TypeMapper {
 	
 	/**
 	 * Some types need to know if they're mapped to the correct class. If they do, they can override this method to glean that information
-	 * @param value
-	 * @param isExpectedType
-	 * @return
 	 */
 	public Object toAerospikeFormat(Object value, boolean isUnknownType, boolean isSubclassOfKnownType) {
 		return toAerospikeFormat(value);

@@ -3,7 +3,7 @@ package com.aerospike.mapper.tools;
 import com.aerospike.client.Key;
 
 public class ThreadLocalKeySaver {
-	private static ThreadLocal<Key> threadLocalKey = new ThreadLocal<>();
+	private static final ThreadLocal<Key> threadLocalKey = new ThreadLocal<>();
 	
 	public static void save(Key key) {
 		threadLocalKey.set(key);

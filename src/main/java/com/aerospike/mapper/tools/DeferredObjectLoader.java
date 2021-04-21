@@ -4,8 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class DeferredObjectLoader {
-	public static interface DeferredSetter {
-		public void setValue(Object object);
+	public interface DeferredSetter {
+		void setValue(Object object);
 	}
 	
 	public static class DeferredObject {
@@ -47,12 +47,7 @@ public class DeferredObjectLoader {
 	}
 	
 	
-	private static ThreadLocal<List<DeferredObjectSetter>> threadLocalLoader = new ThreadLocal<List<DeferredObjectSetter>>() {
-		@Override
-		public List<DeferredObjectSetter> initialValue() {
-			return new ArrayList<DeferredObjectSetter>();
-		}
-	};
+	private static final ThreadLocal<List<DeferredObjectSetter>> threadLocalLoader = ThreadLocal.withInitial(ArrayList::new);
 	
 	public static void save(DeferredObjectSetter object) {
 		threadLocalLoader.get().add(object);
@@ -72,7 +67,7 @@ public class DeferredObjectLoader {
 
 	public static List<DeferredObjectSetter> getAndClear() {
 		List<DeferredObjectSetter> localArray = threadLocalLoader.get();
-		List<DeferredObjectSetter> setters = new ArrayList<DeferredObjectSetter>(localArray);
+		List<DeferredObjectSetter> setters = new ArrayList<>(localArray);
 		localArray.clear();
 		return setters;
 	}

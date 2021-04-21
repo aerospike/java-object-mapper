@@ -13,7 +13,7 @@ import com.aerospike.mapper.tools.configuration.ClassConfig;
 
 public class PropertyDefinition {
 	
-	public static enum SetterParamType {
+	public enum SetterParamType {
 		NONE,
 		KEY,
 		VALUE
