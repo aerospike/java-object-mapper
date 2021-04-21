@@ -571,7 +571,7 @@ These types are built into the converter. However, if you wish to change them, y
 
 ```java
 public static class DateConverter {
-	private static final ThreadLocal<SimpleDateFormat> dateFormatter = ThreadLocal.withInitial(() -> new SimpleDateFormat("dd-MM-yyyy hh:mm:ss.SSS"));
+    	private static final ThreadLocal<SimpleDateFormat> dateFormatter = ThreadLocal.withInitial(() -> new SimpleDateFormat("dd-MM-yyyy HH:mm:ss.SSS zzzZ"));
     @ToAerospike
     public String toAerospike(Date date) {
     	if (date == null) {

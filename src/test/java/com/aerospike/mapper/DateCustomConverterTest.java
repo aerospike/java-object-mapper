@@ -19,8 +19,9 @@ import com.aerospike.mapper.tools.AeroMapper;
 public class DateCustomConverterTest extends AeroMapperBaseTest {
 
     public static class DateConverter {
-    	private static final ThreadLocal<SimpleDateFormat> dateFormatter = ThreadLocal.withInitial(() -> new SimpleDateFormat("dd-MM-yyyy hh:mm:ss.SSS"));
-        @ToAerospike
+    	private static final ThreadLocal<SimpleDateFormat> dateFormatter = ThreadLocal.withInitial(() -> new SimpleDateFormat("dd-MM-yyyy HH:mm:ss.SSS zzzZ"));
+
+    	@ToAerospike
         public String toAerospike(Date date) {
         	if (date == null) {
         		return null;
