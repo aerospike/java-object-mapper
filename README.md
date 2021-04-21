@@ -537,6 +537,67 @@ Since this information is redundant, it could be stripped out, shortening the le
 
 ----
 
+## Default Mappings of Java Data type
+Here are how standard Java types are mapped to Aerospike types:
+| Java Type | Aerospike Type |
+| --- | --- |
+| byte | integral numeric |
+| char | integral numeric |
+| short | integral numeric |
+| int | integral numeric |
+| long | integral numeric |
+| boolean | integral numeric |
+| Byte | integral numeric |
+| Character | integral numeric |
+| Short | integral numeric |
+| Integer | integral numeric |
+| Long | integral numeric |
+| Boolean | integral numeric |
+| float | double numeric |
+| double | double numeric |
+| Float | double numeric |
+| Double | double numeric |
+| java.util.Date | integral numeric |
+| java.time.Instant | integral numeric |
+| String | String |
+| byte[] | BLOB |
+| enums | String |
+| Arrays (int[], String[], Customer[], etc) | List |
+| List<?> | List or Map |
+| Map<?,?> | Map |
+| Object Reference (@AerospikeRecord) | List or Map |
+
+These types are built into the converter. However, if you wish to change them, you can use a (Custom Object Converter)]custom-object-converter]. For example, if you want Dates stored in the database as a string, you could do:
+
+```java
+public static class DateConverter {
+	private static final ThreadLocal<SimpleDateFormat> dateFormatter = ThreadLocal.withInitial(() -> new SimpleDateFormat("dd-MM-yyyy hh:mm:ss.SSS"));
+    @ToAerospike
+    public String toAerospike(Date date) {
+    	if (date == null) {
+    		return null;
+    	}
+		return dateFormatter.get().format(date);
+    }
+
+    @FromAerospike
+    public Date fromAerospike(String dateStr) throws ParseException {
+    	if (dateStr == null) {
+    		return null;
+    	}
+    	return dateFormatter.get().parse(dateStr);
+    }
+}
+
+AeroMapper convertingMapper = new AeroMapper.Builder(client).addConverter(new DateConverter()).build();
+```
+
+(Note that SimpleDateFormat is not thread-safe, and hence the use of the ThreadLocal variable)
+
+This would affect all dates. If you wanted to affect the format of some dates, create a sub-class Date and have the converter change that to the String format.
+
+----
+
 ## References to other objects
 The mapper has 2 ways of mapping child objects associated with parent objects: by reference, or embedding them. Further, embedded objects can be stored either as lists or maps. All of this is controlled by annotations on the owning (parent) class.
 
@@ -785,6 +846,30 @@ Note that storing the digest as the referencing key is not compatible with lazy 
 ```
 
 will throw an exception at runtime. 
+
+#### Batch Loading
+
+Note that when objects are stored by non-lazy references, all dependent children objects will be loaded by batch loading. For example, assume there is a complex object graph like:
+
+![Object Diagram](/images/complexObjectGraph.png)
+
+Note that some of the objects are embedded and some are references.
+
+If we then instantiate a complex object graph like:
+
+![Object Graph](/images/objectInstantiation.png)
+
+Here you can see the Customer has a lot of dependent objects, where the white objects are being loaded by reference and the grey objects are being embedded into the parent. When the Customer is loaded the entire object graph is loaded. Looking at the calls that are performed to the database, we see:
+
+```
+Get: [test:customer:cust1:818d8a436587c36aef4da99d28eaf17e3ce3a0e1] took 0.211ms, record found
+Batch: [4/4 keys] took 0.258ms
+Batch: [6/6 keys] took 0.262ms
+Batch: [2/2 keys] took 0.205ms
+```
+
+The first call (the `get`) is for the Customer object, the first batch of 4 is for the Cusomter's 4 accounts (Checking, Savings, Loan, Portfolio), the second batch of 6 items is for the 2 checkbooks and 4 security properties, and the last batch of 2 items is for the 2 branches. The AeroMapper will load all dependent objects it can in one hit, even if they're of different classes. This includes elements within LIsts, Arrays and Maps as well as straight dependent objects. This can make loading complex object graphs very efficient.
+
 
 ### Aggregating by Embedding
 The other way object relationships can be modeled is by embedding the child object(s) inside the parent object. For example, in some banking systems, Accounts are based off Products. The Products are typically versioned but can have changes made to them by banking officers. Hence the product is effectively specific to a particular account, even though it is derived from a global product. In this case, it makes sense to encapsulate the product into the account object.
@@ -1486,8 +1571,23 @@ Note that if an object is mapped to the actual type (eg Account to Account) then
 
 For this reason, it is strongly recommended that all attributes use a parameterized type, eg `List<Account>` rather than `List`
 
-It should be noted that the use of subclasses 
+It should be noted that the use of subclasses can have a minor degradation on performance. When the declared type is the same as the instantiated type, the Java Object Mapper has already computed the optimal way of accessing that information. If it encounters a sub-class at runtime (i.e. the instantiated type is not the same as the declared type), it must then work out how to store the passed sub-class. The sub-class information is also typically cached so the performance hit should not be significant, but it is there.
 
+By the same token, it is always better to use Java generics in collection types to give the Java Object Mapper hints about how to store the data in Aerospike so it can optimize its internal processes.
+
+For example, say we need a list of Customers as a field on a class. We could declare this as:
+
+```java
+public List<Customer> customers;
+```
+
+or
+
+```java
+public List customers;
+```
+
+The former is considered better style in Java and also provides the Java Object Mapper with information about the elements in the list, so it will optimize its workings to know how to store a list of Customers. The latter gives it no type information so it must derive the type -- and hence how to map it to Aerospike -- for every element in this list. This can have a noticeable performance impact for large lists, as well as consuming more database space (as it must store the runtime type of each element in the list in addition to the data).
 
 
 ----
@@ -1979,10 +2079,8 @@ Note: At the moment not all CDT operations are supported, and if the underlying 
 
 ## To finish
 - Add interface to adaptiveMap, including changing EmbedType
-- Document all parameters to annotations and examples of types
-- Document enums, dates, instants.
-- Document subclasses and the mapping to tables + references stored as lists
-- Document batch loading
 - handle object graph circularities (A->B->C). Be careful of: A->B(Lazy), A->C->B: B should end up fully hydrated in both instances, not lazy in both instances
 - Consider the items on virtual list which return a list to be able to return a map as well (ELEMENT_LIST, ELEMENT_MAP) 
 - Test a constructor which requires a sub-object. For example, Account has a Property, Property has an Address. All 3 a referenced objects. Constructor for Property requires Address
+- Add in support for the Async client
+- Add in more List/Map methods to the Virtual Lists.
