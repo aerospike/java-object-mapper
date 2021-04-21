@@ -2074,13 +2074,3 @@ public <T> T convertToObject(Class<T> clazz, Record record);
 
 Note: At the moment not all CDT operations are supported, and if the underlying CDTs are of the wrong type, a different API call may be used. For example, if you invoke `getByKeyRange` on items represented in the database as a list, `getByValueRange` is invoked instead as a list has no key.
 
-
-----
-
-## To finish
-- Add interface to adaptiveMap, including changing EmbedType
-- handle object graph circularities (A->B->C). Be careful of: A->B(Lazy), A->C->B: B should end up fully hydrated in both instances, not lazy in both instances
-- Consider the items on virtual list which return a list to be able to return a map as well (ELEMENT_LIST, ELEMENT_MAP) 
-- Test a constructor which requires a sub-object. For example, Account has a Property, Property has an Address. All 3 a referenced objects. Constructor for Property requires Address
-- Add in support for the Async client
-- Add in more List/Map methods to the Virtual Lists.
