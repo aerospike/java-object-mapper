@@ -1,6 +1,6 @@
 # Aerospike Java Object Mapper
 
-[Aerospike](https://www.aerospike.com) is one of, if not the fastest, NoSQL database in the world. It presents a Java API which is comprehensive and powerful, but requires a measure of boilder plate code to map the data from Java POJOs to the database. The aim of this repository is to lower the amount of code required when mapping POJOs to Aerospike and back as well as reducing some of the brittleness of the code.
+[Aerospike](https://www.aerospike.com) is one of, if not the fastest, NoSQL database in the world. It presents a Java API which is comprehensive and powerful, but requires a measure of boiler plate code to map the data from Java POJOs to the database. The aim of this repository is to lower the amount of code required when mapping POJOs to Aerospike and back as well as reducing some of the brittleness of the code.
 
 # Table of contents:
 1. [Motivation and a simple example](#Motivation-and-a-simple-example)
@@ -262,14 +262,14 @@ However, there are times when this is not desirable, for example when the class 
 
 ```java
 @AerospikeRecord(namespace = "test", set = "testSet")
-public class ConstructoredClass {
+public class ConstructedClass {
 	@AerospikeKey
 	public final int id;
 	public final int age;
 	public final String name;
 	public final Date date;
 	
-	public ConstructoredClass(int id, int age, String name, Date date) {
+	public ConstructedClass(int id, int age, String name, Date date) {
 		super();
 		this.id = id;
 		this.age = age;
@@ -279,18 +279,18 @@ public class ConstructoredClass {
 }
 ```
 
-As it stands, this class cannot be used with the AeroMapper because there is no valid constructor to invoke when an object needs to be created. There is a constructor but it does not contain enough information to map the reocrd on the database to the parameters of the constructor. (Remember that at runtime method and argument names are typically lost and become "arg1", "arg2" and so on). We can use this constructor, but we need to provide this missing information with annotations:
+As it stands, this class cannot be used with the AeroMapper because there is no valid constructor to invoke when an object needs to be created. There is a constructor but it does not contain enough information to map the record on the database to the parameters of the constructor. (Remember that at runtime method and argument names are typically lost and become "arg1", "arg2" and so on). We can use this constructor, but we need to provide this missing information with annotations:
 
 ```java
 @AerospikeRecord(namespace = "test", set = "testSet")
-public class ConstructoredClass {
+public class ConstructedClass {
 	@AerospikeKey
 	public final int id;
 	public final int age;
 	public final String name;
 	public final Date date;
 	
-	public ConstructoredClass(@ParamFrom("id") int id, @ParamFrom("age") int age, @ParamFrom("name") String name, @ParamFrom("date")Date date) {
+	public ConstructedClass(@ParamFrom("id") int id, @ParamFrom("age") int age, @ParamFrom("name") String name, @ParamFrom("date")Date date) {
 		super();
 		this.id = id;
 		this.age = age;
@@ -319,14 +319,14 @@ Note that not all the fields in the class need to be specified in the constructo
 
 ```java
 @AerospikeRecord(namespace = "test", set = "testSet") 
-public class ConstructoredClass2 {
+public class ConstructedClass2 {
 	@AerospikeKey
 	public final int id;
 	public final int a;
 	public int b;
 	public int c;
 	
-	public ConstructoredClass2(@ParamFrom("id") int id, @ParamFrom("a") int a) {
+	public ConstructedClass2(@ParamFrom("id") int id, @ParamFrom("a") int a) {
 		this.id = id;
 		this.a = a;
 	}
@@ -339,19 +339,19 @@ If there are multiple constructors on the class, the one to be used by the AeroM
 
 ```java
 @AerospikeRecord(namespace = "test", set = "testSet") 
-public class ConstructoredClass2 {
+public class ConstructedClass2 {
 	@AerospikeKey
 	public final int id;
 	public final int a;
 	public int b;
 	public int c;
 	
-	public ConstructoredClass2(@ParamFrom("id") int id, @ParamFrom("a") int a) {
+	public ConstructedClass2(@ParamFrom("id") int id, @ParamFrom("a") int a) {
 		this.id = id;
 		this.a = a;
 	}
 	@AerospikeConstructor
-	public ConstructoredClass2(@ParamFrom("id") int id, @ParamFrom("a") int a, @ParamFrom("b") int b) {
+	public ConstructedClass2(@ParamFrom("id") int id, @ParamFrom("a") int a, @ParamFrom("b") int b) {
 		this.id = id;
 		this.a = a;
 		this.b = b;
@@ -699,7 +699,7 @@ loadedPerson : Person
 
 Note that if a reference to an AerospikeRecord annotated object exists, but the reference has neither @AerospikeReference nor @AerospikeEmbed (see below), then it is assumed it will be @AerospikeReference(lazy = false).
 
-There are times when it makes sense to store the digest of the child record as the reference rather than it's primary key. For example, if the native primary key is of significant length then storing a fixed 20-byte digest makes sense. This can be accomplished by adding `type = ReferenceType.DIGEST` to the @AeropikeReference. For example:
+There are times when it makes sense to store the digest of the child record as the reference rather than it's primary key. For example, if the native primary key is of significant length then storing a fixed 20-byte digest makes sense. This can be accomplished by adding `type = ReferenceType.DIGEST` to the @AerospikeReference. For example:
 
 ```java
 @AerospikeRecord(namespace = "test", set = "people")
@@ -1027,7 +1027,7 @@ transactions: MAP('{"Txn1":[100, 1610478132904000000, "Bob's store", "Txn1"], "T
 type: "SAVINGS"
 ```
 
-Here the transaction time is the second attribute in each list, and the amount is the first attribute. However, a common request is to be able to extract transaction by time. For example, in fraud detection systems, there may be a need to load the N most recent transactions. If the transactions were to be stored with the transaction time as the first element in the list, efficient CDT perations in Aerospike such as `getByValueRange(...)` can be used.
+Here the transaction time is the second attribute in each list, and the amount is the first attribute. However, a common request is to be able to extract transaction by time. For example, in fraud detection systems, there may be a need to load the N most recent transactions. If the transactions were to be stored with the transaction time as the first element in the list, efficient CDT operations in Aerospike such as `getByValueRange(...)` can be used.
 
 This ordering can be controlled by the @AerospikeOrdinal annotation:
 
@@ -1167,7 +1167,7 @@ An example using an environment variable:
 private String title;
 ```
 
-In this case, if the environment variable ``ACCOUNT_TITLE_BIN_NAME`` is set, that will be the name of the bin which is used. If it is not set, it will be like the annotation does not specify the ``name`` paramteter at all, which means that the field name (``title``) will be used for the bin name.
+In this case, if the environment variable ``ACCOUNT_TITLE_BIN_NAME`` is set, that will be the name of the bin which is used. If it is not set, it will be like the annotation does not specify the ``name`` parameter at all, which means that the field name (``title``) will be used for the bin name.
 
 ----
 
@@ -1447,7 +1447,7 @@ Sometimes, the representation of the data in Aerospike and the representation in
 
 ```java
 public enum Suit {
-    CLUBS, DIAMONDS, HEARTS, SPADES;
+    CLUBS, DIAMONDS, HEARTS, SPADES
 }
 
 @AerospikeRecord(namespace = NAMESPACE, set = "card")
@@ -1784,7 +1784,7 @@ public class Container {
 }
 ````
 
-Note that in this case the items are embedded into the container and not refrenced. This is what is needed for virtual lists, they must have a list of items in the database associated with a single record.
+Note that in this case the items are embedded into the container and not referenced. This is what is needed for virtual lists, they must have a list of items in the database associated with a single record.
 
 These items can be populated using the functionally presented above. For example:
 
@@ -1844,7 +1844,7 @@ name: "container"
 ```
 
 Note however that the list in the object in memory still contains only 4 items. *Virtual lists affect only the database representation of the data and not the Java POJO.*
-eVirutal Lists tend to use the (Operate)[https://www.aerospike.com/docs/client/java/usage/kvs/multiops.html] command which allows multiple operations to be performed on the same key at the same time. As a consequence, multiple commands can be done on a list with a single Aerospike operation. For example:
+Virtual Lists tend to use the (Operate)[https://www.aerospike.com/docs/client/java/usage/kvs/multiops.html] command which allows multiple operations to be performed on the same key at the same time. As a consequence, multiple commands can be done on a list with a single Aerospike operation. For example:
 
 ```java
 List<Item> results = (List<Item>) list.beginMultiOperation()
