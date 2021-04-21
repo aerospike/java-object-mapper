@@ -190,12 +190,7 @@ public class ListMapper extends TypeMapper {
 						Object result = thisMapper == null ? obj : thisMapper.fromAerospikeFormat(obj);
 						if (result instanceof DeferredObject) {
 							final int thisIndex = index;
-							DeferredSetter setter = new DeferredSetter() {
-								@Override
-								public void setValue(Object object) {
-									results.set(thisIndex, object);
-								}
-							};
+							DeferredSetter setter = object -> results.set(thisIndex, object);
 							DeferredObjectSetter objectSetter = new DeferredObjectSetter(setter, (DeferredObject)result);
 							DeferredObjectLoader.add(objectSetter);
 							// add a placeholder to maintain the index
@@ -217,12 +212,7 @@ public class ListMapper extends TypeMapper {
 						Object result = this.instanceClassMapper.fromAerospikeFormat(obj);
 						if (result instanceof DeferredObject) {
 							final int thisIndex = index;
-							DeferredSetter setter = new DeferredSetter() {
-								@Override
-								public void setValue(Object object) {
-									results.set(thisIndex, object);
-								}
-							};
+							DeferredSetter setter = object -> results.set(thisIndex, object);
 							DeferredObjectSetter objectSetter = new DeferredObjectSetter(setter, (DeferredObject)result);
 							DeferredObjectLoader.add(objectSetter);
 							// add a placeholder to maintain the index

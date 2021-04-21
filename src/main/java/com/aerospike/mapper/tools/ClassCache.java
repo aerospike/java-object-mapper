@@ -16,7 +16,7 @@ import com.aerospike.mapper.tools.configuration.ClassConfig;
 import com.aerospike.mapper.tools.configuration.Configuration;
 
 public class ClassCache {
-	private static ClassCache instance = new ClassCache();
+	private static final ClassCache instance = new ClassCache();
 
 	public static ClassCache getInstance() {
 		return instance;
@@ -30,12 +30,12 @@ public class ClassCache {
 		QUERY
 	}
 	
-	private Map<Class<?>, ClassCacheEntry> cacheMap = new HashMap<>();
-	private Map<String, ClassConfig> classesConfig = new HashMap<>();
-	private Map<PolicyType, Policy> defaultPolicies = new HashMap<>();
-	private Map<String, ClassCacheEntry> storedNameToCacheEntry = new HashMap<>();
-	private Map<PolicyType, Map<Class<?>, Policy>> childrenPolicies = new HashMap<>();  
-	private Map<PolicyType, Map<Class<?>, Policy>> specificPolicies = new HashMap<>();  
+	private final Map<Class<?>, ClassCacheEntry> cacheMap = new HashMap<>();
+	private final Map<String, ClassConfig> classesConfig = new HashMap<>();
+	private final Map<PolicyType, Policy> defaultPolicies = new HashMap<>();
+	private final Map<String, ClassCacheEntry> storedNameToCacheEntry = new HashMap<>();
+	private final Map<PolicyType, Map<Class<?>, Policy>> childrenPolicies = new HashMap<>();
+	private final Map<PolicyType, Map<Class<?>, Policy>> specificPolicies = new HashMap<>();
 
 	private ClassCache() {
 		for (PolicyType thisType : PolicyType.values()) {

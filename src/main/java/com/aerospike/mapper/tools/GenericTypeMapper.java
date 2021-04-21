@@ -9,7 +9,7 @@ import com.aerospike.mapper.annotations.ToAerospike;
 
 public class GenericTypeMapper extends TypeMapper {
 	private Class<?> mappedClass;
-	private Object converter;
+	private final Object converter;
 	private Method toAerospike;
 	private Method fromAerospike;
 	public GenericTypeMapper(Object converter) {
@@ -78,7 +78,7 @@ public class GenericTypeMapper extends TypeMapper {
 
 		if (!this.toAerospike.getParameters()[0].getType().equals(this.fromAerospike.getReturnType())) {
 			throw new AerospikeException(String.format("@FromAerospike method on Converter class %s returns %s, but the @ToAerospike method takes %s. These should be the same class",
-					this.converter.getClass().getSimpleName(), this.fromAerospike.getReturnType().getClass().getSimpleName(), this.toAerospike.getParameters()[0].getType().getSimpleName()));
+					this.converter.getClass().getSimpleName(), this.fromAerospike.getReturnType().getSimpleName(), this.toAerospike.getParameters()[0].getType().getSimpleName()));
 		}
 		if (!this.fromAerospike.getParameters()[0].getType().equals(this.toAerospike.getReturnType())) {
 			throw new AerospikeException(String.format("@ToAerospike method on Converter class %s returns %s, but the @FromAerospike method takes %s. These should be the same class",

@@ -101,9 +101,9 @@ public class TypeUtils {
 	 * This method adds a new type mapper into the system. This type mapper will replace any other mappers
 	 * registered for the same class. If there was another mapper for the same type already registered,
 	 * the old mapper will be replaced with this mapper and the old mapper returned.
-	 * @param clazz
-	 * @param mapper
-	 * @return
+	 * @param clazz The class to register for the new type mapper.
+	 * @param mapper The new type mapper to create.
+	 * @return Return existing mapper registered for the requested class, null in case there isn't one.
 	 */
 	static TypeMapper addTypeMapper(Class<?> clazz, TypeMapper mapper) {
 		TypeMapper returnValue = mappers.get(clazz);

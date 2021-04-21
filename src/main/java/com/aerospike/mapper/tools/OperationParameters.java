@@ -5,13 +5,16 @@ public class OperationParameters {
 	
 	public OperationParameters() {
 	}
+
 	public OperationParameters(ReturnType needsResultOfType) {
 		super();
 		this.needsResultOfType = needsResultOfType;
 	}
+
 	public ReturnType getNeedsResultOfType() {
 		return needsResultOfType;
 	}
+
 	public void setNeedsResultOfType(ReturnType needsResultOfType) {
 		this.needsResultOfType = needsResultOfType;
 	}

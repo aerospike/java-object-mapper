@@ -74,17 +74,11 @@ public class MapMapper extends TypeMapper {
 			TypeMapper keyMap = keyMapper != null ? keyMapper : TypeUtils.getMapper(key.getClass(), AnnotatedType.getDefaultAnnotateType(), mapper);
 			TypeMapper itemMap = itemMapper != null ? itemMapper : TypeUtils.getMapper(item.getClass(), AnnotatedType.getDefaultAnnotateType(), mapper);
 //			results.put(keyMap.fromAerospikeFormat(key), itemMap.fromAerospikeFormat(item));
-		
-		
+
 			final Object javaKey = keyMap == null ? null : keyMap.fromAerospikeFormat(key);
 			final Object javaItem = itemMap == null ? null : itemMap.fromAerospikeFormat(item);
 			if (javaKey instanceof DeferredObject || javaItem instanceof DeferredObject) {
-				DeferredSetter setter = new DeferredSetter() {
-					@Override
-					public void setValue(Object object) {
-						results.put(javaKey, object);
-					}
-				};
+				DeferredSetter setter = object -> results.put(javaKey, object);
 				DeferredObjectSetter objectSetter = new DeferredObjectSetter(setter, (DeferredObject)javaItem);
 				DeferredObjectLoader.add(objectSetter);
 			}

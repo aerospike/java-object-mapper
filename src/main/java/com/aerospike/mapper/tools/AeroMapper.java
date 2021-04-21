@@ -1,29 +1,7 @@
 package com.aerospike.mapper.tools;
 
-import java.io.File;
-import java.io.IOException;
-import java.lang.reflect.Array;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.function.Function;
-
-import javax.validation.constraints.NotNull;
-
-import org.apache.commons.lang3.StringUtils;
-
-import com.aerospike.client.AerospikeException;
-import com.aerospike.client.Bin;
-import com.aerospike.client.IAerospikeClient;
-import com.aerospike.client.Key;
-import com.aerospike.client.Record;
-import com.aerospike.client.Value;
-import com.aerospike.client.policy.BatchPolicy;
-import com.aerospike.client.policy.Policy;
-import com.aerospike.client.policy.QueryPolicy;
-import com.aerospike.client.policy.RecordExistsAction;
-import com.aerospike.client.policy.ScanPolicy;
-import com.aerospike.client.policy.WritePolicy;
+import com.aerospike.client.*;
+import com.aerospike.client.policy.*;
 import com.aerospike.client.query.RecordSet;
 import com.aerospike.client.query.Statement;
 import com.aerospike.mapper.tools.ClassCache.PolicyType;
@@ -40,7 +18,7 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 
 public class AeroMapper {
 
-    IAerospikeClient mClient;
+    final IAerospikeClient mClient;
 
     public static class Builder {
         private AeroMapper mapper;
@@ -422,7 +400,7 @@ public class AeroMapper {
     		batchPolicy = entry.getBatchPolicy();
     	}
         Record[] records = mClient.get(batchPolicy, keys);
-        T[] results = (T[])Array.newInstance(clazz, records.length);
+        T[] results = (T[]) Array.newInstance(clazz, records.length);
         for (int i = 0; i < records.length; i++) {
         	if (records[i] == null) {
         		results[i] = null;
@@ -495,10 +473,10 @@ public class AeroMapper {
      * </ul>
      * These operation can all be done without having the full set of transactions
      * @param <T> the type of the elements in the list.
-     * @param object
-     * @param binName
-     * @param elementClazz
-     * @return
+     * @param object The object that will use as a base for the virtual list.
+     * @param binName The Aerospike bin name.
+     * @param elementClazz The class of the elements in the list.
+     * @return A virtual list.
      */
     public <T> VirtualList<T> asBackedList(@NotNull Object object, @NotNull String binName, Class<T> elementClazz) {
     	return new VirtualList<T>(this, object, binName, elementClazz);

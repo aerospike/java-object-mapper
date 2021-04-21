@@ -113,10 +113,10 @@ public class VirtualList<E> {
 	}
 	
 	public class MultiOperation<E> {
-		private VirtualList<E> virtualList;
-		private List<Interactor> interactions;
+		private final VirtualList<E> virtualList;
+		private final List<Interactor> interactions;
 		private int indexToReturn = -1;
-		private WritePolicy writePolicy;
+		private final WritePolicy writePolicy;
 		
 		private MultiOperation(@NotNull VirtualList<E> virtualList, @NotNull WritePolicy writePolicy) {
 			this.virtualList = virtualList;
@@ -129,22 +129,27 @@ public class VirtualList<E> {
 			this.interactions.add(new Interactor(virtualList.getAppendOperation(aerospikeItem)));
 			return this;
 		}
+
 		public MultiOperation<E> removeByKey(Object key) {
 			this.interactions.add(getRemoveKeyInteractor(key));
 			return this;
 		}
+
 		public MultiOperation<E> removeByKeyRange(Object startKey, Object endKey) {
 			this.interactions.add(getRemoveKeyRangeInteractor(startKey, endKey));
 			return this;
 		}
+
 		public MultiOperation<E> removeByValueRange(Object startKey, Object endKey) {
 			this.interactions.add(getRemoveValueRangeInteractor(startKey, endKey));
 			return this;
 		}
+
 		public MultiOperation<E> getByValueRange(Object startKey, Object endKey) {
 			this.interactions.add(getGetByValueRangeInteractor(startKey, endKey));
 			return this;
 		}
+
 		public MultiOperation<E> getByKeyRange(Object startKey, Object endKey) {
 			this.interactions.add(getGetByKeyRangeInteractor(startKey, endKey));
 			return this;
@@ -179,16 +184,17 @@ public class VirtualList<E> {
 		}
 		
 		/**
-		 * Finish the multi operation and process it. 
-		 * @return
+		 * Finish the multi operation and process it.
+		 * @return The multi operation result.
 		 */
 		public Object end() {
 			return end(null);
 		}
 		
 		/**
-		 * Finish the multi operation and process it. 
-		 * @return
+		 * Finish the multi operation and process it.
+		 * @param resultType The return type for the result.
+		 * @return The multi operation result with the given result type.
 		 */
 		public <T> T end(Class<T> resultType) {
 			if (this.interactions.isEmpty()) {
@@ -281,16 +287,27 @@ public class VirtualList<E> {
 	 * <p/>
 	 * If the list is mapped to a LIST in Aerospike however, the start and end range represent values to be removed from the list.
 	 * <p/>
-	 * The result of the method is a list of the records which have been removed from the database if returnResults is true, null otherwise.
-	 * @param startKey
-	 * @param endKey
-	 * @param returnResults
-	 * @return
+	 * @param startKey Start key of the range to remove.
+	 * @param endKey End key of the range to remove.
+	 * @param returnResultsOfType Type to return.
+	 * @return A list of the records which have been removed from the database if returnResults is true, null otherwise.
 	 */
 	public List<E> removeByValueRange(Object startKey, Object endKey, ReturnType returnResultsOfType) {
 		return this.removeByValueRange(null, startKey, endKey, returnResultsOfType);
 	}
-	
+
+	/**
+	 * Remove items from the list matching the specified key. If the list is mapped to a MAP in Aerospike, the start key and end key will dictate the range of keys to be removed,
+	 * inclusive of the start, exclusive of the end.
+	 * <p/>
+	 * If the list is mapped to a LIST in Aerospike however, the start and end range represent values to be removed from the list.
+	 * <p/>
+	 * @param writePolicy An Aerospike write policy to use for the operate() operation.
+	 * @param startKey Start key of the range to remove.
+	 * @param endKey End key of the range to remove.
+	 * @param returnResultsOfType Type to return.
+	 * @return A list of the records which have been removed from the database if returnResults is true, null otherwise.
+	 */
 	public List<E> removeByValueRange(WritePolicy writePolicy, Object startKey, Object endKey, ReturnType returnResultsOfType) {
     	if (writePolicy == null) {
         	writePolicy = new WritePolicy(owningEntry.getWritePolicy());
@@ -309,16 +326,27 @@ public class VirtualList<E> {
 	 * <p/>
 	 * If the list is mapped to a LIST in Aerospike however, the start and end range represent values to be removed from the list.
 	 * <p/>
-	 * The result of the method is a list of the records which have been removed from the database if returnResults is true, null otherwise.
-	 * @param startKey
-	 * @param endKey
-	 * @param returnResults
-	 * @return
+	 * @param startKey Start key of the range to remove.
+	 * @param endKey End key of the range to remove.
+	 * @param returnResultsOfType Type to return.
+	 * @return The result of the method is a list of the records which have been removed from the database if returnResults is true, null otherwise.
 	 */
 	public List<E> removeByKeyRange(Object startKey, Object endKey, ReturnType returnResultsOfType) {
 		return this.removeByKeyRange(null, startKey, endKey, returnResultsOfType);
 	}
-	
+
+	/**
+	 * Remove items from the list matching the specified key. If the list is mapped to a MAP in Aerospike, the start key and end key will dictate the range of keys to be removed,
+	 * inclusive of the start, exclusive of the end.
+	 * <p/>
+	 * If the list is mapped to a LIST in Aerospike however, the start and end range represent values to be removed from the list.
+	 * <p/>
+	 * @param writePolicy An Aerospike write policy to use for the operate() operation.
+	 * @param startKey Start key of the range to remove.
+	 * @param endKey End key of the range to remove.
+	 * @param returnResultsOfType Type to return.
+	 * @return The result of the method is a list of the records which have been removed from the database if returnResults is true, null otherwise.
+	 */
 	public List<E> removeByKeyRange(WritePolicy writePolicy, Object startKey, Object endKey, ReturnType returnResultsOfType) {
     	if (writePolicy == null) {
         	writePolicy = new WritePolicy(owningEntry.getWritePolicy());
