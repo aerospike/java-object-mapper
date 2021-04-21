@@ -200,7 +200,7 @@ If multiple configuration files are used and the same class is defined in multip
 After the specified policy, there are 3 possible options: 
 
 - `forAll()`: The passed policy is used for all classes. This is similar to setting the defaultReadPolicy on the IAerospikeClient but allows it to be set after the client is created. 
-- `forChildrenOf(Class<?> class)`: The passed policy is used for the passed class and all subclasses of the passed class.
+- `forThisOrChildrenOf(Class<?> class)`: The passed policy is used for the passed class and all subclasses of the passed class.
 - `forClasses(Class<?> ... classes)`: The passed policy is used for the passed class(es), but no subclasses.
 
 It is entirely possible that a class falls into more than one category, in which case the most specific policy is used. If no policy is specified, the defaultReadPolicy passed to the IAerospikeClient is used. For example, if there are classes A, B, C with C being a subclass of B, a definition could be for example:
@@ -210,19 +210,34 @@ Policy readPolicy1, readPolicy2, readPolicy3;
 // ... code to set up the policies goes here...
 AeroMapper.Builder(client)
           .withReadPolicy(readPolicy1).forAll()
-          .withReadPolicy(readPolicy2).forChildrenOf(B.class)
+          .withReadPolicy(readPolicy2).forThisOrChildrenOf(B.class)
           .withReadPolicy(readPolicy3).forClasses(C.class)
           .build();
 ```
 
-In this case the `forAll()` would apply to A,B,C, the `forChildrenOf` would apply to B,C and `forClasses` would apply to C. So the policies used for each class would be:
+In this case the `forAll()` would apply to A,B,C, the `forThisOrChildrenOf` would apply to B,C and `forClasses` would apply to C. So the policies used for each class would be:
 
 - A: `readPolicy1`
 - B: `readPolicy2`
 - C: `readPolicy3`
            
 Note that each operation can also optionally take a policy if it is desired to change any of the policy settings on the fly. The explicitly provided policy will override any other settings, such as `durableDelete` on the `@AerospikeRecord`
- 
+
+if it is desired to change one part of a policy but keep the rest as the defaults set up with these policies, the appropriate policy can be read with `getReadPolicy`, `getWritePolicy`, `getBatchPolicy`, `getScanPolicy` and `getQueryPolicy` methods on the AeroMapper. For example, if we needed a policy which was preiously set up on a Customer class but needed to change the `durableDelete` property, we could do
+
+```java
+WritePolicy writePolicy = mapper.getWritePolicy(Customer.class);
+writePolicy.durableDelete = true;
+mapper.delete(writePolicy, myCustomer);
+```
+
+In summary, the policy which will be used for a call are: (lower number is a higher priority)
+
+1. Policy passed as a parameter
+2. Policy passed to  `forClasses` method
+3. Policy passed to `forThisOrChildrenOf` method
+4. Policy passed to `forAll` method
+5. AerospikeClient.getXxxxPolicyDefault
 
 ---
 
@@ -455,6 +470,70 @@ public int getCraziness() {
 ```
 
 This will create a bin in the database with the name "bob".
+
+It is possible for the setter to take an additional parameter too, providing this additional parameter is either a `Key` or `Value` object. This will be the key of the last object being loaded. 
+
+So, for example, if we have an A object which embeds a B, when the setter for B is called the second parameter will represent A's key:
+
+```java
+@AerospikeRecord(namespace = "test", set = "A", mapAll = false)
+public class A {
+	@AerospikeBin
+	private String key;
+	private String value1;
+	private long value2;
+	
+	@AerospikeGetter(name = "v1")
+	public String getValue1() {
+		return value1;
+	}
+	@AerospikeSetter(name = "v1")
+	public void setValue1(String value1, Value owningKey) {
+		// owningKey.getObject() will be a String of "B-1"
+		this.value1 = value1;
+	}
+	
+	@AerospikeGetter(name = "v2")
+	public long getValue2() {
+		return value2;
+	}
+	
+	@AerospikeSetter(name = "v2")
+	public void setValue2(long value2, Key key) {
+		// Key will have namespace="test", setName = "B", key.userKey.getObject() = "B-1"
+		this.value2 = value2;
+	}
+}
+
+@AerospikeRecord(namespace = "test", set = "B")
+public class B {
+	@AerospikeKey 
+	private String key;
+	@AerospikeEmbed
+	private A a;
+}
+
+@Test
+public void test() {
+	A a = new A();
+	a.key = "A-1";
+	a.value1 = "value1";
+	a.value2 = 1000;
+	
+	B b = new B();
+	b.key = "B-1";
+	b.a = a;
+	
+	AeroMapper mapper = new AeroMapper.Builder(client).build();
+	mapper.save(b);
+	B b2 = mapper.read(B.class, b.key);
+	
+}
+```
+
+This can be useful in situations where the full key does not need to be stored in subordinate parts of the record. Consider a time-series use case where transactions are stored in a transaction container. The transactions for a single day might be grouped into a single transaction container, and the time of the transaction in microseconds may be the primary key of the transaction. If we model this with the transactions in the transaction container, the key for the transaction record could simply be the number of microseconds since the start of the day, as the microseconds representing the start of the day would be contained in the day number used as the transaction container key.
+
+Since this information is redundant, it could be stripped out, shortening the length of the transaction key and hence saving storage space. However, when we wish to rebuild the transaction, we need the key of the transaction container to be able to derive the microseconds of the key to the start of the day to reform the appropriate transaction key.
 
 ----
 
@@ -1902,11 +1981,8 @@ Note: At the moment not all CDT operations are supported, and if the underlying 
 - Add interface to adaptiveMap, including changing EmbedType
 - Document all parameters to annotations and examples of types
 - Document enums, dates, instants.
-- Document methods with 2 parameters for keys and setters, the second one either a Key or a Value
 - Document subclasses and the mapping to tables + references stored as lists
-- Batch load of child items on Maps and References. Ensure testing of non-parameterized classes too.
 - Document batch loading
-- Ensure batch loading option exists in AerospikeReference Configuration
 - handle object graph circularities (A->B->C). Be careful of: A->B(Lazy), A->C->B: B should end up fully hydrated in both instances, not lazy in both instances
 - Consider the items on virtual list which return a list to be able to return a map as well (ELEMENT_LIST, ELEMENT_MAP) 
 - Test a constructor which requires a sub-object. For example, Account has a Property, Property has an Address. All 3 a referenced objects. Constructor for Property requires Address
