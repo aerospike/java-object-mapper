@@ -38,7 +38,7 @@ import com.aerospike.mapper.tools.mappers.ObjectReferenceMapper;
 import com.aerospike.mapper.tools.mappers.ShortMapper;
 
 public class TypeUtils {
-	private static Map<Class<?>, TypeMapper> mappers = new HashMap<>();
+	private static final Map<Class<?>, TypeMapper> mappers = new HashMap<>();
 	
 	public static class AnnotatedType {
 		
@@ -238,10 +238,7 @@ public class TypeUtils {
 			
 			else if (clazz.isAnnotationPresent(AerospikeRecord.class) || ClassCache.getInstance().hasClassConfig(clazz)) {
 				boolean throwError = false;
-				if (type == null) {
-					
-				}
-				else {
+				if (type != null) {
 					BinConfig binConfig = type.getBinConfig();
 					if (binConfig != null && (binConfig.getEmbed() != null || binConfig.getReference() != null)) {
 						// The config parameters take precedence over the annotations.
@@ -254,7 +251,7 @@ public class TypeUtils {
 							if (embedType == null) {
 								embedType = EmbedType.MAP;
 							}
-							boolean saveKey = embedConfig.getSaveKey() == null ? false : true;
+							boolean saveKey = embedConfig.getSaveKey() != null;
 							boolean skipKey = isForSubType && (embedConfig.getType() == EmbedType.MAP && embedConfig.getElementType() == EmbedType.LIST && (!saveKey));
 							typeMapper = new ObjectEmbedMapper(clazz, embedType, mapper, skipKey);
 							addToMap = false;

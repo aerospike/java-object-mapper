@@ -51,12 +51,12 @@ public class ClassCache {
 		ClassCacheEntry<T> entry = cacheMap.get(clazz);
 		if (entry == null) {
 			try {
-				entry = new ClassCacheEntry<T>(clazz, mapper, getClassConfig(clazz), 
-						determinePolicy(clazz, PolicyType.READ), 
-						(WritePolicy)determinePolicy(clazz, PolicyType.WRITE),
-						(BatchPolicy)determinePolicy(clazz, PolicyType.BATCH),
-						(QueryPolicy)determinePolicy(clazz, PolicyType.QUERY),
-						(ScanPolicy)determinePolicy(clazz, PolicyType.SCAN));
+				entry = new ClassCacheEntry<>(clazz, mapper, getClassConfig(clazz),
+						determinePolicy(clazz, PolicyType.READ),
+						(WritePolicy) determinePolicy(clazz, PolicyType.WRITE),
+						(BatchPolicy) determinePolicy(clazz, PolicyType.BATCH),
+						(QueryPolicy) determinePolicy(clazz, PolicyType.QUERY),
+						(ScanPolicy) determinePolicy(clazz, PolicyType.SCAN));
 			}
 			catch (IllegalArgumentException iae) {
 				return null;
@@ -114,7 +114,7 @@ public class ClassCache {
 		if (result != null) {
 			return result;
 		}
-		// Otherwise, iterate up class heirarchy looking for the policy.
+		// Otherwise, iterate up class hierarchy looking for the policy.
 		Class<?> thisClass = clazz;
 		while (thisClass != null) {
 			Policy aPolicy = childrenPolicies.get(policyType).get(thisClass);

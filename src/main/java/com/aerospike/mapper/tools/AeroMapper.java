@@ -349,8 +349,7 @@ public class AeroMapper {
         } else {
             try {
             	ThreadLocalKeySaver.save(key);
-                T result = convertToObject(clazz, record, entry, resolveDepenencies);
-                return result;
+                return convertToObject(clazz, record, entry, resolveDependencies);
             } catch (ReflectiveOperationException e) {
                 throw new AerospikeException(e);
             }
@@ -543,11 +542,10 @@ public class AeroMapper {
     /**
      * Given a record loaded from Aerospike and a class type, attempt to convert the record to 
      * an instance of the passed class.
-     * @param <T>
-     * @param clazz
-     * @param record
-     * @return
-     * @throws ReflectiveOperationException
+     * @param clazz The class type to convert the Aerospike record to.
+     * @param record The Aerospike record to convert.
+     * @return A virtual list.
+     * @throws AerospikeException an AerospikeException will be thrown in case of an encountering a ReflectiveOperationException.
      */
     public <T> T convertToObject(Class<T> clazz, Record record) {
     	try {
@@ -638,7 +636,7 @@ public class AeroMapper {
     	BatchPolicy batchPolicy = parentEntity == null ? mClient.getBatchPolicyDefault() : parentEntity.getBatchPolicy();
     	BatchPolicy batchPolicyClone = new BatchPolicy(batchPolicy);
     	
-    	while (deferredObjects != null && !deferredObjects.isEmpty()) {
+    	while (!deferredObjects.isEmpty()) {
     		int size = deferredObjects.size();
     		
     		ClassCacheEntry<?>[] classCaches = new ClassCacheEntry<?>[size];

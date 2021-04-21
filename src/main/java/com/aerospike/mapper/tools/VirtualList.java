@@ -57,7 +57,7 @@ public class VirtualList<E> {
 		if (object != null) {
 			owningClazz = object.getClass();
 		}
-        this.owningEntry = (ClassCacheEntry<?>) ClassCache.getInstance().loadClass(owningClazz, mapper);
+        this.owningEntry = ClassCache.getInstance().loadClass(owningClazz, mapper);
         Object aerospikeKey;
         if (key == null) {
         	aerospikeKey = owningEntry.getKey(object);
@@ -65,7 +65,7 @@ public class VirtualList<E> {
         else {
         	aerospikeKey = owningEntry.translateKeyToAerospikeKey(key);
         }
-        this.elementEntry = (ClassCacheEntry<?>) ClassCache.getInstance().loadClass(clazz, mapper);
+        this.elementEntry = ClassCache.getInstance().loadClass(clazz, mapper);
         this.mapper = mapper;
         this.binName = binName;
         this.value = owningEntry.getValueFromBinName(binName);
@@ -98,7 +98,7 @@ public class VirtualList<E> {
         else {
         	throw new AerospikeException(String.format("Bin %s on class %s is not mapped via a listMapper. This is unexpected", binName, clazz.getSimpleName()));
         }
-        this.instanceMapper = src -> listMapper.fromAerospikeInstanceFormat(src);
+        this.instanceMapper = listMapper::fromAerospikeInstanceFormat;
 
 	}
 	
@@ -261,7 +261,7 @@ public class VirtualList<E> {
         	writePolicy = new WritePolicy(owningEntry.getWritePolicy());
     		writePolicy.recordExistsAction = RecordExistsAction.UPDATE;
     	}
-		return new MultiOperation<E>(this, writePolicy);
+		return new MultiOperation<>(this, writePolicy);
 	}
 	
 
