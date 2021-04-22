@@ -9,20 +9,64 @@
 	<packaging>jar</packaging>
 	
 	<name>Aerospike Object Mapper</name>
+	<description>Aerospike Object Mapper aims to lower the amount of code required when mapping POJOs
+		to Aerospike and back as well as reducing some of the brittleness of the code.</description>
+	<url>https://github.com/aerospike/java-object-mapper</url>
+	<organization>
+		<name>Aerospike Inc.</name>
+		<url>https://www.aerospike.com</url>
+	</organization>
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<java.version>1.8</java.version>
    		<maven.compiler.target>1.8</maven.compiler.target>
 		<maven.compiler.source>1.8</maven.compiler.source>
-		<maven.compiler.plugin.version>3.8.0</maven.compiler.plugin.version>
 		<maven.source.plugin.version>3.2.1</maven.source.plugin.version>
+		<maven.javadoc.plugin.version>3.2.0</maven.javadoc.plugin.version>
+		<maven.gpg.plugin.version>1.6</maven.gpg.plugin.version>
+		<maven.compiler.plugin.version>3.8.0</maven.compiler.plugin.version>
 		<junit.version>4.13.2</junit.version>
 		<javax.validation-api.version>2.0.1.Final</javax.validation-api.version>
 		<aerospike-client.version>5.0.7</aerospike-client.version>
 		<commons-lang3.version>3.12.0</commons-lang3.version>
 		<jackson-dataformat-yaml.version>2.12.3</jackson-dataformat-yaml.version>
 	</properties>
+
+	<licenses>
+		<license>
+			<name>The Apache License, Version 2.0</name>
+			<url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
+		</license>
+	</licenses>
+
+	<developers>
+		<developer>
+			<id>Tim Faulkes</id>
+			<name>Tim Faulkes</name>
+			<email>tim@aerospike.com</email>
+			<url>https://www.aerospike.com</url>
+			<organization>Aerospike Inc.</organization>
+			<organizationUrl>https://www.aerospike.com</organizationUrl>
+		</developer>
+	</developers>
+
+	<scm>
+		<connection>scm:git:git://github.com/aerospike/java-object-mapper.git</connection>
+		<developerConnection>scm:git:ssh://git@github.com:aerospike/java-object-mapper.git</developerConnection>
+		<url>https://github.com/aerospike/java-object-mapper</url>
+	</scm>
+
+	<distributionManagement>
+		<snapshotRepository>
+			<id>ossrh</id>
+			<url>https://oss.sonatype.org/content/repositories/snapshots</url>
+		</snapshotRepository>
+		<repository>
+			<id>ossrh</id>
+			<url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+		</repository>
+	</distributionManagement>
 
 	<dependencies>
 		<dependency>
@@ -73,6 +117,33 @@
 						<id>attach-sources</id>
 						<goals>
 							<goal>jar</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-javadoc-plugin</artifactId>
+				<version>${maven.javadoc.plugin.version}</version>
+				<executions>
+					<execution>
+						<id>attach-javadocs</id>
+						<goals>
+							<goal>jar</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-gpg-plugin</artifactId>
+				<version>${maven.gpg.plugin.version}</version>
+				<executions>
+					<execution>
+						<id>sign-artifacts</id>
+						<phase>verify</phase>
+						<goals>
+							<goal>sign</goal>
 						</goals>
 					</execution>
 				</executions>
