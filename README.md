@@ -200,7 +200,7 @@ If multiple configuration files are used and the same class is defined in multip
 After the specified policy, there are 3 possible options: 
 
 - `forAll()`: The passed policy is used for all classes. This is similar to setting the defaultReadPolicy on the IAerospikeClient but allows it to be set after the client is created. 
-- `forChildrenOf(Class<?> class)`: The passed policy is used for the passed class and all subclasses of the passed class.
+- `forThisOrChildrenOf(Class<?> class)`: The passed policy is used for the passed class and all subclasses of the passed class.
 - `forClasses(Class<?> ... classes)`: The passed policy is used for the passed class(es), but no subclasses.
 
 It is entirely possible that a class falls into more than one category, in which case the most specific policy is used. If no policy is specified, the defaultReadPolicy passed to the IAerospikeClient is used. For example, if there are classes A, B, C with C being a subclass of B, a definition could be for example:
@@ -210,19 +210,34 @@ Policy readPolicy1, readPolicy2, readPolicy3;
 // ... code to set up the policies goes here...
 AeroMapper.Builder(client)
           .withReadPolicy(readPolicy1).forAll()
-          .withReadPolicy(readPolicy2).forChildrenOf(B.class)
+          .withReadPolicy(readPolicy2).forThisOrChildrenOf(B.class)
           .withReadPolicy(readPolicy3).forClasses(C.class)
           .build();
 ```
 
-In this case the `forAll()` would apply to A,B,C, the `forChildrenOf` would apply to B,C and `forClasses` would apply to C. So the policies used for each class would be:
+In this case the `forAll()` would apply to A,B,C, the `forThisOrChildrenOf` would apply to B,C and `forClasses` would apply to C. So the policies used for each class would be:
 
 - A: `readPolicy1`
 - B: `readPolicy2`
 - C: `readPolicy3`
            
 Note that each operation can also optionally take a policy if it is desired to change any of the policy settings on the fly. The explicitly provided policy will override any other settings, such as `durableDelete` on the `@AerospikeRecord`
- 
+
+if it is desired to change one part of a policy but keep the rest as the defaults set up with these policies, the appropriate policy can be read with `getReadPolicy`, `getWritePolicy`, `getBatchPolicy`, `getScanPolicy` and `getQueryPolicy` methods on the AeroMapper. For example, if we needed a policy which was preiously set up on a Customer class but needed to change the `durableDelete` property, we could do
+
+```java
+WritePolicy writePolicy = mapper.getWritePolicy(Customer.class);
+writePolicy.durableDelete = true;
+mapper.delete(writePolicy, myCustomer);
+```
+
+In summary, the policy which will be used for a call are: (lower number is a higher priority)
+
+1. Policy passed as a parameter
+2. Policy passed to  `forClasses` method
+3. Policy passed to `forThisOrChildrenOf` method
+4. Policy passed to `forAll` method
+5. AerospikeClient.getXxxxPolicyDefault
 
 ---
 
@@ -455,6 +470,131 @@ public int getCraziness() {
 ```
 
 This will create a bin in the database with the name "bob".
+
+It is possible for the setter to take an additional parameter too, providing this additional parameter is either a `Key` or `Value` object. This will be the key of the last object being loaded. 
+
+So, for example, if we have an A object which embeds a B, when the setter for B is called the second parameter will represent A's key:
+
+```java
+@AerospikeRecord(namespace = "test", set = "A", mapAll = false)
+public class A {
+	@AerospikeBin
+	private String key;
+	private String value1;
+	private long value2;
+	
+	@AerospikeGetter(name = "v1")
+	public String getValue1() {
+		return value1;
+	}
+	@AerospikeSetter(name = "v1")
+	public void setValue1(String value1, Value owningKey) {
+		// owningKey.getObject() will be a String of "B-1"
+		this.value1 = value1;
+	}
+	
+	@AerospikeGetter(name = "v2")
+	public long getValue2() {
+		return value2;
+	}
+	
+	@AerospikeSetter(name = "v2")
+	public void setValue2(long value2, Key key) {
+		// Key will have namespace="test", setName = "B", key.userKey.getObject() = "B-1"
+		this.value2 = value2;
+	}
+}
+
+@AerospikeRecord(namespace = "test", set = "B")
+public class B {
+	@AerospikeKey 
+	private String key;
+	@AerospikeEmbed
+	private A a;
+}
+
+@Test
+public void test() {
+	A a = new A();
+	a.key = "A-1";
+	a.value1 = "value1";
+	a.value2 = 1000;
+	
+	B b = new B();
+	b.key = "B-1";
+	b.a = a;
+	
+	AeroMapper mapper = new AeroMapper.Builder(client).build();
+	mapper.save(b);
+	B b2 = mapper.read(B.class, b.key);
+	
+}
+```
+
+This can be useful in situations where the full key does not need to be stored in subordinate parts of the record. Consider a time-series use case where transactions are stored in a transaction container. The transactions for a single day might be grouped into a single transaction container, and the time of the transaction in microseconds may be the primary key of the transaction. If we model this with the transactions in the transaction container, the key for the transaction record could simply be the number of microseconds since the start of the day, as the microseconds representing the start of the day would be contained in the day number used as the transaction container key.
+
+Since this information is redundant, it could be stripped out, shortening the length of the transaction key and hence saving storage space. However, when we wish to rebuild the transaction, we need the key of the transaction container to be able to derive the microseconds of the key to the start of the day to reform the appropriate transaction key.
+
+----
+
+## Default Mappings of Java Data type
+Here are how standard Java types are mapped to Aerospike types:
+| Java Type | Aerospike Type |
+| --- | --- |
+| byte | integral numeric |
+| char | integral numeric |
+| short | integral numeric |
+| int | integral numeric |
+| long | integral numeric |
+| boolean | integral numeric |
+| Byte | integral numeric |
+| Character | integral numeric |
+| Short | integral numeric |
+| Integer | integral numeric |
+| Long | integral numeric |
+| Boolean | integral numeric |
+| float | double numeric |
+| double | double numeric |
+| Float | double numeric |
+| Double | double numeric |
+| java.util.Date | integral numeric |
+| java.time.Instant | integral numeric |
+| String | String |
+| byte[] | BLOB |
+| enums | String |
+| Arrays (int[], String[], Customer[], etc) | List |
+| List<?> | List or Map |
+| Map<?,?> | Map |
+| Object Reference (@AerospikeRecord) | List or Map |
+
+These types are built into the converter. However, if you wish to change them, you can use a (Custom Object Converter)]custom-object-converter]. For example, if you want Dates stored in the database as a string, you could do:
+
+```java
+public static class DateConverter {
+    	private static final ThreadLocal<SimpleDateFormat> dateFormatter = ThreadLocal.withInitial(() -> new SimpleDateFormat("dd-MM-yyyy HH:mm:ss.SSS zzzZ"));
+    @ToAerospike
+    public String toAerospike(Date date) {
+    	if (date == null) {
+    		return null;
+    	}
+		return dateFormatter.get().format(date);
+    }
+
+    @FromAerospike
+    public Date fromAerospike(String dateStr) throws ParseException {
+    	if (dateStr == null) {
+    		return null;
+    	}
+    	return dateFormatter.get().parse(dateStr);
+    }
+}
+
+AeroMapper convertingMapper = new AeroMapper.Builder(client).addConverter(new DateConverter()).build();
+```
+
+(Note that SimpleDateFormat is not thread-safe, and hence the use of the ThreadLocal variable)
+
+This would affect all dates. If you wanted to affect the format of some dates, create a sub-class Date and have the converter change that to the String format.
 
 ----
 
@@ -706,6 +846,30 @@ Note that storing the digest as the referencing key is not compatible with lazy 
 ```
 
 will throw an exception at runtime. 
+
+#### Batch Loading
+
+Note that when objects are stored by non-lazy references, all dependent children objects will be loaded by batch loading. For example, assume there is a complex object graph like:
+
+![Object Diagram](/images/complexObjectGraph.png)
+
+Note that some of the objects are embedded and some are references.
+
+If we then instantiate a complex object graph like:
+
+![Object Graph](/images/objectInstantiation.png)
+
+Here you can see the Customer has a lot of dependent objects, where the white objects are being loaded by reference and the grey objects are being embedded into the parent. When the Customer is loaded the entire object graph is loaded. Looking at the calls that are performed to the database, we see:
+
+```
+Get: [test:customer:cust1:818d8a436587c36aef4da99d28eaf17e3ce3a0e1] took 0.211ms, record found
+Batch: [4/4 keys] took 0.258ms
+Batch: [6/6 keys] took 0.262ms
+Batch: [2/2 keys] took 0.205ms
+```
+
+The first call (the `get`) is for the Customer object, the first batch of 4 is for the Cusomter's 4 accounts (Checking, Savings, Loan, Portfolio), the second batch of 6 items is for the 2 checkbooks and 4 security properties, and the last batch of 2 items is for the 2 branches. The AeroMapper will load all dependent objects it can in one hit, even if they're of different classes. This includes elements within LIsts, Arrays and Maps as well as straight dependent objects. This can make loading complex object graphs very efficient.
+
 
 ### Aggregating by Embedding
 The other way object relationships can be modeled is by embedding the child object(s) inside the parent object. For example, in some banking systems, Accounts are based off Products. The Products are typically versioned but can have changes made to them by banking officers. Hence the product is effectively specific to a particular account, even though it is derived from a global product. In this case, it makes sense to encapsulate the product into the account object.
@@ -1407,8 +1571,23 @@ Note that if an object is mapped to the actual type (eg Account to Account) then
 
 For this reason, it is strongly recommended that all attributes use a parameterized type, eg `List<Account>` rather than `List`
 
-It should be noted that the use of subclasses 
+It should be noted that the use of subclasses can have a minor degradation on performance. When the declared type is the same as the instantiated type, the Java Object Mapper has already computed the optimal way of accessing that information. If it encounters a sub-class at runtime (i.e. the instantiated type is not the same as the declared type), it must then work out how to store the passed sub-class. The sub-class information is also typically cached so the performance hit should not be significant, but it is there.
 
+By the same token, it is always better to use Java generics in collection types to give the Java Object Mapper hints about how to store the data in Aerospike so it can optimize its internal processes.
+
+For example, say we need a list of Customers as a field on a class. We could declare this as:
+
+```java
+public List<Customer> customers;
+```
+
+or
+
+```java
+public List customers;
+```
+
+The former is considered better style in Java and also provides the Java Object Mapper with information about the elements in the list, so it will optimize its workings to know how to store a list of Customers. The latter gives it no type information so it must derive the type -- and hence how to map it to Aerospike -- for every element in this list. This can have a noticeable performance impact for large lists, as well as consuming more database space (as it must store the runtime type of each element in the list in addition to the data).
 
 
 ----
@@ -1895,18 +2074,3 @@ public <T> T convertToObject(Class<T> clazz, Record record);
 
 Note: At the moment not all CDT operations are supported, and if the underlying CDTs are of the wrong type, a different API call may be used. For example, if you invoke `getByKeyRange` on items represented in the database as a list, `getByValueRange` is invoked instead as a list has no key.
 
-
-----
-
-## To finish
-- Add interface to adaptiveMap, including changing EmbedType
-- Document all parameters to annotations and examples of types
-- Document enums, dates, instants.
-- Document methods with 2 parameters for keys and setters, the second one either a Key or a Value
-- Document subclasses and the mapping to tables + references stored as lists
-- Batch load of child items on Maps and References. Ensure testing of non-parameterized classes too.
-- Document batch loading
-- Ensure batch loading option exists in AerospikeReference Configuration
-- handle object graph circularities (A->B->C). Be careful of: A->B(Lazy), A->C->B: B should end up fully hydrated in both instances, not lazy in both instances
-- Consider the items on virtual list which return a list to be able to return a map as well (ELEMENT_LIST, ELEMENT_MAP) 
-- Test a constructor which requires a sub-object. For example, Account has a Property, Property has an Address. All 3 a referenced objects. Constructor for Property requires Address
