@@ -641,6 +641,81 @@ public class AeroMapper {
     }
     
     /**
+     * Return the read policy to be used for the passed class. This is a convenience method only and should rarely be needed
+     * @param clazz - the class to return the read policy for.
+     * @return - the appropriate read policy. If none is set, the client's readPolicyDefault is returned.
+     */
+    public Policy getReadPolicy(Class<?> clazz) {
+    	ClassCacheEntry<?> entry = ClassCache.getInstance().loadClass(clazz, this);
+    	if (entry == null) {
+    		return this.mClient.getReadPolicyDefault();
+    	}
+    	else {
+    		return entry.getReadPolicy();
+    	}
+    }
+
+    /**
+     * Return the write policy to be used for the passed class. This is a convenience method only and should rarely be needed
+     * @param clazz - the class to return the write policy for.
+     * @return - the appropriate write policy. If none is set, the client's writePolicyDefault is returned.
+     */
+    public WritePolicy getWritePolicy(Class<?> clazz) {
+    	ClassCacheEntry<?> entry = ClassCache.getInstance().loadClass(clazz, this);
+    	if (entry == null) {
+    		return this.mClient.getWritePolicyDefault();
+    	}
+    	else {
+    		return entry.getWritePolicy();
+    	}
+    }
+
+    /**
+     * Return the batch policy to be used for the passed class. This is a convenience method only and should rarely be needed
+     * @param clazz - the class to return the batch policy for.
+     * @return - the appropriate batch policy. If none is set, the client's batchPolicyDefault is returned.
+     */
+    public BatchPolicy getBatchPolicy(Class<?> clazz) {
+    	ClassCacheEntry<?> entry = ClassCache.getInstance().loadClass(clazz, this);
+    	if (entry == null) {
+    		return this.mClient.getBatchPolicyDefault();
+    	}
+    	else {
+    		return entry.getBatchPolicy();
+    	}
+    }
+
+    /**
+     * Return the scan policy to be used for the passed class. This is a convenience method only and should rarely be needed
+     * @param clazz - the class to return the scan policy for.
+     * @return - the appropriate scan policy. If none is set, the client's scanPolicyDefault is returned.
+     */
+    public ScanPolicy getScanPolicy(Class<?> clazz) {
+    	ClassCacheEntry<?> entry = ClassCache.getInstance().loadClass(clazz, this);
+    	if (entry == null) {
+    		return this.mClient.getScanPolicyDefault();
+    	}
+    	else {
+    		return entry.getScanPolicy();
+    	}
+    }
+
+    /**
+     * Return the query policy to be used for the passed class. This is a convenience method only and should rarely be needed
+     * @param clazz - the class to return the query policy for.
+     * @return - the appropriate query policy. If none is set, the client's queryPolicyDefault is returned.
+     */
+    public Policy getQueryPolicy(Class<?> clazz) {
+    	ClassCacheEntry<?> entry = ClassCache.getInstance().loadClass(clazz, this);
+    	if (entry == null) {
+    		return this.mClient.getQueryPolicyDefault();
+    	}
+    	else {
+    		return entry.getQueryPolicy();
+    	}
+    }
+
+    /**
      * If an object refers to other objects (eg A has a list of B via references), then reading the object will populate the
      * ids. If configured to do so, these objects can be loaded via a batch load and populated back into the references which
      * contain them. This method performs this batch load, translating the records to objects and mapping them back to the
@@ -660,7 +735,7 @@ public class AeroMapper {
     	BatchPolicy batchPolicy = parentEntity == null ? mClient.getBatchPolicyDefault() : parentEntity.getBatchPolicy();
     	BatchPolicy batchPolicyClone = new BatchPolicy(batchPolicy);
     	
-    	while (deferredObjects != null && !deferredObjects.isEmpty()) {
+    	while (!deferredObjects.isEmpty()) {
     		int size = deferredObjects.size();
     		
     		ClassCacheEntry<?>[] classCaches = new ClassCacheEntry<?>[size];
@@ -707,6 +782,4 @@ public class AeroMapper {
         	deferredObjects = DeferredObjectLoader.getAndClear();
     	}
     }
-    
-
 }

@@ -23,7 +23,7 @@ public class NonJavaMapperApplication extends ApplicationBase {
 		
 		Bin customerId = new Bin("id", customer.getCustomerId());
 		Bin firstName = new Bin("firstName", customer.getFirstName());
-		Bin lastName = new Bin("lastName", customer.getFirstName());
+		Bin lastName = new Bin("lastName", customer.getLastName());
 		Bin dateOfBirth = new Bin("dob", customer.getDateOfBirth() == null ? null : customer.getDateOfBirth().getTime());
 		Bin phone = new Bin("phone", customer.getPhone());
 		Bin joinedBank = new Bin("joinedBank", customer.getJoinedBank() == null ? null : customer.getJoinedBank().getTime());
