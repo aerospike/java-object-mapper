@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Configuration {
-	private List<ClassConfig> classes;
+	private final List<ClassConfig> classes;
 	
 	public Configuration() {
 		this.classes = new ArrayList<>();

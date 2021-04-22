@@ -62,12 +62,7 @@ public class ArrayMapper extends TypeMapper {
 			}
 			else {
 				final int thisIndex = i;
-				DeferredSetter setter = new DeferredSetter() {
-					@Override
-					public void setValue(Object object) {
-						Array.set(result, thisIndex, object);
-					}
-				};
+				DeferredSetter setter = object -> Array.set(result, thisIndex, object);
 				DeferredObjectLoader.add(new DeferredObjectSetter(setter, (DeferredObject)item));
 			}
 		}

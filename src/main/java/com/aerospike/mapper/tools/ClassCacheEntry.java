@@ -1,49 +1,24 @@
 package com.aerospike.mapper.tools;
 
+import com.aerospike.client.AerospikeException;
+import com.aerospike.client.Bin;
+import com.aerospike.client.Record;
+import com.aerospike.client.cdt.MapOrder;
+import com.aerospike.client.policy.*;
+import com.aerospike.mapper.annotations.*;
+import com.aerospike.mapper.tools.TypeUtils.AnnotatedType;
+import com.aerospike.mapper.tools.configuration.BinConfig;
+import com.aerospike.mapper.tools.configuration.ClassConfig;
+import com.aerospike.mapper.tools.configuration.KeyConfig;
+import org.apache.commons.lang3.StringUtils;
+
+import javax.validation.constraints.NotNull;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeMap;
-
-import javax.validation.constraints.NotNull;
-
-import org.apache.commons.lang3.StringUtils;
-
-import com.aerospike.client.AerospikeException;
-import com.aerospike.client.Bin;
-import com.aerospike.client.Key;
-import com.aerospike.client.Record;
-import com.aerospike.client.Value;
-import com.aerospike.client.cdt.MapOrder;
-import com.aerospike.client.policy.BatchPolicy;
-import com.aerospike.client.policy.Policy;
-import com.aerospike.client.policy.QueryPolicy;
-import com.aerospike.client.policy.ScanPolicy;
-import com.aerospike.client.policy.WritePolicy;
-import com.aerospike.mapper.annotations.AerospikeBin;
-import com.aerospike.mapper.annotations.AerospikeConstructor;
-import com.aerospike.mapper.annotations.AerospikeExclude;
-import com.aerospike.mapper.annotations.AerospikeGetter;
-import com.aerospike.mapper.annotations.AerospikeKey;
-import com.aerospike.mapper.annotations.AerospikeOrdinal;
-import com.aerospike.mapper.annotations.AerospikeRecord;
-import com.aerospike.mapper.annotations.AerospikeSetter;
-import com.aerospike.mapper.annotations.ParamFrom;
-import com.aerospike.mapper.tools.DeferredObjectLoader.DeferredObject;
-import com.aerospike.mapper.tools.DeferredObjectLoader.DeferredObjectSetter;
-import com.aerospike.mapper.tools.TypeUtils.AnnotatedType;
-import com.aerospike.mapper.tools.configuration.BinConfig;
-import com.aerospike.mapper.tools.configuration.ClassConfig;
-import com.aerospike.mapper.tools.configuration.KeyConfig;
+import java.util.*;
 
 public class ClassCacheEntry<T> {
 	
@@ -505,7 +480,7 @@ public class ClassCacheEntry<T> {
 				isKey = true;
 			}
 
-			if (thisField.isAnnotationPresent(AerospikeExclude.class) || (thisBin != null && thisBin.isExcluded() != null && thisBin.isExcluded().booleanValue())) {
+			if (thisField.isAnnotationPresent(AerospikeExclude.class) || (thisBin != null && thisBin.isExcluded() != null && thisBin.isExcluded())) {
 				// This field should be excluded from being stored in the database. Even keys must be stored
 				continue;
 			}
@@ -634,7 +609,7 @@ public class ClassCacheEntry<T> {
 						Object javaValue = value.get(instance);
 						Object aerospikeValue = value.getTypeMapper().toAerospikeFormat(javaValue);
 						if (aerospikeValue != null || allowNullBins) {
-							if (aerospikeValue != null && aerospikeValue instanceof TreeMap<?, ?>) {
+							if (aerospikeValue instanceof TreeMap<?, ?>) {
 								TreeMap<?,?> treeMap = (TreeMap<?,?>)aerospikeValue;
 								bins[index++] = new Bin(name, new ArrayList(treeMap.entrySet()), MapOrder.KEY_ORDERED);
 							}
@@ -689,7 +664,7 @@ public class ClassCacheEntry<T> {
 	}
 	
 	private boolean isKeyField(String name) {
-		return name != null && keyName != null && keyName.equals(name);
+		return keyName != null && keyName.equals(name);
 	}
 	
 	public List<Object> getList(Object instance, boolean skipKey, boolean needsType) {
@@ -868,7 +843,7 @@ public class ClassCacheEntry<T> {
 				// If the object saved in the list was a subclass of the declared type, it must have the type name as the last element of the list.
 				// Note that there is a performance implication of using subclasses.
 				Object obj = list.get(endIndex-1);
-				if (obj != null && (obj instanceof String) && ((String)obj).startsWith(TYPE_PREFIX)) {
+				if ((obj instanceof String) && ((String) obj).startsWith(TYPE_PREFIX)) {
 					String className = ((String)obj).substring(TYPE_PREFIX.length());
 					thisClass = ClassCache.getInstance().getCacheEntryFromStoredName(className);
 					if (thisClass == null) {
@@ -885,7 +860,7 @@ public class ClassCacheEntry<T> {
 					Object lastValue = list.get(endIndex-1);
 					int recordVersion = 1;
 					if ((lastValue instanceof String) && (((String)lastValue).startsWith(VERSION_PREFIX))) {
-						recordVersion = Integer.valueOf(((String)lastValue).substring(2));
+						recordVersion = Integer.parseInt(((String)lastValue).substring(2));
 						endIndex--;
 					}
 					int objectVersion = thisClass.version;
@@ -934,7 +909,7 @@ public class ClassCacheEntry<T> {
 					Object lastValue = list.get(endIndex-1);
 					int recordVersion = 1;
 					if ((lastValue instanceof String) && (((String)lastValue).startsWith(VERSION_PREFIX))) {
-						recordVersion = Integer.valueOf(((String)lastValue).substring(2));
+						recordVersion = Integer.parseInt(((String)lastValue).substring(2));
 						endIndex--;
 					}
 					int objectVersion = thisClass.version;

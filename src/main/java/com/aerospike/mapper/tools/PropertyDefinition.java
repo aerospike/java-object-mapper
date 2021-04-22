@@ -13,7 +13,7 @@ import com.aerospike.mapper.tools.configuration.ClassConfig;
 
 public class PropertyDefinition {
 	
-	public static enum SetterParamType {
+	public enum SetterParamType {
 		NONE,
 		KEY,
 		VALUE
@@ -24,7 +24,7 @@ public class PropertyDefinition {
 	private String name;
 	private Class<?> clazz;
 	private TypeMapper typeMapper;
-	private AeroMapper mapper;
+	private final AeroMapper mapper;
 	private SetterParamType setterParamType = SetterParamType.NONE;
 	
 	public PropertyDefinition(String name, AeroMapper mapper) {
@@ -51,7 +51,6 @@ public class PropertyDefinition {
 	/**
 	 * Get the type of this property. The getter and setter must agree on the property and this method
 	 * is only valid after the <code>validate</code> method has been called.
-	 * @return
 	 */
 	public Class<?> getType() {
 		return this.clazz;

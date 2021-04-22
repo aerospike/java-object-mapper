@@ -3,7 +3,7 @@ package com.aerospike.mapper.tools;
 import com.aerospike.client.Operation;
 
 public interface DeferredOperation {
-	public Operation getOperation(OperationParameters operationParams);
-	public ResultsUnpacker[] getUnpackers(OperationParameters operationParams);
-	public boolean isGetOperation();
+	Operation getOperation(OperationParameters operationParams);
+	ResultsUnpacker[] getUnpackers(OperationParameters operationParams);
+	boolean isGetOperation();
 }

@@ -16,7 +16,7 @@ import com.aerospike.mapper.tools.configuration.ClassConfig;
 import com.aerospike.mapper.tools.configuration.Configuration;
 
 public class ClassCache {
-	private static ClassCache instance = new ClassCache();
+	private static final ClassCache instance = new ClassCache();
 
 	public static ClassCache getInstance() {
 		return instance;
@@ -30,12 +30,12 @@ public class ClassCache {
 		QUERY
 	}
 	
-	private Map<Class<?>, ClassCacheEntry> cacheMap = new HashMap<>();
-	private Map<String, ClassConfig> classesConfig = new HashMap<>();
-	private Map<PolicyType, Policy> defaultPolicies = new HashMap<>();
-	private Map<String, ClassCacheEntry> storedNameToCacheEntry = new HashMap<>();
-	private Map<PolicyType, Map<Class<?>, Policy>> childrenPolicies = new HashMap<>();  
-	private Map<PolicyType, Map<Class<?>, Policy>> specificPolicies = new HashMap<>();  
+	private final Map<Class<?>, ClassCacheEntry> cacheMap = new HashMap<>();
+	private final Map<String, ClassConfig> classesConfig = new HashMap<>();
+	private final Map<PolicyType, Policy> defaultPolicies = new HashMap<>();
+	private final Map<String, ClassCacheEntry> storedNameToCacheEntry = new HashMap<>();
+	private final Map<PolicyType, Map<Class<?>, Policy>> childrenPolicies = new HashMap<>();
+	private final Map<PolicyType, Map<Class<?>, Policy>> specificPolicies = new HashMap<>();
 
 	private ClassCache() {
 		for (PolicyType thisType : PolicyType.values()) {
@@ -51,12 +51,12 @@ public class ClassCache {
 		ClassCacheEntry<T> entry = cacheMap.get(clazz);
 		if (entry == null) {
 			try {
-				entry = new ClassCacheEntry<T>(clazz, mapper, getClassConfig(clazz), 
-						determinePolicy(clazz, PolicyType.READ), 
-						(WritePolicy)determinePolicy(clazz, PolicyType.WRITE),
-						(BatchPolicy)determinePolicy(clazz, PolicyType.BATCH),
-						(QueryPolicy)determinePolicy(clazz, PolicyType.QUERY),
-						(ScanPolicy)determinePolicy(clazz, PolicyType.SCAN));
+				entry = new ClassCacheEntry<>(clazz, mapper, getClassConfig(clazz),
+						determinePolicy(clazz, PolicyType.READ),
+						(WritePolicy) determinePolicy(clazz, PolicyType.WRITE),
+						(BatchPolicy) determinePolicy(clazz, PolicyType.BATCH),
+						(QueryPolicy) determinePolicy(clazz, PolicyType.QUERY),
+						(ScanPolicy) determinePolicy(clazz, PolicyType.SCAN));
 			}
 			catch (IllegalArgumentException iae) {
 				return null;
@@ -114,7 +114,7 @@ public class ClassCache {
 		if (result != null) {
 			return result;
 		}
-		// Otherwise, iterate up class heirarchy looking for the policy.
+		// Otherwise, iterate up class hierarchy looking for the policy.
 		Class<?> thisClass = clazz;
 		while (thisClass != null) {
 			Policy aPolicy = childrenPolicies.get(policyType).get(thisClass);

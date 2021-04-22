@@ -19,7 +19,7 @@ public class ClassConfig {
 	private Boolean durableDelete;
 	private KeyConfig key;
 	private String shortName;
-	private List<BinConfig> bins;
+	private final List<BinConfig> bins;
 	
 	public ClassConfig() {
 		bins = new ArrayList<>();
@@ -69,9 +69,6 @@ public class ClassConfig {
 	}
 	
 	public BinConfig getBinByName(@NotNull String name) {
-		if (bins == null) {
-			return null;
-		}
 		for (BinConfig thisBin : bins) {
 			if (name.equals(thisBin.getName())) {
 				return thisBin;
@@ -81,9 +78,6 @@ public class ClassConfig {
 	}
 	
 	public BinConfig getBinByGetterName(@NotNull String getterName) {
-		if (bins == null) {
-			return null;
-		}
 		for (BinConfig thisBin : bins) {
 			if (getterName.equals(thisBin.getGetter())) {
 				return thisBin;
@@ -93,9 +87,6 @@ public class ClassConfig {
 	}
 	
 	public BinConfig getBinByFieldName(@NotNull String fieldName) {
-		if (bins == null) {
-			return null;
-		}
 		for (BinConfig thisBin : bins) {
 			if (fieldName.equals(thisBin.getField())) {
 				return thisBin;
@@ -104,10 +95,8 @@ public class ClassConfig {
 		return null;
 	}
 	public void validate() {
-		if (this.bins != null) {
-			for (BinConfig thisBin : bins) {
-				thisBin.validate(this.className);
-			}
+		for (BinConfig thisBin : bins) {
+			thisBin.validate(this.className);
 		}
 	}
 }
