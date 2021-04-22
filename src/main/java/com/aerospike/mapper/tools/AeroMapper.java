@@ -715,7 +715,6 @@ public class AeroMapper {
     	}
     }
 
-    
     /**
      * If an object refers to other objects (eg A has a list of B via references), then reading the object will populate the
      * ids. If configured to do so, these objects can be loaded via a batch load and populated back into the references which
@@ -736,7 +735,7 @@ public class AeroMapper {
     	BatchPolicy batchPolicy = parentEntity == null ? mClient.getBatchPolicyDefault() : parentEntity.getBatchPolicy();
     	BatchPolicy batchPolicyClone = new BatchPolicy(batchPolicy);
     	
-    	while (deferredObjects != null && !deferredObjects.isEmpty()) {
+    	while (!deferredObjects.isEmpty()) {
     		int size = deferredObjects.size();
     		
     		ClassCacheEntry<?>[] classCaches = new ClassCacheEntry<?>[size];
@@ -783,6 +782,4 @@ public class AeroMapper {
         	deferredObjects = DeferredObjectLoader.getAndClear();
     	}
     }
-    
-
 }

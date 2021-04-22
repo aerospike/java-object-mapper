@@ -8,15 +8,9 @@ import com.aerospike.client.Key;
 /**
  * Save the keys. Note that this is effectively a stack of keys, as A can load B which can load C, and C needs B's key, not A's.
  * @author timfaulkes
- *
  */
 public class ThreadLocalKeySaver {
-	private static ThreadLocal<Deque<Key>> threadLocalKeys = new ThreadLocal<Deque<Key>>() {
-		@Override
-		public Deque<Key> initialValue() {
-			return new ArrayDeque();
-		}
-	};
+	private static final ThreadLocal<Deque<Key>> threadLocalKeys = ThreadLocal.withInitial(ArrayDeque::new);
 	
 	public static void save(Key key) {
 		threadLocalKeys.get().addLast(key);

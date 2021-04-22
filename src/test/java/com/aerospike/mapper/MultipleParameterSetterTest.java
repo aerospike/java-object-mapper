@@ -78,6 +78,5 @@ public class MultipleParameterSetterTest extends AeroMapperBaseTest {
 		B b2 = mapper.read(B.class, b.key);
 		
 		compare(b, b2);
-		
 	}
 }

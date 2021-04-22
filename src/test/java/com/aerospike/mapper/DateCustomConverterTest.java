@@ -60,10 +60,9 @@ public class DateCustomConverterTest extends AeroMapperBaseTest {
     	compare(container, container2, true);
     	
     	Record record = client.get(null, new Key("test", "dateFormat", 1));
-    	String datestr = record.getString("date");
-    	Date date2 = DateConverter.dateFormatter.get().parse(datestr);
+    	String dateStr = record.getString("date");
+    	Date date2 = DateConverter.dateFormatter.get().parse(dateStr);
     	System.out.println("Expected: " + date + ", received " + date2);
     	assertEquals(date, date2);
-    	
     }
 }
