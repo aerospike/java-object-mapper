@@ -3,33 +3,36 @@
 [Aerospike](https://www.aerospike.com) is one of, if not the fastest, NoSQL database in the world. It presents a Java API which is comprehensive and powerful, but requires a measure of boiler plate code to map the data from Java POJOs to the database. The aim of this repository is to lower the amount of code required when mapping POJOs to Aerospike and back as well as reducing some of the brittleness of the code.
 
 # Table of contents:
-1. [Motivation and a simple example](#Motivation-and-a-simple-example)
-2. [Getting Started](#Getting-Started)
-3. [Constructors](#Constructors)
-4. [Keys](#Keys)
-5. [Fields](#Fields)
-6. [Properties](#Properties)
-7. [References to other objects](#References-to-other-objects)
-   + 7.1. [Associating by Reference](#Associating-by-Reference)
-   + 7.2. [Aggregating by Embedding](#Aggregating-by-Embedding)
-     + 7.2.1. [Versioning Lists](#Versioning-Lists)
-     + 7.2.2 [List Ordinals](#List-Ordinals)
-     + 7.2.3 [The importance of Generic Types](#The-importance-of-Generic-Types)
-8. [Advanced Features](#Advanced-Features)
-   + 8.1. [Placeholder replacement](#Placeholder-replacement)
-   + 8.2. [Subclasses](#Subclasses)
-     + 8.2.1 [Data Inheritance](#Data-Inheritance)
-     + 8.2.2 [Subclass Inheritance](#Subclass-Inheritance)
-   + 8.3. [Custom Object Converters](#Custom-Object-Converters)
-9. [External Configuration File](#External-Configuration-File)
-   + 9.1 [File Structure](#File-Structure)
-     + 9.1.1 [Key Structure](#Key-Structure)
-     + 9.1.2 [Bin Structure](#Bin-Structure)
-     + 9.1.3 [Embed Structure](#Embed-Structure)
-     + 9.1.4 [Reference Structure](#Reference-Structure)
-10. [Virtual Lists](#Virtual-Lists)
+1. [Motivation and a simple example](#1.-Motivation-and-a-simple-example)
+2. [Getting Started](#2.-Getting-Started)
+   + 2.1 [Maven Configuration](#2.1.-Maven-Configuration)
+   + 2.2 [Writing Code](#2.2.-Writing-Code)
+3. [Constructors](#3.-Constructors)
+4. [Keys](#4.-Keys)
+5. [Fields](#5.-Fields)
+6. [Properties](#6.-Properties)
+7. [References to other objects](#7.-References-to-other-objects)
+   + 7.1. [Associating by Reference](#7.1.-Associating-by-Reference)
+     + 7.1.1. [Batch Loading](#7.1.1.-Batch Loading)
+   + 7.2. [Aggregating by Embedding](#7.2.-Aggregating-by-Embedding)
+     + 7.2.1. [Versioning Lists](#7.2.1.-Versioning-Lists)
+     + 7.2.2 [List Ordinals](#7.2.2.-List-Ordinals)
+     + 7.2.3 [The importance of Generic Types](#7.2.3.-The-importance-of-Generic-Types)
+8. [Advanced Features](#8.-Advanced-Features)
+   + 8.1. [Placeholder replacement](#8.1.-Placeholder-replacement)
+   + 8.2. [Subclasses](#8.2.-Subclasses)
+     + 8.2.1 [Data Inheritance](#8.2.1.-Data-Inheritance)
+     + 8.2.2 [Subclass Inheritance](#8.2.2.-Subclass-Inheritance)
+   + 8.3. [Custom Object Converters](#8.3.-Custom-Object-Converters)
+9. [External Configuration File](#9.-External-Configuration-File)
+   + 9.1 [File Structure](#9.1.-File-Structure)
+     + 9.1.1 [Key Structure](#9.1.1.-Key-Structure)
+     + 9.1.2 [Bin Structure](#9.1.2.-Bin-Structure)
+     + 9.1.3 [Embed Structure](#9.1.3.-Embed-Structure)
+     + 9.1.4 [Reference Structure](#9.1.4.-Reference-Structure)
+10. [Virtual Lists](#10.-Virtual-Lists)
 
-# Motivation and a simple example
+# 1. Motivation and a simple example
 Consider a simple class:
 
 ```java
@@ -203,7 +206,22 @@ mapper.find(Person.class, function);
 
 ----
 
-## Getting Started
+## 2. Getting Started
+
+### 2.1. Maven Configuration
+
+Add the following Maven dependency to your Pom.xml file:
+
+```
+<dependency>
+  <groupId>com.aerospike</groupId>
+  <artifactId>java-object-mapper</artifactId>
+  <version>1.1.0</version>
+</dependency>
+```
+
+### 2.2. Writing Code
+
 The first thing that needs to be done is to create an instance of the AeroMapper class. This is achieved through the Builder class which allows you to specify
 various options. Once the options have been specified, `build()` is called to get an instance of the AeroMapper. Thus, the simplest usage is:
 
@@ -269,7 +287,7 @@ In summary, the policy which will be used for a call are: (lower number is a hig
 
 ---
 
-## Constructors
+## 3. Constructors
 Given that the AeroMapper is designed to read and write information to an Aerospike database, it must be able to create objects when the data has been read from the database. To construct an object, it will typically use the default (no argument) constructor. 
 
 However, there are times when this is not desirable, for example when the class declares final fields which must be mapped to the constructor. For example, consider the following class:
@@ -384,7 +402,7 @@ If no constructor is annotated with @AerospikeConstructor, the default no-argume
 
 ---
  
-## Keys
+## 4. Keys
 The key to an Aerospike record can be specified either as a field or a property. Remember that Aerospike keys can be Strings, integer types and binary types only.
 
 To use a field as the key, simply mark the field with the AerospikeKey annotation:
@@ -409,7 +427,7 @@ Also, the existence of @AerospikeKey on a field does not imply that the field wi
 
 ----
 
-## Fields
+## 5. Fields
 Fields in Java can be mapped to the database irrespective of the visibility of the field. To do so, simply specify the bin to map to with the @AerospikeBin annotation:
 
 ```java
@@ -486,7 +504,7 @@ This will save 4 fields in the database, a, b, longCname, d.
 
 ----
 
-## Properties
+## 6. Properties
 A pair of methods comprising a getter and setter can also be mapped to a field in the database. These should be annotated with @AerospikeGetter and @AerospikeSetter respectively and the name attribute of these annotations must be provided. The getter must take no arguments and return something, and the setter must return void and take 1 parameter of the same type as the getter return value. Both a setter and a getter must be provided, an exception will be thrown otherwise.
 
 Let's look at an example:
@@ -632,7 +650,7 @@ This would affect all dates. If you wanted to affect the format of some dates, c
 
 ----
 
-## References to other objects
+## 7. References to other objects
 The mapper has 2 ways of mapping child objects associated with parent objects: by reference, or embedding them. Further, embedded objects can be stored either as lists or maps. All of this is controlled by annotations on the owning (parent) class.
 
 Let's see this with and example. Let's define 2 classes, `Parent` and `Child`:
@@ -721,7 +739,7 @@ OK
 
 Let's dig into these further.
 
-### Associating by Reference
+### 7.1. Associating by Reference
 A reference is used when the referenced object needs to exist as a separate entity to the referencing entity. For example, a person might have accounts, and the accounts are to be stored in their own set. They are not to be encapsulated into the person (as business logic might dictate actions are to occur on accounts irrespective of their owners).
 
 To indicate that the second object is to be referenced, use the @AerospikeReference annotation:
@@ -881,7 +899,7 @@ Note that storing the digest as the referencing key is not compatible with lazy 
 
 will throw an exception at runtime. 
 
-#### Batch Loading
+#### 7.1.1. Batch Loading
 
 Note that when objects are stored by non-lazy references, all dependent children objects will be loaded by batch loading. For example, assume there is a complex object graph like:
 
@@ -905,7 +923,7 @@ Batch: [2/2 keys] took 0.205ms
 The first call (the `get`) is for the Customer object, the first batch of 4 is for the Cusomter's 4 accounts (Checking, Savings, Loan, Portfolio), the second batch of 6 items is for the 2 checkbooks and 4 security properties, and the last batch of 2 items is for the 2 branches. The AeroMapper will load all dependent objects it can in one hit, even if they're of different classes. This includes elements within LIsts, Arrays and Maps as well as straight dependent objects. This can make loading complex object graphs very efficient.
 
 
-### Aggregating by Embedding
+### 7.2. Aggregating by Embedding
 The other way object relationships can be modeled is by embedding the child object(s) inside the parent object. For example, in some banking systems, Accounts are based off Products. The Products are typically versioned but can have changes made to them by banking officers. Hence the product is effectively specific to a particular account, even though it is derived from a global product. In this case, it makes sense to encapsulate the product into the account object.
 
 Since Aerospike records can have bins (columns) which are lists and maps, we can choose to represent the underlying product in one of two ways, using a list or a map. There are pros and cons of each.
@@ -991,7 +1009,7 @@ The elements in the list are (in order): createdDate, name, productId, version.
 
 This is far more compact and wastes less space, but has an issue: How do you add new items to the product? The answer is to use versioning.
 
-#### Versioning Lists
+#### 7.2.1. Versioning Lists
 
 Maps and Aerospike records are self-describing -- each value has a name, so it is obvious how to map the data to the database and back. For example, if we have a class
 
@@ -1127,7 +1145,7 @@ The first object (with key `1`) has `d` = 0 since `d` was not written to the dat
 Note: This versioning assumes that the application version of the object will never regress. So, for example, it is not possible to read a version 2 database record with a version 1 application object.
   
 
-#### List Ordinals
+#### 7.2.2. List Ordinals
 
 The order of the elements in a list can be controlled. By default, all the elements in the list are ordered by the name of the fields, but -- unlike maps and bins -- sometimes there is value in changing the order of values in a list. Consider for example a financial services company who stores credit card transactions, with the transactions embedded in the account that owns them. They may be embedded in a map with the transaction id as a key, and the transaction details as a list. For example:
 
@@ -1236,7 +1254,7 @@ Multiple ordinals can be specified for a single class, but these must be sequent
 
 **Note**: Ordinal fields cannot be versioned.
   
-#### The importance of Generic Types
+#### 7.2.3. The importance of Generic Types
 
 When using the object mapper, it is important to use generics to describe the types as fully as possible. For example instead of `List accounts;` this should be `List<Account> accounts;`. Not only is this best practices for Java, but it gives the AeroMapper hints about what is mapped so it can optimize the type and minimize the amount of reflection needed at runtime and hence minimize the performance cost. 
 
@@ -1312,8 +1330,8 @@ Note that the element is annotated with `@T:` and the short name of the type. (T
 
 ----
 
-## Advanced Features
-### Placeholder replacement
+## 8. Advanced Features
+### 8.1. Placeholder replacement
 Sometimes it is desirable to have the parameters to the annotations not being hard coded. For example, it might be desirable to have different namespaces for dev, test, staging and production. Annotations in Java must have constant parameters, so they cannot be pulled from environment variables, system properties, etc.
 
 To work around this, the parameters to annotations which are strings can be driven by environment variables or system properties using a special syntax. This is particularly prevalent for namespace names, set names and bin names.
@@ -1344,7 +1362,7 @@ In this case, if the environment variable ``ACCOUNT_TITLE_BIN_NAME`` is set, tha
 
 ----
 
-### Subclasses
+### 8.2. Subclasses
 The AeroMapper also supports mapping object hierarchies. To see this, consider the following class hierarchy:
 
 ![Hierarchy](/images/classHierarchy.png)
@@ -1357,7 +1375,7 @@ There are 2 abstract classes here: BaseClass which every business class in the h
 The AeroMapper supports both strategies for resolving subclasses, as well as being able to inherit just data fields from superclasses.
 
 
-#### Data Inheritance
+#### 8.2.1. Data Inheritance
 
 Consider the Customer class which inherits from the BaseClass:
 
@@ -1430,7 +1448,7 @@ creationTime: 1614025827020
 
 Note that the data here contains both the data for the child class (Customer) and the superclass (BaseClass)
  
-#### Subclass Inheritance
+#### 8.2.2. Subclass Inheritance
 
 As the first example, let's roll the Checking and Savings account up to the Account set.
 
@@ -1630,7 +1648,7 @@ The former is considered better style in Java and also provides the Java Object 
 
 ----
 
-### Custom Object Converters
+### 8.3. Custom Object Converters
 Sometimes, the representation of the data in Aerospike and the representation in Java should be very different. Consider a class which represents a playing card and another class which represents a poker hand:
 
 ```java
@@ -1831,7 +1849,7 @@ public static class PokerHand {
 
 ----
 
-## External Configuration File
+## 9. External Configuration File
 An configuration file in YAML format can be created and passed to the builder either as a File object containing the YAML file or as a string containing the YAML. Note that passing a string representing a filename does not work -- it should be explicitly turned into a file using `new File(fileName)` for example. 
 
 All of the properties which can be specified via annotations can also be specified via the configuration file. If the same property exists in both a configuration file and an annotation, the value in the configuration file is used in preference to the value in the annotation. This allows for changing the way data is mapped in different environments by specifying a different configuration file. For example, in a development environment it might be desirable for an embedded object to be stored as a map for ease of debugging, but then in test, staging and prod environments it might be useful to store the same object as a list to prevent bloating of the data.
@@ -1864,7 +1882,7 @@ classes:
         name: data
 ```
  
-### File Structure
+### 9.1. File Structure
 The structure of the file is: 
  
 Top level is an array of classes. Each class has:
@@ -1880,7 +1898,7 @@ Top level is an array of classes. Each class has:
  - **bins**: a list of [bin structure](bin-structure), specified below
  - **version**: The version of the record. Must be an integer with a positive value. If not specified, will default to 1. See [Versioning Links](#versioning-lists) for more details. 
 
-#### Key Structure
+#### 9.1.1. Key Structure
 The key structure is used to specify the key to a record. Keys are optional in some situations. For example, if Object A embeds an Object B, B does not need a key as it is not stored in Aerospike in its own right.
 
 The key structure contains:
@@ -1888,7 +1906,7 @@ The key structure contains:
 - **getter**: The getter method used to populate the key. This must be used in conjunction with a setter method, and excludes the use of the field attribute.
 - **setter**: The setter method used to map data back to the Java key. This is used in conjunction with the getter method and precludes the use of the field attribute. Note that the return type of the getter must match the type of the first parameter of the setter, and the setter can have either 1 or 2 parameters, with the second (optional) parameter being either of type [com.aerospike.client.Key](https://www.aerospike.com/apidocs/java/com/aerospike/client/Key.html) or Object.
 
-#### Bin Structure
+#### 9.1.2. Bin Structure
 The bin structure contains:
 - **embed**: An [embed structure](#embed-structure) used for specifying that the contents of this bin should be included in the parent record, rather than being a reference to a child record. There can only be one embed structure per field, and if an embed structure is present, a [reference structure](#reference-structure) cannot be. If a field refers to another AerospikeRecord, either in a collection or in it's own right, and neither an embed or reference structure is specified, a reference will be assumed by default.
 - **exclude**: A boolean value as to whether this bin should be mapped to the database. Defaults to true.
@@ -1899,7 +1917,7 @@ The bin structure contains:
 - **reference**: A [reference structure](#reference-structure) detailing that a child object referenced by this bin should be stored as the key of the child rather than embedding it in the parent object. The use of a reference precludes the use of the embed attribute, and if neither is specified then reference is assumed as the default.
 - **setter**: The setter method used to map data back to the Java POJO. This is used in conjunction with the getter method and precludes the use of the field attribute. Note that the return type of the getter must match the type of the first parameter of the setter, and the setter can have either 1 or 2 parameters, with the second (optional) parameter being either of type [com.aerospike.client.Key](https://www.aerospike.com/apidocs/java/com/aerospike/client/Key.html) or Object.
 
-#### Embed Structure
+#### 9.1.3. Embed Structure
 The embed structure is used when a child object should be fully contained in the parent object without needing to be stored in the database as a separate record. For example, it might be that Customer object contains an Address, but the Address is not stored in a separate table in Aerospike, but rather put into the database as part of the customer record.
 
 The Embed structure contains:
@@ -1928,13 +1946,13 @@ If this has a type of LIST, then the addresses in Aerospike will be stored in a 
 
 - **saveKey**: Boolean, defaults to false. This is useful when storing a list of elements as a LIST inside a MAP. Given the map key is the key of the record, it is often redundant to have the key stored separately in the list of values for the underlying object. However, if it is desired to have the key again in the list, set this value to true.
 
-#### Reference Structure
+#### 9.1.4. Reference Structure
 The reference structure is used when the object being referenced is not to be embedded in the owning object, but rather is to be stored in a separate table. 
 - **lazy**: Boolean, defaults to false. When the parent object is loaded, references marked as lazy are NOT loaded. Instead a placeholder object is created with only the primary key information populated, so those objects can be loaded later.
 - **batchLoad**: Boolean, defaults to true. When the parent object is loaded, all non-lazy children will also be loaded. If there are several children, it is more efficient to load them from the database using a batch load. if this flag is set to false, children will not be loaded via a batch load. Note that if the parent object has 2 or less children to load, it will single thread the batch load as this is typically more performant than doing a very small batch. Otherwise the batchPolicy on the parent class will dictate how many nodes are hit in the batch at once.
 - **type**: Either ID or DIGEST, defaults to ID. The ID option stores the primary key of the referred object in the referencer, the DIGEST stores the digest instead. Note that DIGEST is not compatible with `lazy=true` as there is nowhere to store the digest. (For example, if the primary key of the object is a long, the digest is 20 bytes, without dynamically creating proxies or subtypes at runtime there is nowhere to store these 20 bytes. Dynamically creating objects like this is not performant so is not allowed).
 
-## Virtual Lists
+## 10. Virtual Lists
 
 When mapping a Java object to Aerospike the most common operations to do are to save the whole object and load the whole object. The AeroMapper is set up primarily for these use cases. However, there are cases where it makes sense to manipulate objects directly in the database, particularly when it comes to manipulating lists and maps. This functionality is provided via virtual lists.  
 
