@@ -28,7 +28,6 @@
      + 9.1.3 [Embed Structure](#Embed-Structure)
      + 9.1.4 [Reference Structure](#Reference-Structure)
 10. [Virtual Lists](#Virtual-Lists)
-11. [To finish](#To-finish)
 
 # Motivation and a simple example
 Consider a simple class:
