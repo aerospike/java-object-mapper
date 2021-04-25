@@ -175,7 +175,7 @@ p.setSsn("123456789");
 p.setAge(17);
 
 AerospikeClient client = new AerospikeClient("aerospike hostname",3000);
-AeroMapper mapper = new AeroMapper(client);
+AeroMapper mapper = new AeroMapper.Builder(client).build();
 mapper.save(p);
 ```
  
@@ -252,7 +252,7 @@ In this case the `forAll()` would apply to A,B,C, the `forThisOrChildrenOf` woul
            
 Note that each operation can also optionally take a policy if it is desired to change any of the policy settings on the fly. The explicitly provided policy will override any other settings, such as `durableDelete` on the `@AerospikeRecord`
 
-if it is desired to change one part of a policy but keep the rest as the defaults set up with these policies, the appropriate policy can be read with `getReadPolicy`, `getWritePolicy`, `getBatchPolicy`, `getScanPolicy` and `getQueryPolicy` methods on the AeroMapper. For example, if we needed a policy which was preiously set up on a Customer class but needed to change the `durableDelete` property, we could do
+If it is desired to change one part of a policy but keep the rest as the defaults set up with these policies, the appropriate policy can be read with `getReadPolicy`, `getWritePolicy`, `getBatchPolicy`, `getScanPolicy` and `getQueryPolicy` methods on the AeroMapper. For example, if we need a policy which was previously set up on a Customer class but need to change the `durableDelete` property, we could do
 
 ```java
 WritePolicy writePolicy = mapper.getWritePolicy(Customer.class);
@@ -305,7 +305,10 @@ public class ConstructedClass {
 	public final String name;
 	public final Date date;
 	
-	public ConstructedClass(@ParamFrom("id") int id, @ParamFrom("age") int age, @ParamFrom("name") String name, @ParamFrom("date")Date date) {
+	public ConstructedClass(@ParamFrom("id") int id,
+                            @ParamFrom("age") int age,
+                            @ParamFrom("name") String name,
+                            @ParamFrom("date") Date date) {
 		super();
 		this.id = id;
 		this.age = age;
@@ -348,7 +351,9 @@ public class ConstructedClass2 {
 }
 ```
 
-Whilst these examples show only final fields being set, this is not a requirement.
+When an instance of the ConstructedClass2 is read from the database, the constructor will be invoked and `a` and `id` set via the constructor, then `b` and `c` will be set by direct field access.
+
+Note that whilst these examples show only final fields being set, this is not a requirement. The constructor can set any or all fields.
 
 If there are multiple constructors on the class, the one to be used by the AeroMapper should be annotated with @AerospikeConstructor:
 
@@ -374,9 +379,9 @@ public class ConstructedClass2 {
 }
 ```
 
-In this case, the 3 argument constructor will be used. Note that you must annotate the desired constructor with @AerospikeConstructor on any class with multiple constructors, irrespective of how many of those constructors have the @ParamFrom annotations on their arguments. It is only allowed to have one constructor so annotated.
+In this case, the 3 argument constructor will be used. Note that you must annotate the desired constructor with @AerospikeConstructor on any class with multiple constructors, irrespective of how many of those constructors have the @ParamFrom annotations on their arguments. If more than 1 constructor is annotated with @AerospikeConstructor on a class an exception will be thrown the first time the mapper sees that class.
 
-If no constructor is annotated with @AerospikeConstructor, the default no-argument constructor will be used. If there is no no-argument constructor and no @AerospikeConstructor annotated constructor has been declared, an exception will be thrown when the class is first used.
+If no constructor is annotated with @AerospikeConstructor, the default no-argument constructor will be used. If there is no no-argument constructor but only one constructor on the class, that constructor will be used. If there is no default constructor and multiple other constructors but no @AerospikeConstructor annotated constructor has been declared, an exception will be thrown when the class is first used.
 
 ---
  
@@ -596,11 +601,12 @@ Here are how standard Java types are mapped to Aerospike types:
 | Map<?,?> | Map |
 | Object Reference (@AerospikeRecord) | List or Map |
 
-These types are built into the converter. However, if you wish to change them, you can use a (Custom Object Converter)]custom-object-converter]. For example, if you want Dates stored in the database as a string, you could do:
+These types are built into the converter. However, if you wish to change them, you can use a (Custom Object Converter)[custom-object-converter]. For example, if you want Dates stored in the database as a string, you could do:
 
 ```java
 public static class DateConverter {
-    	private static final ThreadLocal<SimpleDateFormat> dateFormatter = ThreadLocal.withInitial(() -> new SimpleDateFormat("dd-MM-yyyy HH:mm:ss.SSS zzzZ"));
+    	private static final ThreadLocal<SimpleDateFormat> dateFormatter = ThreadLocal.withInitial(() ->
+                new SimpleDateFormat("dd-MM-yyyy HH:mm:ss.SSS zzzZ"));
     @ToAerospike
     public String toAerospike(Date date) {
     	if (date == null) {
@@ -1187,7 +1193,9 @@ This gets saved in the database as:
 ```
 id: 1
 name: "Savings Account"
-transactions: MAP('{"Txn1":[100, 1610478132904000000, "Bob's store", "Txn1"], "Txn2":[134.99, 1610449332904000000, "Kim's store", "Txn2"], "Txn3":[75.43000000000001, 1610406132907000000, "Sue's store", "Txn3"]}')
+transactions: MAP('{"Txn1":[100, 1610478132904000000, "Bob's store", "Txn1"], 
+				"Txn2":[134.99, 1610449332904000000, "Kim's store", "Txn2"], 
+				"Txn3":[75.43000000000001, 1610406132907000000, "Sue's store", "Txn3"]}')
 type: "SAVINGS"
 ```
 
@@ -1219,7 +1227,9 @@ Now the data will be saved in a different format with the transaction time the f
 ``` 
 id: 1
 name: "Savings Account"
-transactions: MAP('{"Txn1":[1610478716965000000, 100, "Bob's store", "Txn1"], "Txn2":[1610449916965000000, 134.99, "Kim's store", "Txn2"], "Txn3":[1610406716967000000, 75.43000000000001, "Sue's store", "Txn3"]}')
+transactions: MAP('{"Txn1":[1610478716965000000, 100, "Bob's store", "Txn1"], 
+				"Txn2":[1610449916965000000, 134.99, "Kim's store", "Txn2"], 
+				"Txn3":[1610406716967000000, 75.43000000000001, "Sue's store", "Txn3"]}')
 type: "SAVINGS"
 ```
 
