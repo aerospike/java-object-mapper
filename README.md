@@ -1,7 +1,36 @@
 # Aerospike Java Object Mapper
 
-[Aerospike](https://www.aerospike.com) is one of, if not the fastest, NoSQL database in the world. It presents a Java API which is comprehensive and powerful, but requires a measure of boilder plate code to map the data from Java POJOs to the database. The aim of this repository is to lower the amount of code required when mapping POJOs to Aerospike and back as well as reducing some of the brittleness of the code.
+[Aerospike](https://www.aerospike.com) is one of, if not the fastest, NoSQL database in the world. It presents a Java API which is comprehensive and powerful, but requires a measure of boiler plate code to map the data from Java POJOs to the database. The aim of this repository is to lower the amount of code required when mapping POJOs to Aerospike and back as well as reducing some of the brittleness of the code.
 
+# Table of contents:
+1. [Motivation and a simple example](#Motivation-and-a-simple-example)
+2. [Getting Started](#Getting-Started)
+3. [Constructors](#Constructors)
+4. [Keys](#Keys)
+5. [Fields](#Fields)
+6. [Properties](#Properties)
+7. [References to other objects](#References-to-other-objects)
+   + 7.1. [Associating by Reference](#Associating-by-Reference)
+   + 7.2. [Aggregating by Embedding](#Aggregating-by-Embedding)
+     + 7.2.1. [Versioning Lists](#Versioning-Lists)
+     + 7.2.2 [List Ordinals](#List-Ordinals)
+     + 7.2.3 [The importance of Generic Types](#The-importance-of-Generic-Types)
+8. [Advanced Features](#Advanced-Features)
+   + 8.1. [Placeholder replacement](#Placeholder-replacement)
+   + 8.2. [Subclasses](#Subclasses)
+     + 8.2.1 [Data Inheritance](#Data-Inheritance)
+     + 8.2.2 [Subclass Inheritance](#Subclass-Inheritance)
+   + 8.3. [Custom Object Converters](#Custom-Object-Converters)
+9. [External Configuration File](#External-Configuration-File)
+   + 9.1 [File Structure](#File-Structure)
+     + 9.1.1 [Key Structure](#Key-Structure)
+     + 9.1.2 [Bin Structure](#Bin-Structure)
+     + 9.1.3 [Embed Structure](#Embed-Structure)
+     + 9.1.4 [Reference Structure](#Reference-Structure)
+10. [Virtual Lists](#Virtual-Lists)
+11. [To finish](#To-finish)
+
+# Motivation and a simple example
 Consider a simple class:
 
 ```java
@@ -248,14 +277,14 @@ However, there are times when this is not desirable, for example when the class 
 
 ```java
 @AerospikeRecord(namespace = "test", set = "testSet")
-public class ConstructoredClass {
+public class ConstructedClass {
 	@AerospikeKey
 	public final int id;
 	public final int age;
 	public final String name;
 	public final Date date;
 	
-	public ConstructoredClass(int id, int age, String name, Date date) {
+	public ConstructedClass(int id, int age, String name, Date date) {
 		super();
 		this.id = id;
 		this.age = age;
@@ -265,18 +294,18 @@ public class ConstructoredClass {
 }
 ```
 
-As it stands, this class cannot be used with the AeroMapper because there is no valid constructor to invoke when an object needs to be created. There is a constructor but it does not contain enough information to map the reocrd on the database to the parameters of the constructor. (Remember that at runtime method and argument names are typically lost and become "arg1", "arg2" and so on). We can use this constructor, but we need to provide this missing information with annotations:
+As it stands, this class cannot be used with the AeroMapper because there is no valid constructor to invoke when an object needs to be created. There is a constructor but it does not contain enough information to map the record on the database to the parameters of the constructor. (Remember that at runtime method and argument names are typically lost and become "arg1", "arg2" and so on). We can use this constructor, but we need to provide this missing information with annotations:
 
 ```java
 @AerospikeRecord(namespace = "test", set = "testSet")
-public class ConstructoredClass {
+public class ConstructedClass {
 	@AerospikeKey
 	public final int id;
 	public final int age;
 	public final String name;
 	public final Date date;
 	
-	public ConstructoredClass(@ParamFrom("id") int id, @ParamFrom("age") int age, @ParamFrom("name") String name, @ParamFrom("date")Date date) {
+	public ConstructedClass(@ParamFrom("id") int id, @ParamFrom("age") int age, @ParamFrom("name") String name, @ParamFrom("date")Date date) {
 		super();
 		this.id = id;
 		this.age = age;
@@ -305,14 +334,14 @@ Note that not all the fields in the class need to be specified in the constructo
 
 ```java
 @AerospikeRecord(namespace = "test", set = "testSet") 
-public class ConstructoredClass2 {
+public class ConstructedClass2 {
 	@AerospikeKey
 	public final int id;
 	public final int a;
 	public int b;
 	public int c;
 	
-	public ConstructoredClass2(@ParamFrom("id") int id, @ParamFrom("a") int a) {
+	public ConstructedClass2(@ParamFrom("id") int id, @ParamFrom("a") int a) {
 		this.id = id;
 		this.a = a;
 	}
@@ -325,19 +354,19 @@ If there are multiple constructors on the class, the one to be used by the AeroM
 
 ```java
 @AerospikeRecord(namespace = "test", set = "testSet") 
-public class ConstructoredClass2 {
+public class ConstructedClass2 {
 	@AerospikeKey
 	public final int id;
 	public final int a;
 	public int b;
 	public int c;
 	
-	public ConstructoredClass2(@ParamFrom("id") int id, @ParamFrom("a") int a) {
+	public ConstructedClass2(@ParamFrom("id") int id, @ParamFrom("a") int a) {
 		this.id = id;
 		this.a = a;
 	}
 	@AerospikeConstructor
-	public ConstructoredClass2(@ParamFrom("id") int id, @ParamFrom("a") int a, @ParamFrom("b") int b) {
+	public ConstructedClass2(@ParamFrom("id") int id, @ParamFrom("a") int a, @ParamFrom("b") int b) {
 		this.id = id;
 		this.a = a;
 		this.b = b;
@@ -810,7 +839,7 @@ loadedPerson : Person
 
 Note that if a reference to an AerospikeRecord annotated object exists, but the reference has neither @AerospikeReference nor @AerospikeEmbed (see below), then it is assumed it will be @AerospikeReference(lazy = false).
 
-There are times when it makes sense to store the digest of the child record as the reference rather than it's primary key. For example, if the native primary key is of significant length then storing a fixed 20-byte digest makes sense. This can be accomplished by adding `type = ReferenceType.DIGEST` to the @AeropikeReference. For example:
+There are times when it makes sense to store the digest of the child record as the reference rather than it's primary key. For example, if the native primary key is of significant length then storing a fixed 20-byte digest makes sense. This can be accomplished by adding `type = ReferenceType.DIGEST` to the @AerospikeReference. For example:
 
 ```java
 @AerospikeRecord(namespace = "test", set = "people")
@@ -1162,7 +1191,7 @@ transactions: MAP('{"Txn1":[100, 1610478132904000000, "Bob's store", "Txn1"], "T
 type: "SAVINGS"
 ```
 
-Here the transaction time is the second attribute in each list, and the amount is the first attribute. However, a common request is to be able to extract transaction by time. For example, in fraud detection systems, there may be a need to load the N most recent transactions. If the transactions were to be stored with the transaction time as the first element in the list, efficient CDT perations in Aerospike such as `getByValueRange(...)` can be used.
+Here the transaction time is the second attribute in each list, and the amount is the first attribute. However, a common request is to be able to extract transaction by time. For example, in fraud detection systems, there may be a need to load the N most recent transactions. If the transactions were to be stored with the transaction time as the first element in the list, efficient CDT operations in Aerospike such as `getByValueRange(...)` can be used.
 
 This ordering can be controlled by the @AerospikeOrdinal annotation:
 
@@ -1302,7 +1331,7 @@ An example using an environment variable:
 private String title;
 ```
 
-In this case, if the environment variable ``ACCOUNT_TITLE_BIN_NAME`` is set, that will be the name of the bin which is used. If it is not set, it will be like the annotation does not specify the ``name`` paramteter at all, which means that the field name (``title``) will be used for the bin name.
+In this case, if the environment variable ``ACCOUNT_TITLE_BIN_NAME`` is set, that will be the name of the bin which is used. If it is not set, it will be like the annotation does not specify the ``name`` parameter at all, which means that the field name (``title``) will be used for the bin name.
 
 ----
 
@@ -1597,7 +1626,7 @@ Sometimes, the representation of the data in Aerospike and the representation in
 
 ```java
 public enum Suit {
-    CLUBS, DIAMONDS, HEARTS, SPADES;
+    CLUBS, DIAMONDS, HEARTS, SPADES
 }
 
 @AerospikeRecord(namespace = NAMESPACE, set = "card")
@@ -1841,14 +1870,15 @@ Top level is an array of classes. Each class has:
  - **key**: a [key structure](key-structure), specified below
  - **bins**: a list of [bin structure](bin-structure), specified below
  - **version**: The version of the record. Must be an integer with a positive value. If not specified, will default to 1. See [Versioning Links](#versioning-lists) for more details. 
- 
+
 #### Key Structure
- The key structure contains:
- - **field**: the field for the key. Can be unspecified if methods are being used for the key
- - **getter**: the name of the method to be used as the getter for the key. 
- - **setter**: the name of the method to be used as the setter for the key. This is optional -- if lazy loading of referenced objects is used, a setter must be specified for the child class if a getter is
- Note that either a field should be specified, or a getter (potentially with a setter). Using both a field and a getter will throw an error. Also note that the method is specified by names only, not parameters so it is a good idea to us a unique method. 
- 
+The key structure is used to specify the key to a record. Keys are optional in some situations. For example, if Object A embeds an Object B, B does not need a key as it is not stored in Aerospike in its own right.
+
+The key structure contains:
+- **field**: The name of the field which to which this key is mapped. If this is provided, the getter and setter cannot be provided.
+- **getter**: The getter method used to populate the key. This must be used in conjunction with a setter method, and excludes the use of the field attribute.
+- **setter**: The setter method used to map data back to the Java key. This is used in conjunction with the getter method and precludes the use of the field attribute. Note that the return type of the getter must match the type of the first parameter of the setter, and the setter can have either 1 or 2 parameters, with the second (optional) parameter being either of type [com.aerospike.client.Key](https://www.aerospike.com/apidocs/java/com/aerospike/client/Key.html) or Object.
+
 #### Bin Structure
 The bin structure contains:
 - **embed**: An [embed structure](#embed-structure) used for specifying that the contents of this bin should be included in the parent record, rather than being a reference to a child record. There can only be one embed structure per field, and if an embed structure is present, a [reference structure](#reference-structure) cannot be. If a field refers to another AerospikeRecord, either in a collection or in it's own right, and neither an embed or reference structure is specified, a reference will be assumed by default.
@@ -1859,14 +1889,6 @@ The bin structure contains:
 - **ordinal**: For items mapped as lists, this ordinal specifies the location of this bin in the list. If this is not provided, the position of the bins in the list will be determined by alphabetical ordering.
 - **reference**: A [reference structure](#reference-structure) detailing that a child object referenced by this bin should be stored as the key of the child rather than embedding it in the parent object. The use of a reference precludes the use of the embed attribute, and if neither is specified then reference is assumed as the default.
 - **setter**: The setter method used to map data back to the Java POJO. This is used in conjunction with the getter method and precludes the use of the field attribute. Note that the return type of the getter must match the type of the first parameter of the setter, and the setter can have either 1 or 2 parameters, with the second (optional) parameter being either of type [com.aerospike.client.Key](https://www.aerospike.com/apidocs/java/com/aerospike/client/Key.html) or Object.
- 
-#### Key Structure
-The key structure is used to specify the key to a record. Keys are optional in some situations. For example, if Object A embeds an Object B, B does not need a key as it is not stored in Aerospike in its own right.
-
-The key structure contains:
-- **field**: The name of the field which to which this key is mapped. If this is provided, the getter and setter cannot be provided.
-- **getter**: The getter method used to populate the key. This must be used in conjunction with a setter method, and excludes the use of the field attribute.
-- **setter**: The setter method used to map data back to the Java key. This is used in conjunction with the getter method and precludes the use of the field attribute. Note that the return type of the getter must match the type of the first parameter of the setter, and the setter can have either 1 or 2 parameters, with the second (optional) parameter being either of type [com.aerospike.client.Key](https://www.aerospike.com/apidocs/java/com/aerospike/client/Key.html) or Object.
 
 #### Embed Structure
 The embed structure is used when a child object should be fully contained in the parent object without needing to be stored in the database as a separate record. For example, it might be that Customer object contains an Address, but the Address is not stored in a separate table in Aerospike, but rather put into the database as part of the customer record.
@@ -1941,7 +1963,7 @@ public class Container {
 }
 ````
 
-Note that in this case the items are embedded into the container and not refrenced. This is what is needed for virtual lists, they must have a list of items in the database associated with a single record.
+Note that in this case the items are embedded into the container and not referenced. This is what is needed for virtual lists, they must have a list of items in the database associated with a single record.
 
 These items can be populated using the functionally presented above. For example:
 
@@ -2001,7 +2023,7 @@ name: "container"
 ```
 
 Note however that the list in the object in memory still contains only 4 items. *Virtual lists affect only the database representation of the data and not the Java POJO.*
-eVirutal Lists tend to use the (Operate)[https://www.aerospike.com/docs/client/java/usage/kvs/multiops.html] command which allows multiple operations to be performed on the same key at the same time. As a consequence, multiple commands can be done on a list with a single Aerospike operation. For example:
+Virtual Lists tend to use the (Operate)[https://www.aerospike.com/docs/client/java/usage/kvs/multiops.html] command which allows multiple operations to be performed on the same key at the same time. As a consequence, multiple commands can be done on a list with a single Aerospike operation. For example:
 
 ```java
 List<Item> results = (List<Item>) list.beginMultiOperation()
