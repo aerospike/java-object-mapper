@@ -5,14 +5,13 @@ import com.aerospike.client.policy.*;
 import com.aerospike.client.query.RecordSet;
 import com.aerospike.client.query.Statement;
 import com.aerospike.mapper.tools.ClassCache.PolicyType;
-import com.aerospike.mapper.tools.DeferredObjectLoader.DeferredObject;
-import com.aerospike.mapper.tools.DeferredObjectLoader.DeferredObjectSetter;
-import com.aerospike.mapper.tools.TypeUtils.AnnotatedType;
 import com.aerospike.mapper.tools.configuration.ClassConfig;
 import com.aerospike.mapper.tools.configuration.Configuration;
+import com.aerospike.mapper.tools.converters.MappingConverter;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.validation.constraints.NotNull;
@@ -21,12 +20,14 @@ import java.io.IOException;
 import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.function.Function;
 
-public class AeroMapper {
+public class AeroMapper implements IAeroMapper {
 
-    final IAerospikeClient mClient;
+    @Getter
+    private final IAerospikeClient mClient;
+    @Getter
+    private final MappingConverter mappingConverter;
 
     public static class Builder {
         private final AeroMapper mapper;
@@ -60,7 +61,7 @@ public class AeroMapper {
         public Builder withConfigurationFile(File file) throws IOException {
         	return this.withConfigurationFile(file, false);
         }
-        
+
         public Builder withConfigurationFile(File file, boolean allowsInvalid) throws IOException {
         	ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory());
         	Configuration configuration = objectMapper.readValue(file, Configuration.class);
@@ -71,7 +72,7 @@ public class AeroMapper {
         public Builder withConfiguration(String configurationYaml) throws JsonProcessingException {
         	return this.withConfiguration(configurationYaml, false);
         }
-        
+
         public Builder withConfiguration(String configurationYaml, boolean allowsInvalid) throws JsonProcessingException {
         	ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory());
         	Configuration configuration = objectMapper.readValue(configurationYaml, Configuration.class);
@@ -105,7 +106,7 @@ public class AeroMapper {
         	}
         	ClassCache.getInstance().addConfiguration(configuration);
         }
-        
+
         public static class AeroPolicyMapper {
         	private final Builder builder;
         	private final Policy policy;
@@ -131,7 +132,7 @@ public class AeroMapper {
         		return builder;
         	}
         }
-        
+
         public AeroPolicyMapper withReadPolicy(Policy policy) {
         	return new AeroPolicyMapper(this, PolicyType.READ, policy);
         }
@@ -147,7 +148,7 @@ public class AeroMapper {
         public AeroPolicyMapper withQueryPolicy(QueryPolicy policy) {
         	return new AeroPolicyMapper(this, PolicyType.QUERY, policy);
         }
-        
+
         public AeroMapper build() {
             if (classesToPreload != null) {
                 for (Class<?> clazz : classesToPreload) {
@@ -160,24 +161,12 @@ public class AeroMapper {
 
     private AeroMapper(@NotNull IAerospikeClient client) {
         this.mClient = client;
-    }
-
-    
-    private <T> ClassCacheEntry<T> getEntryAndValidateNamespace(Class<T> clazz) {
-        ClassCacheEntry<T> entry = ClassCache.getInstance().loadClass(clazz, this);
-        String namespace = null;
-        if (entry != null) {
-	        namespace = entry.getNamespace();
-        }
-        if (StringUtils.isBlank(namespace)) {
-            throw new AerospikeException("Namespace not specified to perform database operation on a record of type " + clazz.getName());
-        }
-        return entry;
+        this.mappingConverter = new MappingConverter(this, mClient);
     }
 
     private <T> void save(WritePolicy writePolicy, @NotNull T object, RecordExistsAction recordExistsAction, String[] binNames) {
     	Class<T> clazz = (Class<T>) object.getClass();
-    	ClassCacheEntry<T> entry = getEntryAndValidateNamespace(clazz);
+    	ClassCacheEntry<T> entry = MapperUtils.getEntryAndValidateNamespace(clazz, this);
     	if (writePolicy == null) {
         	writePolicy = new WritePolicy(entry.getWritePolicy());
         	if (recordExistsAction != null) {
@@ -207,34 +196,6 @@ public class AeroMapper {
     }
 
     /**
-     * Translate a Java object to an Aerospike format object. Note that this could potentially have performance issues as
-     * the type information of the passed object must be determined on every call.
-     * @param obj A given Java object.
-     * @return An Aerospike format object.
-     */
-    public Object translateToAerospike(Object obj) {
-    	if (obj == null) {
-    		return null;
-    	}
-    	TypeMapper thisMapper = TypeUtils.getMapper(obj.getClass(), AnnotatedType.getDefaultAnnotateType(), this);
-    	return thisMapper == null ? obj : thisMapper.toAerospikeFormat(obj);
-    }
-
-    /**
-     * Translate an Aerospike object to a Java object. Note that this could potentially have performance issues as
-     * the type information of the passed object must be determined on every call.
-     * @param obj A given Java object.
-     * @return An Aerospike format object.
-     */
-    @SuppressWarnings("unchecked")
-	public <T> T translateFromAerospike(@NotNull Object obj, @NotNull Class<T> expectedClazz) {
-    	TypeMapper thisMapper = TypeUtils.getMapper(expectedClazz, AnnotatedType.getDefaultAnnotateType(), this);
-    	T result = (T)(thisMapper == null ? obj : thisMapper.fromAerospikeFormat(obj));
-		resolveDependencies(ClassCache.getInstance().loadClass(expectedClazz, this));
-		return result;
-    }
-
-    /**
      * Save each object in the database. This method will perform a REPLACE on the existing record so any existing
      * data will be overwritten by the data in the passed object. This is a convenience method for
      * <pre>
@@ -247,6 +208,7 @@ public class AeroMapper {
      * @param objects One or two objects to save.
      * @throws AerospikeException an AerospikeException will be thrown in case of an error.
      */
+    @Override
     public void save(@NotNull Object ... objects) throws AerospikeException {
     	for (Object thisObject : objects) {
     		this.save(thisObject);
@@ -259,6 +221,7 @@ public class AeroMapper {
      * @param object The object to save.
      * @throws AerospikeException an AerospikeException will be thrown in case of an error.
      */
+    @Override
     public void save(@NotNull Object object, String ...binNames) throws AerospikeException {
         save(null, object, RecordExistsAction.REPLACE, binNames);
     }
@@ -270,6 +233,7 @@ public class AeroMapper {
      * @param object The object to save.
      * @throws AerospikeException an AerospikeException will be thrown in case of an error.
      */
+    @Override
     public void save(@NotNull WritePolicy writePolicy, @NotNull Object object, String ...binNames) throws AerospikeException {
         save(writePolicy, object, null, binNames);
     }
@@ -280,10 +244,12 @@ public class AeroMapper {
      * @param object The object to update.
      * @throws AerospikeException an AerospikeException will be thrown in case of an error.
      */
+    @Override
     public void update(@NotNull Object object, String ... binNames) throws AerospikeException {
         save(null, object, RecordExistsAction.UPDATE, binNames);
     }
 
+    @Override
     public <T> T readFromDigest(Policy readPolicy, @NotNull Class<T> clazz, @NotNull byte[] digest) throws AerospikeException {
     	return this.readFromDigest(readPolicy, clazz, digest, true);
     }
@@ -291,12 +257,14 @@ public class AeroMapper {
     /**
      * This method should not be used except by mappers
      */
+    @Override
     public <T> T readFromDigest(Policy readPolicy, @NotNull Class<T> clazz, @NotNull byte[] digest, boolean resolveDependencies) throws AerospikeException {
-        ClassCacheEntry<T> entry = getEntryAndValidateNamespace(clazz);
+        ClassCacheEntry<T> entry = MapperUtils.getEntryAndValidateNamespace(clazz, this);
         Key key = new Key(entry.getNamespace(), digest, entry.getSetName(), null);
         return this.read(readPolicy, clazz, key, entry, resolveDependencies);
     }
 
+    @Override
     public <T> T readFromDigest(@NotNull Class<T> clazz, @NotNull byte[] digest) throws AerospikeException {
     	return this.readFromDigest(clazz, digest, true);
     }
@@ -304,12 +272,14 @@ public class AeroMapper {
     /**
      * This method should not be used except by mappers
      */
+    @Override
     public <T> T readFromDigest(@NotNull Class<T> clazz, @NotNull byte[] digest, boolean resolveDependencies) throws AerospikeException {
-        ClassCacheEntry<T> entry = getEntryAndValidateNamespace(clazz);
+        ClassCacheEntry<T> entry = MapperUtils.getEntryAndValidateNamespace(clazz, this);
         Key key = new Key(entry.getNamespace(), digest, entry.getSetName(), null);
         return this.read(null, clazz, key, entry, resolveDependencies);
     }
 
+    @Override
     public <T> T read(Policy readPolicy, @NotNull Class<T> clazz, @NotNull Object userKey) throws AerospikeException {
     	return this.read(readPolicy, clazz, userKey, true);
     }
@@ -317,8 +287,9 @@ public class AeroMapper {
     /**
      * This method should not be used except by mappers
      */
+    @Override
     public <T> T read(Policy readPolicy, @NotNull Class<T> clazz, @NotNull Object userKey, boolean resolveDependencies) throws AerospikeException {
-        ClassCacheEntry<T> entry = getEntryAndValidateNamespace(clazz);
+        ClassCacheEntry<T> entry = MapperUtils.getEntryAndValidateNamespace(clazz, this);
         String set = entry.getSetName();
         Key key = new Key(entry.getNamespace(), set, Value.get(entry.translateKeyToAerospikeKey(userKey)));
         return read(readPolicy, clazz, key, entry, resolveDependencies);
@@ -331,6 +302,7 @@ public class AeroMapper {
      * @return The returned mapped record.
      * @throws AerospikeException an AerospikeException will be thrown in case of an error.
      */
+    @Override
     public <T> T read(@NotNull Class<T> clazz, @NotNull Object userKey) throws AerospikeException {
     	return this.read(clazz, userKey, true);
     }
@@ -338,32 +310,12 @@ public class AeroMapper {
     /**
      * This method should not be used: It is used by mappers to correctly resolved dependencies. Use read(clazz, userKey) instead
      */
+    @Override
     public <T> T read(@NotNull Class<T> clazz, @NotNull Object userKey, boolean resolveDependencies) throws AerospikeException {
-        ClassCacheEntry<T> entry = getEntryAndValidateNamespace(clazz);
+        ClassCacheEntry<T> entry = MapperUtils.getEntryAndValidateNamespace(clazz, this);
         String set = entry.getSetName();
         Key key = new Key(entry.getNamespace(), set, Value.get(entry.translateKeyToAerospikeKey(userKey)));
         return read(null, clazz, key, entry, resolveDependencies);
-    }
-
-    private <T> T read(Policy readPolicy, @NotNull Class<T> clazz, @NotNull Key key, @NotNull ClassCacheEntry<T> entry, boolean resolveDependencies) {
-    	if (readPolicy == null) {
-    		readPolicy = entry.getReadPolicy();
-    	}
-        Record record = mClient.get(readPolicy, key);
-
-        if (record == null) {
-            return null;
-        } else {
-            try {
-            	ThreadLocalKeySaver.save(key);
-                return convertToObject(clazz, record, entry, resolveDependencies);
-            } catch (ReflectiveOperationException e) {
-                throw new AerospikeException(e);
-            }
-            finally {
-            	ThreadLocalKeySaver.clear();
-            }
-        }
     }
 
     /**
@@ -373,6 +325,7 @@ public class AeroMapper {
      * @return The returned mapped records.
      * @throws AerospikeException an AerospikeException will be thrown in case of an error.
      */
+    @Override
     public <T> T[] read(@NotNull Class<T> clazz, @NotNull Object ... userKeys) throws AerospikeException {
     	return this.read(null, clazz, userKeys);
     }
@@ -385,8 +338,9 @@ public class AeroMapper {
      * @return The returned mapped records.
      * @throws AerospikeException an AerospikeException will be thrown in case of an error.
      */
+    @Override
     public <T> T[] read(BatchPolicy batchPolicy, @NotNull Class<T> clazz, @NotNull Object ... userKeys) throws AerospikeException {
-        ClassCacheEntry<T> entry = getEntryAndValidateNamespace(clazz);
+        ClassCacheEntry<T> entry = MapperUtils.getEntryAndValidateNamespace(clazz, this);
         String set = entry.getSetName();
         Key[] keys = new Key[userKeys.length];
         for (int i = 0; i < userKeys.length; i++) {
@@ -398,7 +352,28 @@ public class AeroMapper {
         	}
         }
 
-    	return this.readBatch(batchPolicy, clazz, keys, entry);
+    	return readBatch(batchPolicy, clazz, keys, entry);
+    }
+
+    private <T> T read(Policy readPolicy, @NotNull Class<T> clazz, @NotNull Key key, @NotNull ClassCacheEntry<T> entry, boolean resolveDependencies) {
+        if (readPolicy == null) {
+            readPolicy = entry.getReadPolicy();
+        }
+        Record record = mClient.get(readPolicy, key);
+
+        if (record == null) {
+            return null;
+        } else {
+            try {
+                ThreadLocalKeySaver.save(key);
+                return mappingConverter.convertToObject(clazz, record, entry, resolveDependencies);
+            } catch (ReflectiveOperationException e) {
+                throw new AerospikeException(e);
+            }
+            finally {
+                ThreadLocalKeySaver.clear();
+            }
+        }
     }
 
     private <T> T[] readBatch(BatchPolicy batchPolicy, @NotNull Class<T> clazz, @NotNull Key[] keys, @NotNull ClassCacheEntry<T> entry) {
@@ -414,7 +389,7 @@ public class AeroMapper {
         	else {
                 try {
                 	ThreadLocalKeySaver.save(keys[i]);
-                    T result = convertToObject(clazz, records[i], entry, false);
+                    T result = mappingConverter.convertToObject(clazz, records[i], entry, false);
                     results[i] = result;
                 } catch (ReflectiveOperationException e) {
                     throw new AerospikeException(e);
@@ -424,16 +399,18 @@ public class AeroMapper {
                 }
         	}
         }
-        resolveDependencies(entry);
+        mappingConverter.resolveDependencies(entry);
         return results;
     }
 
+    @Override
     public <T> boolean delete(@NotNull Class<T> clazz, @NotNull Object userKey) throws AerospikeException {
     	return this.delete(null, clazz, userKey);
     }
-    
+
+    @Override
     public <T> boolean delete(WritePolicy writePolicy, @NotNull Class<T> clazz, @NotNull Object userKey) throws AerospikeException {
-        ClassCacheEntry<T> entry = getEntryAndValidateNamespace(clazz);
+        ClassCacheEntry<T> entry = MapperUtils.getEntryAndValidateNamespace(clazz, this);
         Object asKey = entry.translateKeyToAerospikeKey(userKey);
 
         if (writePolicy == null) {
@@ -449,12 +426,14 @@ public class AeroMapper {
         return mClient.delete(writePolicy, key);
     }
 
+    @Override
     public boolean delete(@NotNull Object object) throws AerospikeException {
     	return this.delete((WritePolicy)null, object);
     }
-    
+
+    @Override
     public boolean delete(WritePolicy writePolicy, @NotNull Object object) throws AerospikeException {
-        ClassCacheEntry<?> entry = getEntryAndValidateNamespace(object.getClass());
+        ClassCacheEntry<?> entry = MapperUtils.getEntryAndValidateNamespace(object.getClass(), this);
         Key key = new Key(entry.getNamespace(), entry.getSetName(), Value.get(entry.getKey(object)));
 
         if (writePolicy == null) {
@@ -484,6 +463,7 @@ public class AeroMapper {
      * @param elementClazz The class of the elements in the list.
      * @return A virtual list.
      */
+    @Override
     public <T> VirtualList<T> asBackedList(@NotNull Object object, @NotNull String binName, Class<T> elementClazz) {
     	return new VirtualList<>(this, object, binName, elementClazz);
     }
@@ -511,12 +491,14 @@ public class AeroMapper {
      * @param elementClazz The class of the elements in the list.
      * @return A virtual list.
      */
+    @Override
     public <T> VirtualList<T> asBackedList(@NotNull Class<?> owningClazz, @NotNull Object key, @NotNull String binName, Class<T> elementClazz) {
     	return new VirtualList<>(this, owningClazz, key, binName, elementClazz);
     }
-    
+
+    @Override
     public <T> void find(@NotNull Class<T> clazz, Function<T, Boolean> function) throws AerospikeException {
-        ClassCacheEntry<T> entry = getEntryAndValidateNamespace(clazz);
+        ClassCacheEntry<T> entry = MapperUtils.getEntryAndValidateNamespace(clazz, this);
 
         Statement statement = new Statement();
         statement.setNamespace(entry.getNamespace());
@@ -542,101 +524,15 @@ public class AeroMapper {
             }
         }
     }
-
-    // --------------------------------------------------------------------------------------------------
-    // The following are convenience methods to convert objects to / from lists / maps / records in case
-    // it is needed to perform this operation manually. They will not be needed in most use cases.
-    // --------------------------------------------------------------------------------------------------
-    /**
-     * Given a record loaded from Aerospike and a class type, attempt to convert the record to 
-     * an instance of the passed class.
-     * @param clazz The class type to convert the Aerospike record to.
-     * @param record The Aerospike record to convert.
-     * @return A virtual list.
-     * @throws AerospikeException an AerospikeException will be thrown in case of an encountering a ReflectiveOperationException.
-     */
-    public <T> T convertToObject(Class<T> clazz, Record record) {
-    	try {
-    		return convertToObject(clazz, record, null);
-		} catch (ReflectiveOperationException e) {
-			throw new AerospikeException(e);
-		}    		
-    }
-
-    public <T> T convertToObject(Class<T> clazz, Record record, ClassCacheEntry<T> entry) throws ReflectiveOperationException {
-    	return this.convertToObject(clazz, record, entry, true);
-    }
-    
-    /**
-     * This method should not be used, it is public only to allow mappers to see it.
-     */
-    public <T> T convertToObject(Class<T> clazz, Record record, ClassCacheEntry<T> entry, boolean resolveDependencies) throws ReflectiveOperationException {
-        if (entry == null) {
-            entry = ClassCache.getInstance().loadClass(clazz, this);
-        }
-        T result = entry.constructAndHydrate(record);
-        if (resolveDependencies) {
-        	resolveDependencies(entry);
-        }
-		return result;
-    }
-
-    public <T> T convertToObject(Class<T> clazz, List<Object> record)  {
-    	return this.convertToObject(clazz, record, true);
-    }
-
-    /**
-     * This method should not be used, it is public only to allow mappers to see it.
-     */
-    public <T> T convertToObject(Class<T> clazz, List<Object> record, boolean resolveDependencies)  {
-		try {
-	        ClassCacheEntry<T> entry = ClassCache.getInstance().loadClass(clazz, this);
-	        T result;
-			result = clazz.getConstructor().newInstance();
-			entry.hydrateFromList(record, result);
-			if (resolveDependencies) {
-				resolveDependencies(entry);
-			}
-			return result;
-		} catch (ReflectiveOperationException e) {
-			throw new AerospikeException(e);
-		}
-    }
-
-    public <T> List<Object> convertToList(@NotNull T instance) {
-    	ClassCacheEntry<T> entry = (ClassCacheEntry<T>) ClassCache.getInstance().loadClass(instance.getClass(), this);
-    	return entry.getList(instance, false, false);
-    }
-
-    public <T> T convertToObject(Class<T> clazz, Map<String,Object> record) {
-    	try {
-	        ClassCacheEntry<T> entry = ClassCache.getInstance().loadClass(clazz, this);
-	        T result = clazz.getConstructor().newInstance();
-	        entry.hydrateFromMap(record, result);
-	        return result;
-		} catch (ReflectiveOperationException e) {
-			throw new AerospikeException(e);
-		}
-    }
-
-    public <T> Map<String, Object> convertToMap(@NotNull T instance) {
-    	ClassCacheEntry<T> entry = (ClassCacheEntry<T>) ClassCache.getInstance().loadClass(instance.getClass(), this);
-    	return entry.getMap(instance, false);
-    }
     
     /**
      * Return the read policy to be used for the passed class. This is a convenience method only and should rarely be needed
      * @param clazz - the class to return the read policy for.
      * @return - the appropriate read policy. If none is set, the client's readPolicyDefault is returned.
      */
+    @Override
     public Policy getReadPolicy(Class<?> clazz) {
-    	ClassCacheEntry<?> entry = ClassCache.getInstance().loadClass(clazz, this);
-    	if (entry == null) {
-    		return this.mClient.getReadPolicyDefault();
-    	}
-    	else {
-    		return entry.getReadPolicy();
-    	}
+        return getPolicyByClassAndType(clazz, PolicyType.READ);
     }
 
     /**
@@ -644,14 +540,9 @@ public class AeroMapper {
      * @param clazz - the class to return the write policy for.
      * @return - the appropriate write policy. If none is set, the client's writePolicyDefault is returned.
      */
+    @Override
     public WritePolicy getWritePolicy(Class<?> clazz) {
-    	ClassCacheEntry<?> entry = ClassCache.getInstance().loadClass(clazz, this);
-    	if (entry == null) {
-    		return this.mClient.getWritePolicyDefault();
-    	}
-    	else {
-    		return entry.getWritePolicy();
-    	}
+        return (WritePolicy) getPolicyByClassAndType(clazz, PolicyType.WRITE);
     }
 
     /**
@@ -659,14 +550,9 @@ public class AeroMapper {
      * @param clazz - the class to return the batch policy for.
      * @return - the appropriate batch policy. If none is set, the client's batchPolicyDefault is returned.
      */
+    @Override
     public BatchPolicy getBatchPolicy(Class<?> clazz) {
-    	ClassCacheEntry<?> entry = ClassCache.getInstance().loadClass(clazz, this);
-    	if (entry == null) {
-    		return this.mClient.getBatchPolicyDefault();
-    	}
-    	else {
-    		return entry.getBatchPolicy();
-    	}
+        return (BatchPolicy) getPolicyByClassAndType(clazz, PolicyType.BATCH);
     }
 
     /**
@@ -674,14 +560,9 @@ public class AeroMapper {
      * @param clazz - the class to return the scan policy for.
      * @return - the appropriate scan policy. If none is set, the client's scanPolicyDefault is returned.
      */
+    @Override
     public ScanPolicy getScanPolicy(Class<?> clazz) {
-    	ClassCacheEntry<?> entry = ClassCache.getInstance().loadClass(clazz, this);
-    	if (entry == null) {
-    		return this.mClient.getScanPolicyDefault();
-    	}
-    	else {
-    		return entry.getScanPolicy();
-    	}
+        return (ScanPolicy) getPolicyByClassAndType(clazz, PolicyType.SCAN);
     }
 
     /**
@@ -689,81 +570,21 @@ public class AeroMapper {
      * @param clazz - the class to return the query policy for.
      * @return - the appropriate query policy. If none is set, the client's queryPolicyDefault is returned.
      */
+    @Override
     public Policy getQueryPolicy(Class<?> clazz) {
-    	ClassCacheEntry<?> entry = ClassCache.getInstance().loadClass(clazz, this);
-    	if (entry == null) {
-    		return this.mClient.getQueryPolicyDefault();
-    	}
-    	else {
-    		return entry.getQueryPolicy();
-    	}
+        return getPolicyByClassAndType(clazz, PolicyType.QUERY);
     }
 
-    /**
-     * If an object refers to other objects (eg A has a list of B via references), then reading the object will populate the
-     * ids. If configured to do so, these objects can be loaded via a batch load and populated back into the references which
-     * contain them. This method performs this batch load, translating the records to objects and mapping them back to the
-     * references.
-     * <p/>
-     * These loaded child objects can themselves have other references to other objects, so we iterate through this until
-     * the list of deferred objects is empty. The deferred objects are stored in a <pre>ThreadLocalData<pre> list, so are thread safe
-     * @param parentEntity - the ClassCacheEntry of the parent entity. This is used to get the batch policy to use.
-     */
-    void resolveDependencies(ClassCacheEntry<?> parentEntity) {
-    	List<DeferredObjectSetter> deferredObjects = DeferredObjectLoader.getAndClear();
-    	
-    	if (deferredObjects.size() == 0) {
-    		return;
-    	}
-    	
-    	BatchPolicy batchPolicy = parentEntity == null ? mClient.getBatchPolicyDefault() : parentEntity.getBatchPolicy();
-    	BatchPolicy batchPolicyClone = new BatchPolicy(batchPolicy);
-    	
-    	while (!deferredObjects.isEmpty()) {
-    		int size = deferredObjects.size();
-    		
-    		ClassCacheEntry<?>[] classCaches = new ClassCacheEntry<?>[size];
-    		Key[] keys = new Key[size];
-    		
-    		for (int i = 0; i < size; i++) {
-    			DeferredObjectSetter thisObjectSetter = deferredObjects.get(i);
-    			DeferredObject deferredObject = thisObjectSetter.getObject();
-    			Class<?> clazz = deferredObject.getType();
-    			ClassCacheEntry<?> entry = getEntryAndValidateNamespace(clazz);
-    			classCaches[i] = entry; 
-    			
-    			if (deferredObject.isDigest()) {
-    				keys[i] = new Key(entry.getNamespace(), (byte[])deferredObject.getKey(), entry.getSetName(), null);
-    			}
-    			else {
-    				keys[i] = new Key(entry.getNamespace(), entry.getSetName(), Value.get(entry.translateKeyToAerospikeKey(deferredObject.getKey())));
-    			}
-    		}
-    		
-    		// Load the data
-    		if (keys.length <= 2) {
-    			// Just single-thread these keys for speed
-    			batchPolicyClone.maxConcurrentThreads = 1;
-    		}
-    		else {
-    			batchPolicyClone.maxConcurrentThreads = batchPolicy.maxConcurrentThreads;
-    		}
-    		Record[] records = this.mClient.get(batchPolicyClone, keys);
-    		
-    		for (int i = 0; i < size; i++) {
-    			DeferredObjectSetter thisObjectSetter = deferredObjects.get(i);
-    			try {
-                	ThreadLocalKeySaver.save(keys[i]);
-                	Object result = records[i] == null ? null : this.convertToObject((Class)thisObjectSetter.getObject().getType(), records[i], classCaches[i], false);
-                	thisObjectSetter.getSetter().setValue(result);
-	            } catch (ReflectiveOperationException e) {
-	                throw new AerospikeException(e);
-	            }
-	            finally {
-	            	ThreadLocalKeySaver.clear();
-	            }
-    		}
-        	deferredObjects = DeferredObjectLoader.getAndClear();
-    	}
+    private Policy getPolicyByClassAndType(Class<?> clazz, PolicyType policyType) {
+        ClassCacheEntry<?> entry = ClassCache.getInstance().loadClass(clazz, this);
+
+        switch (policyType) {
+            case READ: return entry == null ? mClient.getReadPolicyDefault() : entry.getReadPolicy();
+            case WRITE: return entry == null ? mClient.getWritePolicyDefault() : entry.getReadPolicy();
+            case BATCH: return entry == null ? mClient.getBatchPolicyDefault() : entry.getReadPolicy();
+            case SCAN: return entry == null ? mClient.getScanPolicyDefault() : entry.getReadPolicy();
+            case QUERY: return entry == null ? mClient.getQueryPolicyDefault() : entry.getReadPolicy();
+            default: throw new UnsupportedOperationException("Provided unsupported policy.");
+        }
     }
 }

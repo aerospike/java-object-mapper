@@ -40,7 +40,7 @@ public class ClassCacheEntry<T> {
 	private final TreeMap<String, ValueType> values = new TreeMap<>();
 	private final ClassCacheEntry<?> superClazz;
 	private final int binCount;
-	private final AeroMapper mapper;
+	private final IBaseAeroMapper mapper;
 	private Map<Integer, String> ordinals = null;
 	private Set<String> fieldsWithOrdinals = null;
 	private final ClassConfig classConfig;
@@ -61,7 +61,7 @@ public class ClassCacheEntry<T> {
 	
 	
 	// package visibility only.
-	ClassCacheEntry(@NotNull Class<T> clazz, AeroMapper mapper, ClassConfig config, 
+	ClassCacheEntry(@NotNull Class<T> clazz, IBaseAeroMapper mapper, ClassConfig config,
 			@NotNull Policy readPolicy, @NotNull WritePolicy writePolicy,
 			@NotNull BatchPolicy batchPolicy, @NotNull QueryPolicy queryPolicy,
 			@NotNull ScanPolicy scanPolicy) {

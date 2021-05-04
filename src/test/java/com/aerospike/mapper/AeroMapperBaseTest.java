@@ -2,6 +2,8 @@ package com.aerospike.mapper;
 
 import static org.junit.Assert.assertEquals;
 
+import com.aerospike.client.async.NioEventLoops;
+import com.aerospike.client.policy.ClientPolicy;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -20,7 +22,10 @@ public abstract class AeroMapperBaseTest {
 
     @BeforeClass
     public static void setupClass() {
-        client = new AerospikeClient("localhost", 3000);
+        ClientPolicy policy = new ClientPolicy();
+        // Set event loops to use in asynchronous commands.
+        policy.eventLoops = new NioEventLoops(1);
+        client = new AerospikeClient(policy, "localhost", 3000);
     }
 
     @AfterClass
@@ -33,7 +38,6 @@ public abstract class AeroMapperBaseTest {
     @Before
     public void clearCache() {
 		ClassCache.getInstance().clear();
-
     }
 
     public void compare(Object original, Object read) {

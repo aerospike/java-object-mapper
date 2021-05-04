@@ -12,6 +12,7 @@ import com.aerospike.client.policy.Policy;
 import com.aerospike.client.policy.QueryPolicy;
 import com.aerospike.client.policy.ScanPolicy;
 import com.aerospike.client.policy.WritePolicy;
+import com.aerospike.client.reactor.IAerospikeReactorClient;
 import com.aerospike.mapper.tools.configuration.ClassConfig;
 import com.aerospike.mapper.tools.configuration.Configuration;
 
@@ -44,7 +45,7 @@ public class ClassCache {
 		}
 	}
 
-	public <T> ClassCacheEntry<T> loadClass(@NotNull Class<T> clazz, AeroMapper mapper) {
+	public <T> ClassCacheEntry<T> loadClass(@NotNull Class<T> clazz, IBaseAeroMapper mapper) {
 		if (clazz.isPrimitive() || clazz.equals(Object.class) || clazz.equals(String.class) || clazz.equals(Character.class) || Number.class.isAssignableFrom(clazz)) {
 			return null;
 		}
@@ -90,6 +91,14 @@ public class ClassCache {
 		this.defaultPolicies.put(PolicyType.QUERY, client.getQueryPolicyDefault());
 		this.defaultPolicies.put(PolicyType.SCAN, client.getScanPolicyDefault());
 	}
+
+	void setReactiveDefaultPolicies(IAerospikeReactorClient reactorClient) {
+		this.defaultPolicies.put(PolicyType.READ, reactorClient.getReadPolicyDefault());
+		this.defaultPolicies.put(PolicyType.WRITE, reactorClient.getWritePolicyDefault());
+		this.defaultPolicies.put(PolicyType.BATCH, reactorClient.getBatchPolicyDefault());
+		this.defaultPolicies.put(PolicyType.QUERY, reactorClient.getQueryPolicyDefault());
+		this.defaultPolicies.put(PolicyType.SCAN, reactorClient.getScanPolicyDefault());
+	}
 	
 	void setDefaultPolicy(PolicyType policyType, Policy policy) {
 		this.defaultPolicies.put(policyType, policy);
@@ -102,7 +111,6 @@ public class ClassCache {
 	void setSpecificPolicy(PolicyType policyType, Class<?> parentClass, Policy policy) {
 		this.childrenPolicies.get(policyType).put(parentClass, policy);
 	}
-	
 	
 	public boolean hasClass(Class<?> clazz) {
 		return cacheMap.containsKey(clazz);

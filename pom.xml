@@ -29,8 +29,12 @@
 		<junit.version>4.13.2</junit.version>
 		<javax.validation-api.version>2.0.1.Final</javax.validation-api.version>
 		<aerospike-client.version>5.0.7</aerospike-client.version>
+		<aerospike-reactor.version>5.0.7</aerospike-reactor.version>
 		<commons-lang3.version>3.12.0</commons-lang3.version>
 		<jackson-dataformat-yaml.version>2.12.3</jackson-dataformat-yaml.version>
+		<lombok.version>1.18.18</lombok.version>
+		<reactor-test.version>3.4.5</reactor-test.version>
+		<blockhound.version>1.0.6.RELEASE</blockhound.version>
 	</properties>
 
 	<licenses>
@@ -89,7 +93,12 @@
 		    <artifactId>aerospike-client</artifactId>
 		    <version>${aerospike-client.version}</version>
 		</dependency>
-		
+
+		<dependency>
+			<groupId>com.aerospike</groupId>
+			<artifactId>aerospike-reactor-client</artifactId>
+			<version>${aerospike-reactor.version}</version>
+		</dependency>
 		
 		<!-- https://mvnrepository.com/artifact/org.apache.commons/commons-lang3 -->
 		<dependency>
@@ -104,6 +113,33 @@
 		    <groupId>com.fasterxml.jackson.dataformat</groupId>
 		    <artifactId>jackson-dataformat-yaml</artifactId>
 		    <version>${jackson-dataformat-yaml.version}</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.projectlombok</groupId>
+			<artifactId>lombok</artifactId>
+			<version>${lombok.version}</version>
+			<scope>provided</scope>
+		</dependency>
+
+		<dependency>
+			<groupId>io.projectreactor</groupId>
+			<artifactId>reactor-test</artifactId>
+			<version>${reactor-test.version}</version>
+			<scope>test</scope>
+		</dependency>
+
+		<dependency>
+			<groupId>io.projectreactor.tools</groupId>
+			<artifactId>blockhound</artifactId>
+			<version>${blockhound.version}</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.junit.jupiter</groupId>
+			<artifactId>junit-jupiter</artifactId>
+			<version>RELEASE</version>
+			<scope>test</scope>
 		</dependency>
 	</dependencies>
 	<build>

@@ -24,10 +24,10 @@ public class PropertyDefinition {
 	private String name;
 	private Class<?> clazz;
 	private TypeMapper typeMapper;
-	private final AeroMapper mapper;
+	private final IBaseAeroMapper mapper;
 	private SetterParamType setterParamType = SetterParamType.NONE;
 	
-	public PropertyDefinition(String name, AeroMapper mapper) {
+	public PropertyDefinition(String name, IBaseAeroMapper mapper) {
 		this.name = name;
 		this.mapper = mapper;
 	}

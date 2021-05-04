@@ -5,18 +5,18 @@ import java.util.Map;
 
 import com.aerospike.client.AerospikeException;
 import com.aerospike.mapper.annotations.AerospikeEmbed.EmbedType;
-import com.aerospike.mapper.tools.AeroMapper;
 import com.aerospike.mapper.tools.ClassCache;
 import com.aerospike.mapper.tools.ClassCacheEntry;
+import com.aerospike.mapper.tools.IBaseAeroMapper;
 
 public class ObjectEmbedMapper extends ObjectMapper {
 
 	private final Class<?> referencedClass;
-	private final AeroMapper mapper;
+	private final IBaseAeroMapper mapper;
 	private final EmbedType type;
 	private final boolean skipKey;
 	
-	public ObjectEmbedMapper(final Class<?> clazz, final EmbedType type, final AeroMapper mapper, boolean skipKey) {
+	public ObjectEmbedMapper(final Class<?> clazz, final EmbedType type, final IBaseAeroMapper mapper, boolean skipKey) {
 		this.referencedClass = clazz;
 		this.mapper = mapper;
 		this.type = type;

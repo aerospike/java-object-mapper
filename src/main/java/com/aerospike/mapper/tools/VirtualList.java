@@ -219,7 +219,7 @@ public class VirtualList<E> {
 				operations[count++] = thisInteractor.getOperation();
 			}
 						
-    		Record record = this.virtualList.mapper.mClient.operate(writePolicy, key, operations);
+    		Record record = this.virtualList.mapper.getMClient().operate(writePolicy, key, operations);
 
     		T result;
     		if (count == 1) {
@@ -246,7 +246,7 @@ public class VirtualList<E> {
     				Collection<T> collection = (Collection<T>)result;
     				object = collection.isEmpty() ? null : collection.iterator().next();
     			}
-    			mapper.resolveDependencies(ClassCache.getInstance().loadClass(object.getClass(), mapper));
+    			mapper.getMappingConverter().resolveDependencies(ClassCache.getInstance().loadClass(object.getClass(), mapper));
     		}
 			return result;
 		}
@@ -276,7 +276,7 @@ public class VirtualList<E> {
     	}
 		Interactor interactor = getGetByValueRangeInteractor(startValue, endValue);
 		interactor.setNeedsResultOfType(returnResultsOfType);
-		Record record = this.mapper.mClient.operate(writePolicy, key, interactor.getOperation());
+		Record record = this.mapper.getMClient().operate(writePolicy, key, interactor.getOperation());
 
 		return (List<E>)interactor.getResult(record.getList(binName));
 	}
@@ -315,7 +315,7 @@ public class VirtualList<E> {
     	}
 		Interactor interactor = getRemoveValueRangeInteractor(startKey, endKey);
 		interactor.setNeedsResultOfType(returnResultsOfType);
-		Record record = this.mapper.mClient.operate(writePolicy, key, interactor.getOperation());
+		Record record = this.mapper.getMClient().operate(writePolicy, key, interactor.getOperation());
 
 		return (List<E>)interactor.getResult(record.getList(binName));
 	}
@@ -354,7 +354,7 @@ public class VirtualList<E> {
     	}
 		Interactor interactor = getRemoveKeyRangeInteractor(startKey, endKey);
 		interactor.setNeedsResultOfType(returnResultsOfType);
-		Record record = this.mapper.mClient.operate(writePolicy, key, interactor.getOperation());
+		Record record = this.mapper.getMClient().operate(writePolicy, key, interactor.getOperation());
 
 		return (List<E>)interactor.getResult(record.getList(binName));
 	}
@@ -428,7 +428,7 @@ public class VirtualList<E> {
 			aerospikeObject = elementEntry.translateKeyToAerospikeKey(javaObject);
 		}
 		else {
-			aerospikeObject = this.mapper.translateToAerospike(javaObject);
+			aerospikeObject = this.mapper.getMappingConverter().translateToAerospike(javaObject);
 		}
 		if (aerospikeObject == null) {
 			return null;
@@ -594,7 +594,7 @@ public class VirtualList<E> {
         	writePolicy = new WritePolicy(owningEntry.getWritePolicy());
     		writePolicy.recordExistsAction = RecordExistsAction.UPDATE;
     	}
-		Record record = this.mapper.mClient.operate(writePolicy, key, getAppendOperation(result));
+		Record record = this.mapper.getMClient().operate(writePolicy, key, getAppendOperation(result));
     	return record.getLong(binName);
 	}
 	
@@ -619,7 +619,7 @@ public class VirtualList<E> {
     	}
 
     	Interactor interactor = getIndexInteractor(index);
-		Record record = this.mapper.mClient.operate(null, key, interactor.getOperation());
+		Record record = this.mapper.getMClient().operate(null, key, interactor.getOperation());
 		return (E)interactor.getResult(record.getList(binName));
 	}
 	
@@ -637,7 +637,7 @@ public class VirtualList<E> {
     		policy = new Policy(owningEntry.getReadPolicy());
     	}
     	Interactor interactor = getSizeInteractor();
-		Record record = this.mapper.mClient.operate(null, key, interactor.getOperation());
+		Record record = this.mapper.getMClient().operate(null, key, interactor.getOperation());
 		return record.getLong(binName);
 	}
 }

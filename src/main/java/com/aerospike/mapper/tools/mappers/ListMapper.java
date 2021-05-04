@@ -16,7 +16,7 @@ public class ListMapper extends TypeMapper {
 	@SuppressWarnings("unused")
 	private final Class<?> referencedClass;
 	private final Class<?> instanceClass;
-	private final AeroMapper mapper;
+	private final IBaseAeroMapper mapper;
 	private final boolean supportedWithoutTranslation;
 	private final TypeMapper instanceClassMapper;
 	private final EmbedType embedType;
@@ -24,7 +24,7 @@ public class ListMapper extends TypeMapper {
 	private final boolean saveKey;
 	private final boolean allowBatchLoad;
 	
-	public ListMapper(final Class<?> clazz, final Class<?> instanceClass, final TypeMapper instanceClassMapper, final AeroMapper mapper, final EmbedType embedType, final boolean saveKey, boolean allowBatchLoad) {
+	public ListMapper(final Class<?> clazz, final Class<?> instanceClass, final TypeMapper instanceClassMapper, final IBaseAeroMapper mapper, final EmbedType embedType, final boolean saveKey, boolean allowBatchLoad) {
 		this.referencedClass = clazz;
 		this.mapper = mapper;
 		this.instanceClass = instanceClass;
@@ -164,7 +164,6 @@ public class ListMapper extends TypeMapper {
 			return result;
 		}
 	}
-	
 
 	@Override
 	public Object fromAerospikeFormat(Object value) {

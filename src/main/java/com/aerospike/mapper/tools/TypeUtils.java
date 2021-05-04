@@ -112,7 +112,7 @@ public class TypeUtils {
 	}
 	
 	@SuppressWarnings("unchecked")
-	private static TypeMapper getMapper(Class<?> clazz, AnnotatedType type, AeroMapper mapper, boolean isForSubType) {
+	private static TypeMapper getMapper(Class<?> clazz, AnnotatedType type, IBaseAeroMapper mapper, boolean isForSubType) {
 		if (clazz == null) {
 			return null;
 		}
@@ -313,7 +313,7 @@ public class TypeUtils {
 		return typeMapper;
 	}
 
-	public static TypeMapper getMapper(Class<?> clazz, AnnotatedType type, AeroMapper mapper) {
+	public static TypeMapper getMapper(Class<?> clazz, AnnotatedType type, IBaseAeroMapper mapper) {
 		return getMapper(clazz, type, mapper, false);
 	}
 
