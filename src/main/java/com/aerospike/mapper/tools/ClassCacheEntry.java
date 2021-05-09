@@ -348,20 +348,28 @@ public class ClassCacheEntry<T> {
 			current = current.superClazz;
 		}
 		int count = 0;
+		
+		// Parameters can be either specified by their name (which requires the use of the javac -parameters flag), or through an @ParamFrom annotation.  
 		for (Parameter thisParam : params) {
 			count++;
+			boolean isFromAnnotation = false;
+			String binName = thisParam.getName();
 			ParamFrom parameterDetails = thisParam.getAnnotation(ParamFrom.class);
-			if (parameterDetails == null) {
-				throw new AerospikeException("Class " + clazz.getSimpleName() + " has a preferred constructor of " + desiredConstructor.toString()+ ". However, parameter " + count + 
-						" is not marked with a @ParamFrom annotation, and hence cannot be determined how to map to this from the bins in the record.");
+			
+			if (parameterDetails != null) {
+				binName = parameterDetails.value();
+				isFromAnnotation = true;
 			}
-			String binName = parameterDetails.value();
 			
 			// Validate that we have such a value
 			if (!allValues.containsKey(binName)) {
 				String valueList = String.join(",", values.keySet());
-				throw new AerospikeException("Class " + clazz.getSimpleName() + " has a preferred constructor of " + desiredConstructor.toString()+ ". However, parameter " + count + 
-						" is mapped to bin \"" + binName + "\" which is not one of the values on the class, which are: " + valueList);
+				String message = String.format("Class %s has a preferred constructor of %s. However, parameter %d is mapped to bin \"%s\" %s which is not one of the values on the class, which are: %s%s", 
+						clazz.getSimpleName(), desiredConstructor.toString(), count, binName,
+						isFromAnnotation ? "via the @ParamFrom annotation" : "via the argument name",
+						valueList,
+						(!isFromAnnotation && binName.startsWith("arg")) ? ". Did you forget to specify '-parameters' to javac when building?" : "");
+				throw new AerospikeException(message);
 			}
 			Class<?> type = thisParam.getType();
 			if (!type.isAssignableFrom(allValues.get(binName).getType())) {
