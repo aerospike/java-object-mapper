@@ -294,7 +294,10 @@ public class ConstructedClass {
 }
 ```
 
-As it stands, this class cannot be used with the AeroMapper because there is no valid constructor to invoke when an object needs to be created. There is a constructor but it does not contain enough information to map the record on the database to the parameters of the constructor. (Remember that at runtime method and argument names are typically lost and become "arg1", "arg2" and so on). We can use this constructor, but we need to provide this missing information with annotations:
+As it stands, this class cannot be used with the AeroMapper because there is no valid constructor to invoke when an object needs to be created. There is a constructor but it does not contain enough information to map the record on the database to the parameters of the constructor. (Remember that at runtime method and argument names are typically lost and become "arg1", "arg2" and so on). We can use this constructor in one of two ways:
+
+1. We specify '-parameters' to javac, which will prevent it stripping out the names to the constructor
+2. We can to provide this missing information with annotations:
 
 ```java
 @AerospikeRecord(namespace = "test", set = "testSet")
@@ -318,7 +321,7 @@ public class ConstructedClass {
 }
 ```
 
-Now there is enough information to be able to construct an instance of this class from a database record. Note that the names of the @ParamFrom annotation are the bin names, not the underlying field names. So if you have a field declared as
+Now there is enough information to be able to construct an instance of this class from a database record. Note that the names of the @ParamFrom annotation (or the argument names if using -parameters) are the bin names, not the underlying field names. So if you have a field declared as
 
 ```java
 @AerospikeBin(name = "shrtNm")
