@@ -106,14 +106,14 @@ public class ObjectReferenceMapper extends ObjectMapper {
 		}
 		else if (ReferenceType.DIGEST.equals(type)) {
 			if (mapper instanceof ReactiveAeroMapper) {
-				return ((ReactiveAeroMapper) mapper).readFromDigest(classToUse.getUnderlyingClass(), (byte[]) key, false);
+				return ((ReactiveAeroMapper) mapper).readFromDigestSync(classToUse.getUnderlyingClass(), (byte[]) key, false);
 			} else {
 				return ((AeroMapper) mapper).readFromDigest(classToUse.getUnderlyingClass(), (byte[]) key, false);
 			}
 		}
 		else {
 			if (mapper instanceof ReactiveAeroMapper) {
-				return ((ReactiveAeroMapper) mapper).read(classToUse.getUnderlyingClass(), key, false);
+				return ((ReactiveAeroMapper) mapper).readSync(classToUse.getUnderlyingClass(), key, false);
 			} else {
 				return ((AeroMapper) mapper).read(classToUse.getUnderlyingClass(), key, false);
 			}

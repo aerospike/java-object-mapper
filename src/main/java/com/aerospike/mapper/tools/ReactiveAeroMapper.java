@@ -2,10 +2,6 @@ package com.aerospike.mapper.tools;
 
 import com.aerospike.client.*;
 import com.aerospike.client.policy.*;
-import com.aerospike.client.query.KeyRecord;
-import com.aerospike.client.query.RecordSet;
-import com.aerospike.client.query.Statement;
-import com.aerospike.client.reactor.AerospikeReactorClient;
 import com.aerospike.client.reactor.IAerospikeReactorClient;
 import com.aerospike.mapper.tools.configuration.ClassConfig;
 import com.aerospike.mapper.tools.configuration.Configuration;
@@ -13,7 +9,6 @@ import com.aerospike.mapper.tools.converters.MappingConverter;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -29,9 +24,7 @@ import java.util.function.Function;
 
 public class ReactiveAeroMapper implements IReactiveAeroMapper {
 
-    @Getter
     private final IAerospikeReactorClient reactorClient;
-    @Getter
     private final MappingConverter mappingConverter;
 
     public static class Builder {
@@ -157,7 +150,7 @@ public class ReactiveAeroMapper implements IReactiveAeroMapper {
         public ReactiveAeroMapper build() {
             if (classesToPreload != null) {
                 for (Class<?> clazz : classesToPreload) {
-                    ClassCache.getInstance().loadClass(clazz, this.reactorMapper);
+                    ClassCache.getInstance().loadClass(clazz, reactorMapper);
                 }
             }
             return this.reactorMapper;
@@ -344,13 +337,13 @@ public class ReactiveAeroMapper implements IReactiveAeroMapper {
     }
 
     @Override
-    public <T> Flux<T> asBackedList(@NotNull Object object, @NotNull String binName, Class<T> elementClazz) {
-        throw new UnsupportedOperationException("Method not supported yet.");
+    public <T> ReactiveVirtualList<T> asBackedList(@NotNull Object object, @NotNull String binName, Class<T> elementClazz) {
+        return new ReactiveVirtualList<>(this, object, binName, elementClazz);
     }
 
     @Override
-    public <T> Flux<T> asBackedList(@NotNull Class<?> owningClazz, @NotNull Object key, @NotNull String binName, Class<T> elementClazz) {
-        throw new UnsupportedOperationException("Method not supported yet.");
+    public <T> ReactiveVirtualList<T> asBackedList(@NotNull Class<?> owningClazz, @NotNull Object key, @NotNull String binName, Class<T> elementClazz) {
+        return new ReactiveVirtualList<>(this, owningClazz, key, binName, elementClazz);
     }
 
     @Override
@@ -380,6 +373,16 @@ public class ReactiveAeroMapper implements IReactiveAeroMapper {
         }
          */
         throw new UnsupportedOperationException("Method not supported yet.");
+    }
+
+    @Override
+    public IAerospikeReactorClient getReactorClient() {
+        return this.reactorClient;
+    }
+
+    @Override
+    public MappingConverter getMappingConverter() {
+        return this.mappingConverter;
     }
 
     /**
@@ -430,6 +433,49 @@ public class ReactiveAeroMapper implements IReactiveAeroMapper {
     @Override
     public Policy getQueryPolicy(Class<?> clazz) {
         return getPolicyByClassAndType(clazz, ClassCache.PolicyType.QUERY);
+    }
+
+    /**
+        Used for ObjectReferenceMapper only
+     */
+    public <T> T readFromDigestSync(@NotNull Class<T> clazz, @NotNull byte[] digest, boolean resolveDependencies) throws AerospikeException {
+        ClassCacheEntry<T> entry = MapperUtils.getEntryAndValidateNamespace(clazz, this);
+        Key key = new Key(entry.getNamespace(), digest, entry.getSetName(), null);
+        return this.readSync(null, clazz, key, entry, resolveDependencies);
+    }
+
+    /**
+     Used for ObjectReferenceMapper only
+     */
+    public <T> T readSync(@NotNull Class<T> clazz, @NotNull Object userKey, boolean resolveDependencies) throws AerospikeException {
+        ClassCacheEntry<T> entry = MapperUtils.getEntryAndValidateNamespace(clazz, this);
+        String set = entry.getSetName();
+        Key key = new Key(entry.getNamespace(), set, Value.get(entry.translateKeyToAerospikeKey(userKey)));
+        return readSync(null, clazz, key, entry, resolveDependencies);
+    }
+
+    /**
+     Used for ObjectReferenceMapper only
+     */
+    private <T> T readSync(Policy readPolicy, @NotNull Class<T> clazz, @NotNull Key key, @NotNull ClassCacheEntry<T> entry, boolean resolveDependencies) {
+        if (readPolicy == null) {
+            readPolicy = entry.getReadPolicy();
+        }
+        Record record = reactorClient.getAerospikeClient().get(readPolicy, key);
+
+        if (record == null) {
+            return null;
+        } else {
+            try {
+                ThreadLocalKeySaver.save(key);
+                return mappingConverter.convertToObject(clazz, record, entry, resolveDependencies);
+            } catch (ReflectiveOperationException e) {
+                throw new AerospikeException(e);
+            }
+            finally {
+                ThreadLocalKeySaver.clear();
+            }
+        }
     }
 
     private Policy getPolicyByClassAndType(Class<?> clazz, ClassCache.PolicyType policyType) {

@@ -11,7 +11,6 @@ import com.aerospike.mapper.tools.converters.MappingConverter;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.validation.constraints.NotNull;
@@ -24,9 +23,7 @@ import java.util.function.Function;
 
 public class AeroMapper implements IAeroMapper {
 
-    @Getter
     private final IAerospikeClient mClient;
-    @Getter
     private final MappingConverter mappingConverter;
 
     public static class Builder {
@@ -524,7 +521,17 @@ public class AeroMapper implements IAeroMapper {
             }
         }
     }
-    
+
+    @Override
+    public IAerospikeClient getClient() {
+        return this.mClient;
+    }
+
+    @Override
+    public MappingConverter getMappingConverter() {
+        return this.mappingConverter;
+    }
+
     /**
      * Return the read policy to be used for the passed class. This is a convenience method only and should rarely be needed
      * @param clazz - the class to return the read policy for.

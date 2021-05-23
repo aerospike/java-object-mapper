@@ -1,8 +1,10 @@
 package com.aerospike.mapper.tools;
 
+import com.aerospike.client.IAerospikeClient;
 import com.aerospike.client.policy.BatchPolicy;
 import com.aerospike.client.policy.Policy;
 import com.aerospike.client.policy.WritePolicy;
+import com.aerospike.mapper.tools.converters.MappingConverter;
 
 import javax.validation.constraints.NotNull;
 import java.util.function.Function;
@@ -50,4 +52,8 @@ public interface IAeroMapper extends IBaseAeroMapper {
     <T> VirtualList<T> asBackedList(@NotNull Class<?> owningClazz, @NotNull Object key, @NotNull String binName, Class<T> elementClazz);
 
     <T> void find(@NotNull Class<T> clazz, Function<T, Boolean> function);
+
+    IAerospikeClient getClient();
+
+    MappingConverter getMappingConverter();
 }

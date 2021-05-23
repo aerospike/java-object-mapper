@@ -16,11 +16,11 @@ import static org.junit.Assert.assertNotNull;
 
 public class ReactiveAeroMapperTest extends ReactiveAeroMapperBaseTest {
 
-    private ReactiveAeroMapper reactiveAeroMapper;
+    private ReactiveAeroMapper reactiveMapper;
 
     @Before
     public void setup() {
-        reactiveAeroMapper = new ReactiveAeroMapper.Builder(reactorClient).build();
+        reactiveMapper = new ReactiveAeroMapper.Builder(reactorClient).build();
         client.truncate(null, NAMESPACE, "people", null);
         client.truncate(null, NAMESPACE, "account", null);
         client.truncate(null, NAMESPACE, "product", null);
@@ -39,9 +39,9 @@ public class ReactiveAeroMapperTest extends ReactiveAeroMapperBaseTest {
         writePerson.setSsn("123-456-7890");
         writePerson.setValid(true);
 
-        reactiveAeroMapper.save(writePerson).subscribeOn(Schedulers.parallel()).block();
+        reactiveMapper.save(writePerson).subscribeOn(Schedulers.parallel()).block();
 
-        Person readPerson = reactiveAeroMapper
+        Person readPerson = reactiveMapper
                 .read(Person.class, writePerson.getSsn())
                 .subscribeOn(Schedulers.parallel()).block();
 
@@ -72,9 +72,9 @@ public class ReactiveAeroMapperTest extends ReactiveAeroMapperBaseTest {
         writePerson.setSsn("123-456-7890");
         writePerson.setValid(true);
 
-        reactiveAeroMapper.save(writePerson).subscribeOn(Schedulers.parallel()).block();
+        reactiveMapper.save(writePerson).subscribeOn(Schedulers.parallel()).block();
 
-        PersonDifferentNames readPerson = reactiveAeroMapper
+        PersonDifferentNames readPerson = reactiveMapper
                 .read(PersonDifferentNames.class, writePerson.getSsn())
                 .subscribeOn(Schedulers.parallel()).block();
 

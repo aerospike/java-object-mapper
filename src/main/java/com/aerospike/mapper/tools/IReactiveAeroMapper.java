@@ -3,6 +3,8 @@ package com.aerospike.mapper.tools;
 import com.aerospike.client.policy.BatchPolicy;
 import com.aerospike.client.policy.Policy;
 import com.aerospike.client.policy.WritePolicy;
+import com.aerospike.client.reactor.IAerospikeReactorClient;
+import com.aerospike.mapper.tools.converters.MappingConverter;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -56,9 +58,13 @@ public interface IReactiveAeroMapper extends IBaseAeroMapper {
 
     Mono<Boolean> delete(WritePolicy writePolicy, @NotNull Object object);
 
-    <T> Flux<T> asBackedList(@NotNull Object object, @NotNull String binName, Class<T> elementClazz);
+    <T> ReactiveVirtualList<T> asBackedList(@NotNull Object object, @NotNull String binName, Class<T> elementClazz);
 
-    <T> Flux<T> asBackedList(@NotNull Class<?> owningClazz, @NotNull Object key, @NotNull String binName, Class<T> elementClazz);
+    <T> ReactiveVirtualList<T> asBackedList(@NotNull Class<?> owningClazz, @NotNull Object key, @NotNull String binName, Class<T> elementClazz);
 
     <T> Mono<T> find(@NotNull Class<T> clazz, Function<T, Boolean> function);
+
+    IAerospikeReactorClient getReactorClient();
+
+    MappingConverter getMappingConverter();
 }

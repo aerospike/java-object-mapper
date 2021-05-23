@@ -1,21 +1,25 @@
 package com.aerospike.mapper.tools.converters;
 
-import com.aerospike.client.*;
+import com.aerospike.client.AerospikeException;
+import com.aerospike.client.Key;
+import com.aerospike.client.Record;
+import com.aerospike.client.Value;
 import com.aerospike.client.policy.BatchPolicy;
 import com.aerospike.mapper.tools.*;
 
 import javax.validation.constraints.NotNull;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.atomic.AtomicInteger;
 
-public class MappingConverter {
+@Deprecated
+public class ReactiveMappingConverter {
 
-    private final IBaseAeroMapper mapper;
-    private final IAerospikeClient aerospikeClient;
+    private final IReactiveAeroMapper reactiveMapper;
 
-    public MappingConverter(IBaseAeroMapper mapper, IAerospikeClient aerospikeClient) {
-        this.mapper = mapper;
-        this.aerospikeClient = aerospikeClient;
+    public ReactiveMappingConverter(IReactiveAeroMapper reactiveMapper) {
+        this.reactiveMapper = reactiveMapper;
     }
 
     /**
@@ -28,7 +32,7 @@ public class MappingConverter {
         if (obj == null) {
             return null;
         }
-        TypeMapper thisMapper = TypeUtils.getMapper(obj.getClass(), TypeUtils.AnnotatedType.getDefaultAnnotateType(), mapper);
+        TypeMapper thisMapper = TypeUtils.getMapper(obj.getClass(), TypeUtils.AnnotatedType.getDefaultAnnotateType(), reactiveMapper);
         return thisMapper == null ? obj : thisMapper.toAerospikeFormat(obj);
     }
 
@@ -40,9 +44,9 @@ public class MappingConverter {
      */
     @SuppressWarnings("unchecked")
     public <T> T translateFromAerospike(@NotNull Object obj, @NotNull Class<T> expectedClazz) {
-        TypeMapper thisMapper = TypeUtils.getMapper(expectedClazz, TypeUtils.AnnotatedType.getDefaultAnnotateType(), mapper);
+        TypeMapper thisMapper = TypeUtils.getMapper(expectedClazz, TypeUtils.AnnotatedType.getDefaultAnnotateType(), reactiveMapper);
         T result = (T)(thisMapper == null ? obj : thisMapper.fromAerospikeFormat(obj));
-        resolveDependencies(ClassCache.getInstance().loadClass(expectedClazz, mapper));
+        resolveDependenciesReactively(ClassCache.getInstance().loadClass(expectedClazz, reactiveMapper));
         return result;
     }
 
@@ -75,11 +79,11 @@ public class MappingConverter {
      */
     public <T> T convertToObject(Class<T> clazz, Record record, ClassCacheEntry<T> entry, boolean resolveDependencies) throws ReflectiveOperationException {
         if (entry == null) {
-            entry = ClassCache.getInstance().loadClass(clazz, mapper);
+            entry = ClassCache.getInstance().loadClass(clazz, reactiveMapper);
         }
         T result = entry.constructAndHydrate(record);
         if (resolveDependencies) {
-            resolveDependencies(entry);
+            resolveDependenciesReactively(entry);
         }
         return result;
     }
@@ -93,12 +97,12 @@ public class MappingConverter {
      */
     public <T> T convertToObject(Class<T> clazz, List<Object> record, boolean resolveDependencies) {
         try {
-            ClassCacheEntry<T> entry = ClassCache.getInstance().loadClass(clazz, mapper);
+            ClassCacheEntry<T> entry = ClassCache.getInstance().loadClass(clazz, reactiveMapper);
             T result;
             result = clazz.getConstructor().newInstance();
             entry.hydrateFromList(record, result);
             if (resolveDependencies) {
-                resolveDependencies(entry);
+                resolveDependenciesReactively(entry);
             }
             return result;
         } catch (ReflectiveOperationException e) {
@@ -107,13 +111,13 @@ public class MappingConverter {
     }
 
     public <T> List<Object> convertToList(@NotNull T instance) {
-        ClassCacheEntry<T> entry = (ClassCacheEntry<T>) ClassCache.getInstance().loadClass(instance.getClass(), mapper);
+        ClassCacheEntry<T> entry = (ClassCacheEntry<T>) ClassCache.getInstance().loadClass(instance.getClass(), reactiveMapper);
         return entry.getList(instance, false, false);
     }
 
     public <T> T convertToObject(Class<T> clazz, Map<String,Object> record) {
         try {
-            ClassCacheEntry<T> entry = ClassCache.getInstance().loadClass(clazz, mapper);
+            ClassCacheEntry<T> entry = ClassCache.getInstance().loadClass(clazz, reactiveMapper);
             T result = clazz.getConstructor().newInstance();
             entry.hydrateFromMap(record, result);
             return result;
@@ -123,7 +127,7 @@ public class MappingConverter {
     }
 
     public <T> Map<String, Object> convertToMap(@NotNull T instance) {
-        ClassCacheEntry<T> entry = (ClassCacheEntry<T>) ClassCache.getInstance().loadClass(instance.getClass(), mapper);
+        ClassCacheEntry<T> entry = (ClassCacheEntry<T>) ClassCache.getInstance().loadClass(instance.getClass(), reactiveMapper);
         return entry.getMap(instance, false);
     }
 
@@ -137,14 +141,14 @@ public class MappingConverter {
      * the list of deferred objects is empty. The deferred objects are stored in a <pre>ThreadLocalData<pre> list, so are thread safe
      * @param parentEntity - the ClassCacheEntry of the parent entity. This is used to get the batch policy to use.
      */
-    public void resolveDependencies(ClassCacheEntry<?> parentEntity) {
+    public void resolveDependenciesReactively(ClassCacheEntry<?> parentEntity) {
         List<DeferredObjectLoader.DeferredObjectSetter> deferredObjects = DeferredObjectLoader.getAndClear();
 
         if (deferredObjects.size() == 0) {
             return;
         }
 
-        BatchPolicy batchPolicy = parentEntity == null ? aerospikeClient.getBatchPolicyDefault() : parentEntity.getBatchPolicy();
+        BatchPolicy batchPolicy = parentEntity == null ? reactiveMapper.getReactorClient().getBatchPolicyDefault() : parentEntity.getBatchPolicy();
         BatchPolicy batchPolicyClone = new BatchPolicy(batchPolicy);
 
         while (!deferredObjects.isEmpty()) {
@@ -157,7 +161,7 @@ public class MappingConverter {
                 DeferredObjectLoader.DeferredObjectSetter thisObjectSetter = deferredObjects.get(i);
                 DeferredObjectLoader.DeferredObject deferredObject = thisObjectSetter.getObject();
                 Class<?> clazz = deferredObject.getType();
-                ClassCacheEntry<?> entry = MapperUtils.getEntryAndValidateNamespace(clazz, mapper);
+                ClassCacheEntry<?> entry = MapperUtils.getEntryAndValidateNamespace(clazz, reactiveMapper);
                 classCaches[i] = entry;
 
                 if (deferredObject.isDigest()) {
@@ -176,20 +180,27 @@ public class MappingConverter {
             else {
                 batchPolicyClone.maxConcurrentThreads = batchPolicy.maxConcurrentThreads;
             }
-            Record[] records = aerospikeClient.get(batchPolicyClone, keys);
 
-            for (int i = 0; i < size; i++) {
-                DeferredObjectLoader.DeferredObjectSetter thisObjectSetter = deferredObjects.get(i);
-                try {
-                    ThreadLocalKeySaver.save(keys[i]);
-                    Object result = records[i] == null ? null : convertToObject((Class) thisObjectSetter.getObject().getType(), records[i], classCaches[i], false);
-                    thisObjectSetter.getSetter().setValue(result);
-                } catch (ReflectiveOperationException e) {
-                    throw new AerospikeException(e);
-                } finally {
-                    ThreadLocalKeySaver.clear();
-                }
-            }
+            AtomicInteger i = new AtomicInteger(0);
+            List<DeferredObjectLoader.DeferredObjectSetter> finalDeferredObjects = deferredObjects;
+
+            reactiveMapper.getReactorClient()
+                    .getFlux(batchPolicyClone, keys)
+                    .filter(Objects::nonNull)
+                    .map(keyRecord -> {
+                        try {
+                            DeferredObjectLoader.DeferredObjectSetter thisObjectSetter = finalDeferredObjects.get(i.get());
+                            ThreadLocalKeySaver.save(keyRecord.key);
+                            Object result = keyRecord.record == null ? null : convertToObject((Class)thisObjectSetter.getObject().getType(), keyRecord.record, classCaches[i.get()], false);
+                            thisObjectSetter.getSetter().setValue(result);
+                            return null;
+                        } catch (ReflectiveOperationException e) {
+                            throw new AerospikeException(e);
+                        } finally {
+                            ThreadLocalKeySaver.clear();
+                        }
+                    });
+
             deferredObjects = DeferredObjectLoader.getAndClear();
         }
     }

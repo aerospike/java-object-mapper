@@ -11,7 +11,7 @@ import com.aerospike.mapper.annotations.AerospikeKey;
 import com.aerospike.mapper.annotations.AerospikeRecord;
 import com.aerospike.mapper.tools.AeroMapper;
 
-public class TestAnonymousReferences extends AeroMapperBaseTest {
+public class AnonymousReferencesTest extends AeroMapperBaseTest {
 
 	@AerospikeRecord(namespace = "test", set = "A")
 	public static class A {
@@ -27,14 +27,14 @@ public class TestAnonymousReferences extends AeroMapperBaseTest {
 			nonB = new ArrayList<>();
 		}
 	}
-	
+
 	@AerospikeRecord(namespace = "test", set = "B")
 	public static class B {
 		@AerospikeKey
 		public int id;
 		public String name;
 	}
-	
+
 	@Test
 	public void runner() {
 		AeroMapper mapper = new AeroMapper.Builder(client).build();
@@ -52,15 +52,15 @@ public class TestAnonymousReferences extends AeroMapperBaseTest {
 		a.id = 1;
 		a.namedB.add(b);
 		a.namedB.add(b1);
-		
+
 		a.unnamedB.add(b);
 		a.unnamedB.add(b1);
-		
+
 		List nonB = new ArrayList();
 		nonB.add(2L);
 		nonB.add("B");
 		a.nonB.add(nonB);
-		
+
 		mapper.save(a);
 		A a2 = mapper.read(A.class, a.id);
 		assertEquals(a.id, a2.id);
@@ -75,7 +75,7 @@ public class TestAnonymousReferences extends AeroMapperBaseTest {
 		assertEquals(a.namedB.get(0).name, a2.namedB.get(0).name);
 		assertEquals(a.namedB.get(1).id, a2.namedB.get(1).id);
 		assertEquals(a.namedB.get(1).name, a2.namedB.get(1).name);
-		
+
 		assertEquals(a.nonB.size(), a2.nonB.size());
 		assertEquals(((List)a.nonB.get(0)).get(0), ((List)a2.nonB.get(0)).get(0));
 		assertEquals(((List)a.nonB.get(0)).get(1), ((List)a2.nonB.get(0)).get(1));
