@@ -31,7 +31,7 @@ public class ReactiveVirtualListTest extends ReactiveAeroMapperBaseTest {
 
         @Override
         public boolean equals(Object obj) {
-            return obj != null && a == ((ReactiveVirtualListTest.C)obj).a && b.equals(((ReactiveVirtualListTest.C)obj).b);
+            return obj != null && a == ((C)obj).a && b.equals(((C)obj).b);
         }
         @Override
         public int hashCode() {
@@ -45,10 +45,10 @@ public class ReactiveVirtualListTest extends ReactiveAeroMapperBaseTest {
         public int id;
         public String name;
         public long date;
-        public ReactiveVirtualListTest.C thisC;
-        public List<ReactiveVirtualListTest.C> Cs;
-        public List<ReactiveVirtualListTest.C> otherCs;
-        public ReactiveVirtualListTest.C anonC;
+        public C thisC;
+        public List<C> Cs;
+        public List<C> otherCs;
+        public C anonC;
 
         @AerospikeConstructor
         public B(@ParamFrom("id") int id, @ParamFrom("name") String name, @ParamFrom("date") long date) {
@@ -60,11 +60,11 @@ public class ReactiveVirtualListTest extends ReactiveAeroMapperBaseTest {
             this.otherCs = new ArrayList<>();
         }
 
-        public B(int id, String name, long date, ReactiveVirtualListTest.C thisC, ReactiveVirtualListTest.C... listCs) {
+        public B(int id, String name, long date, C thisC, C... listCs) {
             this(id, name, date);
             this.thisC = thisC;
             this.anonC = thisC;
-            for (ReactiveVirtualListTest.C aC : listCs) {
+            for (C aC : listCs) {
                 this.Cs.add(aC);
                 this.otherCs.add(aC);
             }
@@ -81,13 +81,13 @@ public class ReactiveVirtualListTest extends ReactiveAeroMapperBaseTest {
         public long getDate() {
             return date;
         }
-        public List<ReactiveVirtualListTest.C> getCs() {
+        public List<C> getCs() {
             return Cs;
         }
-        public ReactiveVirtualListTest.C getThisC() {
+        public C getThisC() {
             return thisC;
         }
-        public void setThisC(ReactiveVirtualListTest.C thisC) {
+        public void setThisC(C thisC) {
             this.thisC = thisC;
         }
 
@@ -108,10 +108,10 @@ public class ReactiveVirtualListTest extends ReactiveAeroMapperBaseTest {
 
         @Override
         public boolean equals(Object obj) {
-            if ((!(obj instanceof ReactiveVirtualListTest.B))) {
+            if ((!(obj instanceof B))) {
                 return false;
             }
-            ReactiveVirtualListTest.B b2 = (ReactiveVirtualListTest.B)obj;
+            B b2 = (B)obj;
             if (id != b2.id || date != b2.date) {
                 return false;
             }
@@ -122,7 +122,7 @@ public class ReactiveVirtualListTest extends ReactiveAeroMapperBaseTest {
     @AerospikeRecord(namespace = "test", set = "A")
     public static class A {
         @AerospikeEmbed(type = AerospikeEmbed.EmbedType.MAP, elementType = AerospikeEmbed.EmbedType.MAP)
-        public List<ReactiveVirtualListTest.B> elements;
+        public List<B> elements;
 
         @AerospikeKey
         public int id;
@@ -134,37 +134,37 @@ public class ReactiveVirtualListTest extends ReactiveAeroMapperBaseTest {
 
     @Test
     public void test() {
-        ReactiveVirtualListTest.C a = new ReactiveVirtualListTest.C(1, "a");
-        ReactiveVirtualListTest.C b = new ReactiveVirtualListTest.C(2, "b");
-        ReactiveVirtualListTest.C c = new ReactiveVirtualListTest.C(3, "c");
-        ReactiveVirtualListTest.C d = new ReactiveVirtualListTest.C(4, "d");
-        ReactiveVirtualListTest.C e = new ReactiveVirtualListTest.C(5, "e");
-        ReactiveVirtualListTest.C f = new ReactiveVirtualListTest.C(6, "f");
-        ReactiveVirtualListTest.C g = new ReactiveVirtualListTest.C(7, "g");
-        ReactiveVirtualListTest.C h = new ReactiveVirtualListTest.C(8, "h");
-        ReactiveVirtualListTest.C i = new ReactiveVirtualListTest.C(9, "i");
-        ReactiveVirtualListTest.C j = new ReactiveVirtualListTest.C(10, "j");
+        C a = new C(1, "a");
+        C b = new C(2, "b");
+        C c = new C(3, "c");
+        C d = new C(4, "d");
+        C e = new C(5, "e");
+        C f = new C(6, "f");
+        C g = new C(7, "g");
+        C h = new C(8, "h");
+        C i = new C(9, "i");
+        C j = new C(10, "j");
 
-        ReactiveVirtualListTest.A collection = new ReactiveVirtualListTest.A();
+        A collection = new A();
         collection.id = 1;
 
-        collection.elements.add(new ReactiveVirtualListTest.B(102, "bob", 12345, a, b, c));
-        collection.elements.add(new ReactiveVirtualListTest.B(101, "joe", 23456, b, d, e, f));
-        collection.elements.add(new ReactiveVirtualListTest.B(100, "sue", 34567, c));
+        collection.elements.add(new B(102, "bob", 12345, a, b, c));
+        collection.elements.add(new B(101, "joe", 23456, b, d, e, f));
+        collection.elements.add(new B(100, "sue", 34567, c));
 
         ReactiveAeroMapper reactiveMapper = new ReactiveAeroMapper.Builder(reactorClient).build();
-        reactiveMapper.save(collection);
-        reactiveMapper.save(a,b,c,d,e,f,g,h,i,j);
+        reactiveMapper.save(collection).subscribeOn(Schedulers.parallel()).block();
+        reactiveMapper.save(a,b,c,d,e,f,g,h,i,j).subscribeOn(Schedulers.parallel()).collectList().block();
 
-        ReactiveVirtualList<ReactiveVirtualListTest.B> list = reactiveMapper.asBackedList(collection, "elements", ReactiveVirtualListTest.B.class);
+        ReactiveVirtualList<B> list = reactiveMapper.asBackedList(collection, "elements", B.class);
 //		list.append(new CollectionElement(103, "tom", 45678));
 //		System.out.println("Get by index returned: " + list.get(2));
 //		System.out.println("Delete by Key Range returned: " + list.removeByKeyRange(100, 102, true));
-        List<ReactiveVirtualListTest.B> results = list.beginMultiOperation()
-                .append(new ReactiveVirtualListTest.B(104, "tim", 22222, i, e, f))
-                .append(new ReactiveVirtualListTest.B(103, "tom", 45678, h, g, g))
-                .append(new ReactiveVirtualListTest.B(105, "sam", 33333, j, a, b))
-                .append(new ReactiveVirtualListTest.B(106, "rob", 44444, j, g))
+        List<B> results = list.beginMultiOperation()
+                .append(new B(104, "tim", 22222, i, e, f))
+                .append(new B(103, "tom", 45678, h, g, g))
+                .append(new B(105, "sam", 33333, j, a, b))
+                .append(new B(106, "rob", 44444, j, g))
                 .getByKeyRange(101, 105)
 //				.removeByKeyRange(100, 102).asResult()
 //				.get(0)
@@ -185,7 +185,7 @@ public class ReactiveVirtualListTest extends ReactiveAeroMapperBaseTest {
         assertEquals(103, results.get(2).id);
         assertEquals(104, results.get(3).id);
 
-        ReactiveVirtualListTest.A result = reactiveMapper.read(ReactiveVirtualListTest.A.class, collection.id).subscribeOn(Schedulers.parallel()).block();
+        A result = reactiveMapper.read(A.class, collection.id).subscribeOn(Schedulers.parallel()).block();
         assert result != null;
         assertEquals(collection.id, result.id);
         assertEquals(7, result.elements.size());

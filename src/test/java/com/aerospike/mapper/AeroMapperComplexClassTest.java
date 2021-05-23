@@ -51,7 +51,7 @@ public class AeroMapperComplexClassTest extends AeroMapperBaseTest {
 		complex.cnid = "CN19";
 		complex.res = "result";
 		complex.meid = "ME11";
-		complex.byte4Fields = Arrays.asList(new Integer[] {1,2,3,4,5});
+		complex.byte4Fields = Arrays.asList(1,2,3,4,5);
 		complex.byte2Fields = Arrays.asList(new Short[] {1,2,3,4,5,6,7});
 		complex.byte1Fields = Arrays.asList(new Byte[] {1,2,3,-1,-2,127,-128,0});
 		complex.charFields = Arrays.asList(new Character[] {9,8,7,6,0,255,245,128,127});
