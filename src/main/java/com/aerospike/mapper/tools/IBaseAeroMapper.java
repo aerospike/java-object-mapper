@@ -15,4 +15,6 @@ public interface IBaseAeroMapper {
     ScanPolicy getScanPolicy(Class<?> clazz);
 
     Policy getQueryPolicy(Class<?> clazz);
+
+    IAeroMapper asMapper();
 }

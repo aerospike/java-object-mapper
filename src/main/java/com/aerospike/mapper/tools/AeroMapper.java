@@ -156,7 +156,7 @@ public class AeroMapper implements IAeroMapper {
         }
     }
 
-    private AeroMapper(@NotNull IAerospikeClient client) {
+    AeroMapper(@NotNull IAerospikeClient client) {
         this.mClient = client;
         this.mappingConverter = new MappingConverter(this, mClient);
     }
@@ -580,6 +580,11 @@ public class AeroMapper implements IAeroMapper {
     @Override
     public Policy getQueryPolicy(Class<?> clazz) {
         return getPolicyByClassAndType(clazz, PolicyType.QUERY);
+    }
+
+    @Override
+    public IAeroMapper asMapper() {
+        return this;
     }
 
     private Policy getPolicyByClassAndType(Class<?> clazz, PolicyType policyType) {
