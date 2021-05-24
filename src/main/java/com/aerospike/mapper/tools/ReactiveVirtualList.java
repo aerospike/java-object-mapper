@@ -345,36 +345,6 @@ public class ReactiveVirtualList<E> {
                 .map(keyRecord -> (E)interactor.getResult(keyRecord.record.getList(binName)));
     }
 
-    private int returnTypeToListReturnType(ReturnType returnType) {
-        switch (returnType) {
-            case DEFAULT:
-            case ELEMENTS:
-                return ListReturnType.VALUE;
-            case COUNT:
-                return ListReturnType.COUNT;
-            case INDEX:
-                return ListReturnType.INDEX;
-            case NONE:
-            default:
-                return ListReturnType.NONE;
-        }
-    }
-
-    private int returnTypeToMapReturnType(ReturnType returnType) {
-        switch (returnType) {
-            case DEFAULT:
-            case ELEMENTS:
-                return MapReturnType.KEY_VALUE;
-            case COUNT:
-                return MapReturnType.COUNT;
-            case INDEX:
-                return MapReturnType.INDEX;
-            case NONE:
-            default:
-                return MapReturnType.NONE;
-        }
-    }
-
     private Interactor getGetByValueRangeInteractor(Object startValue, Object endValue) {
         DeferredOperation deferred = new DeferredOperation() {
 
@@ -393,11 +363,11 @@ public class ReactiveVirtualList<E> {
             public Operation getOperation(OperationParameters operationParams) {
                 if (listType == AerospikeEmbed.EmbedType.LIST) {
                     return ListOperation.getByValueRange(binName, getValue(startValue, false), getValue(endValue, false),
-                            returnTypeToListReturnType(operationParams.getNeedsResultOfType()));
+                            TypeUtils.returnTypeToListReturnType(operationParams.getNeedsResultOfType()));
                 }
                 else {
                     return MapOperation.getByValueRange(binName, getValue(startValue, false), getValue(endValue, false),
-                            returnTypeToMapReturnType(operationParams.getNeedsResultOfType()));
+                            TypeUtils.returnTypeToMapReturnType(operationParams.getNeedsResultOfType()));
                 }
             }
 
@@ -443,11 +413,11 @@ public class ReactiveVirtualList<E> {
             public Operation getOperation(OperationParameters operationParams) {
                 if (listType == AerospikeEmbed.EmbedType.LIST) {
                     return ListOperation.getByValueRange(binName, getValue(startKey, true), getValue(endKey, true),
-                            returnTypeToListReturnType(operationParams.getNeedsResultOfType()));
+                            TypeUtils.returnTypeToListReturnType(operationParams.getNeedsResultOfType()));
                 }
                 else {
                     return MapOperation.getByKeyRange(binName, getValue(startKey, true), getValue(endKey, true),
-                            returnTypeToMapReturnType(operationParams.getNeedsResultOfType()));
+                            TypeUtils.returnTypeToMapReturnType(operationParams.getNeedsResultOfType()));
                 }
             }
 
@@ -477,11 +447,11 @@ public class ReactiveVirtualList<E> {
             public Operation getOperation(OperationParameters operationParams) {
                 if (listType == AerospikeEmbed.EmbedType.LIST) {
                     return ListOperation.removeByValueRange(binName, getValue(startKey, true), getValue(endKey, true),
-                            returnTypeToListReturnType(operationParams.getNeedsResultOfType()));
+                            TypeUtils.returnTypeToListReturnType(operationParams.getNeedsResultOfType()));
                 }
                 else {
                     return MapOperation.removeByKeyRange(binName, getValue(startKey, true), getValue(endKey, true),
-                            returnTypeToMapReturnType(operationParams.getNeedsResultOfType()));
+                            TypeUtils.returnTypeToMapReturnType(operationParams.getNeedsResultOfType()));
                 }
             }
 
@@ -511,11 +481,11 @@ public class ReactiveVirtualList<E> {
             public Operation getOperation(OperationParameters operationParams) {
                 if (listType == AerospikeEmbed.EmbedType.LIST) {
                     return ListOperation.removeByValue(binName, getValue(key, true),
-                            returnTypeToListReturnType(operationParams.getNeedsResultOfType()));
+                            TypeUtils.returnTypeToListReturnType(operationParams.getNeedsResultOfType()));
                 }
                 else {
                     return MapOperation.removeByKey(binName, getValue(key, true),
-                            returnTypeToMapReturnType(operationParams.getNeedsResultOfType()));
+                            TypeUtils.returnTypeToMapReturnType(operationParams.getNeedsResultOfType()));
                 }
             }
 
@@ -545,11 +515,11 @@ public class ReactiveVirtualList<E> {
             public Operation getOperation(OperationParameters operationParams) {
                 if (listType == AerospikeEmbed.EmbedType.LIST) {
                     return ListOperation.removeByValueRange(binName, getValue(startValue, false), getValue(endValue, false),
-                            returnTypeToListReturnType(operationParams.getNeedsResultOfType()));
+                            TypeUtils.returnTypeToListReturnType(operationParams.getNeedsResultOfType()));
                 }
                 else {
                     return MapOperation.removeByValueRange(binName, getValue(startValue, false), getValue(endValue, false),
-                            returnTypeToMapReturnType(operationParams.getNeedsResultOfType()));
+                            TypeUtils.returnTypeToMapReturnType(operationParams.getNeedsResultOfType()));
                 }
             }
 

@@ -1,5 +1,19 @@
 package com.aerospike.mapper.tools;
 
+import com.aerospike.client.AerospikeException;
+import com.aerospike.client.cdt.ListReturnType;
+import com.aerospike.client.cdt.MapReturnType;
+import com.aerospike.mapper.annotations.AerospikeEmbed;
+import com.aerospike.mapper.annotations.AerospikeEmbed.EmbedType;
+import com.aerospike.mapper.annotations.AerospikeRecord;
+import com.aerospike.mapper.annotations.AerospikeReference;
+import com.aerospike.mapper.annotations.AerospikeReference.ReferenceType;
+import com.aerospike.mapper.tools.configuration.BinConfig;
+import com.aerospike.mapper.tools.configuration.ClassConfig;
+import com.aerospike.mapper.tools.configuration.EmbedConfig;
+import com.aerospike.mapper.tools.configuration.ReferenceConfig;
+import com.aerospike.mapper.tools.mappers.*;
+
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -10,32 +24,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import com.aerospike.client.AerospikeException;
-import com.aerospike.mapper.annotations.AerospikeEmbed;
-import com.aerospike.mapper.annotations.AerospikeEmbed.EmbedType;
-import com.aerospike.mapper.annotations.AerospikeRecord;
-import com.aerospike.mapper.annotations.AerospikeReference;
-import com.aerospike.mapper.annotations.AerospikeReference.ReferenceType;
-import com.aerospike.mapper.tools.configuration.BinConfig;
-import com.aerospike.mapper.tools.configuration.ClassConfig;
-import com.aerospike.mapper.tools.configuration.EmbedConfig;
-import com.aerospike.mapper.tools.configuration.ReferenceConfig;
-import com.aerospike.mapper.tools.mappers.ArrayMapper;
-import com.aerospike.mapper.tools.mappers.BooleanMapper;
-import com.aerospike.mapper.tools.mappers.ByteMapper;
-import com.aerospike.mapper.tools.mappers.CharacterMapper;
-import com.aerospike.mapper.tools.mappers.DateMapper;
-import com.aerospike.mapper.tools.mappers.DefaultMapper;
-import com.aerospike.mapper.tools.mappers.EnumMapper;
-import com.aerospike.mapper.tools.mappers.FloatMapper;
-import com.aerospike.mapper.tools.mappers.InstantMapper;
-import com.aerospike.mapper.tools.mappers.IntMapper;
-import com.aerospike.mapper.tools.mappers.ListMapper;
-import com.aerospike.mapper.tools.mappers.MapMapper;
-import com.aerospike.mapper.tools.mappers.ObjectEmbedMapper;
-import com.aerospike.mapper.tools.mappers.ObjectReferenceMapper;
-import com.aerospike.mapper.tools.mappers.ShortMapper;
 
 public class TypeUtils {
 	private static final Map<Class<?>, TypeMapper> mappers = new HashMap<>();
@@ -342,5 +330,35 @@ public class TypeUtils {
 
 	public static void clear() {
 		mappers.clear();
+	}
+
+	public static int returnTypeToListReturnType(ReturnType returnType) {
+		switch (returnType) {
+			case DEFAULT:
+			case ELEMENTS:
+				return ListReturnType.VALUE;
+			case COUNT:
+				return ListReturnType.COUNT;
+			case INDEX:
+				return ListReturnType.INDEX;
+			case NONE:
+			default:
+				return ListReturnType.NONE;
+		}
+	}
+
+	public static int returnTypeToMapReturnType(ReturnType returnType) {
+		switch (returnType) {
+			case DEFAULT:
+			case ELEMENTS:
+				return MapReturnType.KEY_VALUE;
+			case COUNT:
+				return MapReturnType.COUNT;
+			case INDEX:
+				return MapReturnType.INDEX;
+			case NONE:
+			default:
+				return MapReturnType.NONE;
+		}
 	}
 }
