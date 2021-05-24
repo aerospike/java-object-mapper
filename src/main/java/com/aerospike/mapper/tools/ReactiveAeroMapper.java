@@ -436,7 +436,7 @@ public class ReactiveAeroMapper implements IReactiveAeroMapper {
     }
 
     /**
-        Used for ObjectReferenceMapper only
+     * Used for ObjectReferenceMapper only
      */
     public <T> T readFromDigestSync(@NotNull Class<T> clazz, @NotNull byte[] digest, boolean resolveDependencies) throws AerospikeException {
         ClassCacheEntry<T> entry = MapperUtils.getEntryAndValidateNamespace(clazz, this);
@@ -445,7 +445,7 @@ public class ReactiveAeroMapper implements IReactiveAeroMapper {
     }
 
     /**
-     Used for ObjectReferenceMapper only
+     * Used for ObjectReferenceMapper only
      */
     public <T> T readSync(@NotNull Class<T> clazz, @NotNull Object userKey, boolean resolveDependencies) throws AerospikeException {
         ClassCacheEntry<T> entry = MapperUtils.getEntryAndValidateNamespace(clazz, this);
@@ -455,7 +455,7 @@ public class ReactiveAeroMapper implements IReactiveAeroMapper {
     }
 
     /**
-     Used for ObjectReferenceMapper only
+     * Used for ObjectReferenceMapper only
      */
     private <T> T readSync(Policy readPolicy, @NotNull Class<T> clazz, @NotNull Key key, @NotNull ClassCacheEntry<T> entry, boolean resolveDependencies) {
         if (readPolicy == null) {
