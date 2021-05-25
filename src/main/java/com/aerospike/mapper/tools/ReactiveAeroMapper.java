@@ -160,7 +160,7 @@ public class ReactiveAeroMapper implements IReactiveAeroMapper {
 
     private ReactiveAeroMapper(@NotNull IAerospikeReactorClient reactorClient) {
         this.reactorClient = reactorClient;
-        this.aeroMapper = new AeroMapper(reactorClient.getAerospikeClient());
+        this.aeroMapper = new AeroMapper.Builder(reactorClient.getAerospikeClient()).build();
         this.mappingConverter = new MappingConverter(this, reactorClient.getAerospikeClient());
     }
 

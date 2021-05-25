@@ -156,7 +156,7 @@ public class AeroMapper implements IAeroMapper {
         }
     }
 
-    AeroMapper(@NotNull IAerospikeClient client) {
+    private AeroMapper(@NotNull IAerospikeClient client) {
         this.mClient = client;
         this.mappingConverter = new MappingConverter(this, mClient);
     }
