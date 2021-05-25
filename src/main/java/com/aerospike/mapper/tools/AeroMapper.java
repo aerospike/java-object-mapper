@@ -582,6 +582,11 @@ public class AeroMapper implements IAeroMapper {
         return getPolicyByClassAndType(clazz, PolicyType.QUERY);
     }
 
+    @Override
+    public IAeroMapper asMapper() {
+        return this;
+    }
+
     private Policy getPolicyByClassAndType(Class<?> clazz, PolicyType policyType) {
         ClassCacheEntry<?> entry = ClassCache.getInstance().loadClass(clazz, this);
 

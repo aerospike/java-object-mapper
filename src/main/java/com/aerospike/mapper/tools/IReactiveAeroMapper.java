@@ -62,7 +62,7 @@ public interface IReactiveAeroMapper extends IBaseAeroMapper {
 
     <T> ReactiveVirtualList<T> asBackedList(@NotNull Class<?> owningClazz, @NotNull Object key, @NotNull String binName, Class<T> elementClazz);
 
-    <T> Mono<T> find(@NotNull Class<T> clazz, Function<T, Boolean> function);
+    <T> Mono<Void> find(@NotNull Class<T> clazz, Function<T, Boolean> function);
 
     IAerospikeReactorClient getReactorClient();
 

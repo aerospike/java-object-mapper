@@ -25,6 +25,7 @@ import java.util.function.Function;
 public class ReactiveAeroMapper implements IReactiveAeroMapper {
 
     private final IAerospikeReactorClient reactorClient;
+    private final IAeroMapper aeroMapper;
     private final MappingConverter mappingConverter;
 
     public static class Builder {
@@ -159,6 +160,7 @@ public class ReactiveAeroMapper implements IReactiveAeroMapper {
 
     private ReactiveAeroMapper(@NotNull IAerospikeReactorClient reactorClient) {
         this.reactorClient = reactorClient;
+        this.aeroMapper = new AeroMapper.Builder(reactorClient.getAerospikeClient()).build();
         this.mappingConverter = new MappingConverter(this, reactorClient.getAerospikeClient());
     }
 
@@ -347,32 +349,11 @@ public class ReactiveAeroMapper implements IReactiveAeroMapper {
     }
 
     @Override
-    public <T> Mono<T> find(@NotNull Class<T> clazz, Function<T, Boolean> function) throws AerospikeException {
-        /*
-        ClassCacheEntry<T> entry = MapperUtils.getEntryAndValidateNamespace(clazz, this);
-
-        Statement statement = new Statement();
-        statement.setNamespace(entry.getNamespace());
-        statement.setSetName(entry.getSetName());
-
-        try {
-            // TODO: set the policy (If this statement is thought to be useful, which is dubious)
-            Flux<KeyRecord> recordSet = reactorClient
-                    .query(null, statement)
-                    .next()
-                    .map(x -> {
-                        T result = clazz.getConstructor().newInstance();
-                        entry.hydrateFromRecord(x.record, result);
-                        if (!function.apply(result)) {
-
-                        }
-                    });
-
-        } catch (ReflectiveOperationException e) {
-            throw new AerospikeException(e);
-        }
-         */
-        throw new UnsupportedOperationException("Method not supported yet.");
+    public <T> Mono<Void> find(@NotNull Class<T> clazz, Function<T, Boolean> function) throws AerospikeException {
+        return Mono.fromCallable(() -> {
+            asMapper().find(clazz, function);
+            return null;
+        });
     }
 
     @Override
@@ -435,47 +416,9 @@ public class ReactiveAeroMapper implements IReactiveAeroMapper {
         return getPolicyByClassAndType(clazz, ClassCache.PolicyType.QUERY);
     }
 
-    /**
-     * Used for ObjectReferenceMapper only
-     */
-    public <T> T readFromDigestSync(@NotNull Class<T> clazz, @NotNull byte[] digest, boolean resolveDependencies) throws AerospikeException {
-        ClassCacheEntry<T> entry = MapperUtils.getEntryAndValidateNamespace(clazz, this);
-        Key key = new Key(entry.getNamespace(), digest, entry.getSetName(), null);
-        return this.readSync(null, clazz, key, entry, resolveDependencies);
-    }
-
-    /**
-     * Used for ObjectReferenceMapper only
-     */
-    public <T> T readSync(@NotNull Class<T> clazz, @NotNull Object userKey, boolean resolveDependencies) throws AerospikeException {
-        ClassCacheEntry<T> entry = MapperUtils.getEntryAndValidateNamespace(clazz, this);
-        String set = entry.getSetName();
-        Key key = new Key(entry.getNamespace(), set, Value.get(entry.translateKeyToAerospikeKey(userKey)));
-        return readSync(null, clazz, key, entry, resolveDependencies);
-    }
-
-    /**
-     * Used for ObjectReferenceMapper only
-     */
-    private <T> T readSync(Policy readPolicy, @NotNull Class<T> clazz, @NotNull Key key, @NotNull ClassCacheEntry<T> entry, boolean resolveDependencies) {
-        if (readPolicy == null) {
-            readPolicy = entry.getReadPolicy();
-        }
-        Record record = reactorClient.getAerospikeClient().get(readPolicy, key);
-
-        if (record == null) {
-            return null;
-        } else {
-            try {
-                ThreadLocalKeySaver.save(key);
-                return mappingConverter.convertToObject(clazz, record, entry, resolveDependencies);
-            } catch (ReflectiveOperationException e) {
-                throw new AerospikeException(e);
-            }
-            finally {
-                ThreadLocalKeySaver.clear();
-            }
-        }
+    @Override
+    public IAeroMapper asMapper() {
+        return aeroMapper;
     }
 
     private Policy getPolicyByClassAndType(Class<?> clazz, ClassCache.PolicyType policyType) {
