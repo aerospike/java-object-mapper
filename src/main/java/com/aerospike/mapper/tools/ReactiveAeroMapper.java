@@ -263,7 +263,8 @@ public class ReactiveAeroMapper implements IReactiveAeroMapper {
      */
     @Override
     public <T> Flux<T> read(@NotNull Class<T> clazz, @NotNull Object... userKeys) {
-        return this.read(null, clazz, userKeys);
+        throw new UnsupportedOperationException("Batch reading is not supported in ReactiveAeroMapper yet.");
+        //return this.read(null, clazz, userKeys);
     }
 
     /**
