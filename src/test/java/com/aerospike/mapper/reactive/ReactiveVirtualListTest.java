@@ -160,7 +160,7 @@ public class ReactiveVirtualListTest extends ReactiveAeroMapperBaseTest {
 //		list.append(new CollectionElement(103, "tom", 45678));
 //		System.out.println("Get by index returned: " + list.get(2));
 //		System.out.println("Delete by Key Range returned: " + list.removeByKeyRange(100, 102, true));
-        List<B> results = list.beginMultiOperation()
+        List<B> results = (List<B>) list.beginMultiOperation()
                 .append(new B(104, "tim", 22222, i, e, f))
                 .append(new B(103, "tom", 45678, h, g, g))
                 .append(new B(105, "sam", 33333, j, a, b))
@@ -169,7 +169,7 @@ public class ReactiveVirtualListTest extends ReactiveAeroMapperBaseTest {
 //				.removeByKeyRange(100, 102).asResult()
 //				.get(0)
 //				.size()
-                .end();
+                .end().subscribeOn(Schedulers.parallel()).block();
 
         assertEquals(4, results.size());
         // Note that the results will be sorted by the id as we're using a K_ORDERED map

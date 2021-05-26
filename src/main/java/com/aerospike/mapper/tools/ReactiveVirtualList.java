@@ -171,7 +171,7 @@ public class ReactiveVirtualList<E> {
          * Finish the multi operation and process it.
          * @return The multi operation result.
          */
-        public <T> T end() {
+        public <T> Mono<T> end() {
             return end(null);
         }
 
@@ -180,7 +180,7 @@ public class ReactiveVirtualList<E> {
          * @param resultType The return type for the result.
          * @return The multi operation result with the given result type.
          */
-        public <T> T end(Class<T> resultType) {
+        public <T> Mono<T> end(Class<T> resultType) {
             if (this.interactions.isEmpty()) {
                 return null;
             }
@@ -203,35 +203,37 @@ public class ReactiveVirtualList<E> {
                 operations[count++] = thisInteractor.getOperation();
             }
 
-            Mono<KeyRecord> keyRecordMono = reactiveVirtualList.reactiveAeroMapper.getReactorClient().operate(writePolicy, key, operations);
-
-            T result;
-            if (count == 1) {
-                result = (T)this.interactions.get(0).getResult(keyRecordMono.map(keyRecord -> keyRecord.record.getValue(binName)).subscribeOn(Schedulers.parallel()).block());
-            }
-            else {
-                List<?> resultList = keyRecordMono.map(keyRecord -> keyRecord.record.getList(binName)).subscribeOn(Schedulers.parallel()).block();
-                if (indexToReturn < 0) {
-                    indexToReturn = listSize-1;
-                    // Determine the last GET operation
-                    for (int i = listSize-1; i >= 0; i--) {
-                        if (!this.interactions.get(i).isWriteOperation()) {
-                            indexToReturn = i;
-                            break;
+            int finalCount = count;
+            return reactiveVirtualList.reactiveAeroMapper.getReactorClient()
+                    .operate(writePolicy, key, operations)
+                    .map(keyRecord -> {
+                        T result;
+                        if(finalCount == 1) {
+                            result = (T)this.interactions.get(0).getResult(keyRecord.record.getValue(binName));
+                        } else {
+                            List<?> resultList = keyRecord.record.getList(binName);
+                            if (indexToReturn < 0) {
+                                indexToReturn = listSize-1;
+                                // Determine the last GET operation
+                                for (int i = listSize-1; i >= 0; i--) {
+                                    if (!this.interactions.get(i).isWriteOperation()) {
+                                        indexToReturn = i;
+                                        break;
+                                    }
+                                }
+                            }
+                            result = (T)this.interactions.get(indexToReturn).getResult(resultList.get(indexToReturn));
                         }
-                    }
-                }
-                result = (T)this.interactions.get(indexToReturn).getResult(resultList.get(indexToReturn));
-            }
-            if (result != null) {
-                Object object = result;
-                if (result instanceof Collection) {
-                    Collection<T> collection = (Collection<T>)result;
-                    object = collection.isEmpty() ? null : collection.iterator().next();
-                }
-                reactiveAeroMapper.getMappingConverter().resolveDependencies(ClassCache.getInstance().loadClass(object.getClass(), reactiveAeroMapper));
-            }
-            return result;
+                        if (result != null) {
+                            Object object = result;
+                            if (result instanceof Collection) {
+                                Collection<T> collection = (Collection<T>) result;
+                                object = collection.isEmpty() ? null : collection.iterator().next();
+                            }
+                            reactiveAeroMapper.getMappingConverter().resolveDependencies(ClassCache.getInstance().loadClass(object.getClass(), reactiveAeroMapper));
+                        }
+                        return result;
+                    });
         }
     }
 
