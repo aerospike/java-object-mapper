@@ -3,32 +3,40 @@
 [Aerospike](https://www.aerospike.com) is one of, if not the fastest, NoSQL database in the world. It presents a Java API which is comprehensive and powerful, but requires a measure of boiler plate code to map the data from Java POJOs to the database. The aim of this repository is to lower the amount of code required when mapping POJOs to Aerospike and back as well as reducing some of the brittleness of the code.
 
 # Table of contents:
-1. [Motivation and a simple example](#Motivation-and-a-simple-example)
-2. [Getting Started](#Getting-Started)
-3. [Constructors](#Constructors)
-4. [Keys](#Keys)
-5. [Fields](#Fields)
-6. [Properties](#Properties)
-7. [References to other objects](#References-to-other-objects)
-   + 7.1. [Associating by Reference](#Associating-by-Reference)
-     + 7.1.1. [Batch Loading](#Batch-Loading)
-   + 7.2. [Aggregating by Embedding](#Aggregating-by-Embedding)
-     + 7.2.1. [Versioning Lists](#Versioning-Lists)
-     + 7.2.2. [List Ordinals](#List-Ordinals)
-     + 7.2.3. [The importance of Generic Types](#The-importance-of-Generic-Types)
-8. [Advanced Features](#Advanced-Features)
-   + 8.1. [Placeholder replacement](#Placeholder-replacement)
-   + 8.2. [Subclasses](#Subclasses)
-     + 8.2.1. [Data Inheritance](#Data-Inheritance)
-     + 8.2.2. [Subclass Inheritance](#Subclass-Inheritance)
-   + 8.3. [Custom Object Converters](#Custom-Object-Converters)
-9. [External Configuration File](#External-Configuration-File)
-   + 9.1. [File Structure](#File-Structure)
-     + 9.1.1. [Key Structure](#Key-Structure)
-     + 9.1.2. [Bin Structure](#Bin-Structure)
-     + 9.1.3. [Embed Structure](#Embed-Structure)
-     + 9.1.4. [Reference Structure](#Reference-Structure)
-10. [Virtual Lists](#Virtual-Lists)
+1. [Compatibility with Aerospike Clients](#Compatibility-with-Aerospike-Clients)
+2. [Motivation and a simple example](#Motivation-and-a-simple-example)
+3. [Getting Started](#Getting-Started)
+4. [Constructors](#Constructors)
+5. [Keys](#Keys)
+6. [Fields](#Fields)
+7. [Properties](#Properties)
+8. [References to other objects](#References-to-other-objects)
+    + 8.1. [Associating by Reference](#Associating-by-Reference)
+        + 8.1.1. [Batch Loading](#Batch-Loading)
+    + 8.2. [Aggregating by Embedding](#Aggregating-by-Embedding)
+        + 8.2.1. [Versioning Lists](#Versioning-Lists)
+        + 8.2.2. [List Ordinals](#List-Ordinals)
+        + 8.2.3. [The importance of Generic Types](#The-importance-of-Generic-Types)
+9. [Advanced Features](#Advanced-Features)
+    + 9.1. [Placeholder replacement](#Placeholder-replacement)
+    + 9.2. [Subclasses](#Subclasses)
+        + 9.2.1. [Data Inheritance](#Data-Inheritance)
+        + 9.2.2. [Subclass Inheritance](#Subclass-Inheritance)
+    + 9.3. [Custom Object Converters](#Custom-Object-Converters)
+10. [External Configuration File](#External-Configuration-File)
+    + 10.1. [File Structure](#File-Structure)
+        + 10.1.1. [Key Structure](#Key-Structure)
+        + 10.1.2. [Bin Structure](#Bin-Structure)
+        + 10.1.3. [Embed Structure](#Embed-Structure)
+        + 10.1.4. [Reference Structure](#Reference-Structure)
+11. [Virtual Lists](#Virtual-Lists)
+
+# Compatibility with Aerospike Clients
+
+|`java-object-mapper` Version | Aerospike Client | Aerospike Reactor Client
+| :----------- | :----------- | :-----------
+| 1.2.0 | 5.1.x | 5.0.x
+| 1.1.0 | 5.0.x | 
 
 # Motivation and a simple example
 Consider a simple class:
