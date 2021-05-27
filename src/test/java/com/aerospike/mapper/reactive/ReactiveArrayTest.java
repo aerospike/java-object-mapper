@@ -75,8 +75,9 @@ public class ReactiveArrayTest extends ReactiveAeroMapperBaseTest {
         reactiveMapper.save(a7).subscribeOn(Schedulers.parallel()).block();
         reactiveMapper.save(a8).subscribeOn(Schedulers.parallel()).block();
         reactiveMapper.save(a9).subscribeOn(Schedulers.parallel()).block();
-        B b2 = reactiveMapper.read(B.class, 1).subscribeOn(Schedulers.parallel()).block();
 
+        B b2 = reactiveMapper.read(B.class, 1).subscribeOn(Schedulers.parallel()).block();
+        assert b2 != null;
         assertEquals(b.id, b2.id);
         assertEquals(b.batchAs.length, b2.batchAs.length);
         assertEquals(b.lazyAs.length, b2.lazyAs.length);

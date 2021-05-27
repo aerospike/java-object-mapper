@@ -171,6 +171,7 @@ public class ReactiveVirtualListTest extends ReactiveAeroMapperBaseTest {
 //				.size()
                 .end().subscribeOn(Schedulers.parallel()).block();
 
+        assert results != null;
         assertEquals(4, results.size());
         // Note that the results will be sorted by the id as we're using a K_ORDERED map
         assertEquals(101, results.get(0).id);

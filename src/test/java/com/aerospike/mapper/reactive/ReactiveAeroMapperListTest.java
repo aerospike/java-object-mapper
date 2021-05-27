@@ -97,6 +97,7 @@ public class ReactiveAeroMapperListTest extends ReactiveAeroMapperBaseTest {
         reactiveMapper.save(container).subscribeOn(Schedulers.parallel()).block();
 
         container = reactiveMapper.read(TestV1Container.class, 1).subscribeOn(Schedulers.parallel()).block();
+        assert container != null;
         assertEquals(1, container.value.a);
         assertEquals(2, container.value.b);
         assertEquals(3, container.value.c);
@@ -115,7 +116,8 @@ public class ReactiveAeroMapperListTest extends ReactiveAeroMapperBaseTest {
 
         reactiveMapper.save(container).subscribeOn(Schedulers.parallel()).block();
 
-        TestV2Container container2 = reactiveMapper.read(TestV2Container.class, 1).subscribeOn(Schedulers.parallel()).block();;
+        TestV2Container container2 = reactiveMapper.read(TestV2Container.class, 1).subscribeOn(Schedulers.parallel()).block();
+        assert container2 != null;
         assertEquals(1, container2.value.a);
         assertEquals(2, container2.value.b);
         assertEquals(0, container2.value.c);
@@ -136,6 +138,7 @@ public class ReactiveAeroMapperListTest extends ReactiveAeroMapperBaseTest {
         reactiveMapper.save(container).subscribeOn(Schedulers.parallel()).block();
 
         TestV2Container container2 = reactiveMapper.read(TestV2Container.class, 1).subscribeOn(Schedulers.parallel()).block();
+        assert container2 != null;
         assertEquals(1, container2.value.a);
         assertEquals(2, container2.value.b);
         assertEquals(0, container2.value.c);
@@ -156,6 +159,7 @@ public class ReactiveAeroMapperListTest extends ReactiveAeroMapperBaseTest {
         reactiveMapper.save(container).subscribeOn(Schedulers.parallel()).block();
 
         TestV3Container container2 = reactiveMapper.read(TestV3Container.class, 1).subscribeOn(Schedulers.parallel()).block();
+        assert container2 != null;
         assertEquals(0, container2.value.a);
         assertEquals(2, container2.value.b);
         assertEquals(0, container2.value.c);
@@ -178,6 +182,7 @@ public class ReactiveAeroMapperListTest extends ReactiveAeroMapperBaseTest {
         reactiveMapper.save(container).subscribeOn(Schedulers.parallel()).block();
 
         TestV3Container container2 = reactiveMapper.read(TestV3Container.class, 1).subscribeOn(Schedulers.parallel()).block();
+        assert container2 != null;
         assertEquals(0, container2.value.a);
         assertEquals(2, container2.value.b);
         assertEquals(0, container2.value.c);
@@ -200,6 +205,7 @@ public class ReactiveAeroMapperListTest extends ReactiveAeroMapperBaseTest {
         reactiveMapper.save(container).subscribeOn(Schedulers.parallel()).block();
 
         TestV3Container container2 = reactiveMapper.read(TestV3Container.class, 1).subscribeOn(Schedulers.parallel()).block();
+        assert container2 != null;
         assertEquals(0, container2.value.a);
         assertEquals(100, container2.value.b);
         assertEquals(0, container2.value.c);
