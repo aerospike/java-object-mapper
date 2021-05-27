@@ -5,18 +5,18 @@ import java.util.Map;
 
 import com.aerospike.client.AerospikeException;
 import com.aerospike.mapper.annotations.AerospikeEmbed.EmbedType;
-import com.aerospike.mapper.tools.AeroMapper;
 import com.aerospike.mapper.tools.ClassCache;
 import com.aerospike.mapper.tools.ClassCacheEntry;
+import com.aerospike.mapper.tools.IBaseAeroMapper;
 
 public class ObjectEmbedMapper extends ObjectMapper {
 
 	private final Class<?> referencedClass;
-	private final AeroMapper mapper;
+	private final IBaseAeroMapper mapper;
 	private final EmbedType type;
 	private final boolean skipKey;
 	
-	public ObjectEmbedMapper(final Class<?> clazz, final EmbedType type, final AeroMapper mapper, boolean skipKey) {
+	public ObjectEmbedMapper(final Class<?> clazz, final EmbedType type, final IBaseAeroMapper mapper, boolean skipKey) {
 		this.referencedClass = clazz;
 		this.mapper = mapper;
 		this.type = type;
@@ -31,7 +31,7 @@ public class ObjectEmbedMapper extends ObjectMapper {
 		// In this case we want to store a reference to the object.
 		boolean needsType = !(referencedClass.equals(value.getClass()));
 		// Use the actual class here in case a sub-class is passed. In that case needsType will be true
-		ClassCacheEntry<?> entry = ClassCache.getInstance().loadClass(value.getClass(), this.mapper);
+		ClassCacheEntry<?> entry = ClassCache.getInstance().loadClass(value.getClass(), mapper);
 		switch (type) {
 		case LIST:		return entry.getList(value, skipKey, needsType);
 		case MAP:		// Fall through
@@ -47,7 +47,7 @@ public class ObjectEmbedMapper extends ObjectMapper {
 		if (value == null) {
 			return null;
 		}
-		ClassCacheEntry<?> entry = ClassCache.getInstance().loadClass(referencedClass, this.mapper);
+		ClassCacheEntry<?> entry = ClassCache.getInstance().loadClass(referencedClass, mapper);
 		try {
 			Object instance;
 			
@@ -68,5 +68,4 @@ public class ObjectEmbedMapper extends ObjectMapper {
 			throw new AerospikeException(e);
 		}
 	}
-
 }

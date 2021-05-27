@@ -1,28 +1,23 @@
-package com.aerospike.mapper;
+package com.aerospike.mapper.reactive;
 
-import static org.junit.Assert.assertEquals;
+import com.aerospike.mapper.annotations.*;
+import com.aerospike.mapper.tools.ReactiveAeroMapper;
+import org.junit.Before;
+import org.junit.Test;
+import reactor.core.scheduler.Schedulers;
 
 import java.util.List;
 
-import org.junit.Before;
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
 
-import com.aerospike.mapper.annotations.AerospikeEmbed;
-import com.aerospike.mapper.annotations.AerospikeEmbed.EmbedType;
-import com.aerospike.mapper.annotations.AerospikeKey;
-import com.aerospike.mapper.annotations.AerospikeOrdinal;
-import com.aerospike.mapper.annotations.AerospikeRecord;
-import com.aerospike.mapper.annotations.AerospikeVersion;
-import com.aerospike.mapper.tools.AeroMapper;
+public class ReactiveAeroMapperListTest extends ReactiveAeroMapperBaseTest {
 
-public class AeroMapperListTest extends AeroMapperBaseTest {
-
-    private AeroMapper mapper;
+    private ReactiveAeroMapper reactiveMapper;
 
     @Before
     public void setup() {
-        mapper = new AeroMapper.Builder(client).build();
-        client.truncate(null, NAMESPACE, "testSet", null);
+        reactiveMapper = new ReactiveAeroMapper.Builder(reactorClient).build();
+        reactorClient.getAerospikeClient().truncate(null, NAMESPACE, "testSet", null);
     }
 
     @AerospikeRecord(namespace = NAMESPACE, set = "testSet")
@@ -69,7 +64,7 @@ public class AeroMapperListTest extends AeroMapperBaseTest {
     public static class TestV1Container {
         @AerospikeKey
         public int id;
-        @AerospikeEmbed(type = EmbedType.LIST)
+        @AerospikeEmbed(type = AerospikeEmbed.EmbedType.LIST)
         public TestV1 value;
     }
 
@@ -77,7 +72,7 @@ public class AeroMapperListTest extends AeroMapperBaseTest {
     public static class TestV2Container {
         @AerospikeKey
         public int id;
-        @AerospikeEmbed(type = EmbedType.LIST)
+        @AerospikeEmbed(type = AerospikeEmbed.EmbedType.LIST)
         public TestV2 value;
     }
 
@@ -85,7 +80,7 @@ public class AeroMapperListTest extends AeroMapperBaseTest {
     public static class TestV3Container {
         @AerospikeKey
         public int id;
-        @AerospikeEmbed(type = EmbedType.LIST)
+        @AerospikeEmbed(type = AerospikeEmbed.EmbedType.LIST)
         public TestV3 value;
     }
 
@@ -99,9 +94,10 @@ public class AeroMapperListTest extends AeroMapperBaseTest {
         container.value.c = 3;
         container.value.d = 4;
 
-        mapper.save(container);
+        reactiveMapper.save(container).subscribeOn(Schedulers.parallel()).block();
 
-        container = mapper.read(TestV1Container.class, 1);
+        container = reactiveMapper.read(TestV1Container.class, 1).subscribeOn(Schedulers.parallel()).block();
+        assert container != null;
         assertEquals(1, container.value.a);
         assertEquals(2, container.value.b);
         assertEquals(3, container.value.c);
@@ -118,9 +114,10 @@ public class AeroMapperListTest extends AeroMapperBaseTest {
         container.value.c = 3;
         container.value.d = 4;
 
-        mapper.save(container);
+        reactiveMapper.save(container).subscribeOn(Schedulers.parallel()).block();
 
-        TestV2Container container2 = mapper.read(TestV2Container.class, 1);
+        TestV2Container container2 = reactiveMapper.read(TestV2Container.class, 1).subscribeOn(Schedulers.parallel()).block();
+        assert container2 != null;
         assertEquals(1, container2.value.a);
         assertEquals(2, container2.value.b);
         assertEquals(0, container2.value.c);
@@ -138,9 +135,10 @@ public class AeroMapperListTest extends AeroMapperBaseTest {
         container.value.d = 4;
         container.value.e = 5;
 
-        mapper.save(container);
+        reactiveMapper.save(container).subscribeOn(Schedulers.parallel()).block();
 
-        TestV2Container container2 = mapper.read(TestV2Container.class, 1);
+        TestV2Container container2 = reactiveMapper.read(TestV2Container.class, 1).subscribeOn(Schedulers.parallel()).block();
+        assert container2 != null;
         assertEquals(1, container2.value.a);
         assertEquals(2, container2.value.b);
         assertEquals(0, container2.value.c);
@@ -158,9 +156,10 @@ public class AeroMapperListTest extends AeroMapperBaseTest {
         container.value.c = 3;
         container.value.d = 4;
 
-        mapper.save(container);
+        reactiveMapper.save(container).subscribeOn(Schedulers.parallel()).block();
 
-        TestV3Container container2 = mapper.read(TestV3Container.class, 1);
+        TestV3Container container2 = reactiveMapper.read(TestV3Container.class, 1).subscribeOn(Schedulers.parallel()).block();
+        assert container2 != null;
         assertEquals(0, container2.value.a);
         assertEquals(2, container2.value.b);
         assertEquals(0, container2.value.c);
@@ -180,9 +179,10 @@ public class AeroMapperListTest extends AeroMapperBaseTest {
         container.value.d = 3;
         container.value.e = 4;
 
-        mapper.save(container);
+        reactiveMapper.save(container).subscribeOn(Schedulers.parallel()).block();
 
-        TestV3Container container2 = mapper.read(TestV3Container.class, 1);
+        TestV3Container container2 = reactiveMapper.read(TestV3Container.class, 1).subscribeOn(Schedulers.parallel()).block();
+        assert container2 != null;
         assertEquals(0, container2.value.a);
         assertEquals(2, container2.value.b);
         assertEquals(0, container2.value.c);
@@ -202,9 +202,10 @@ public class AeroMapperListTest extends AeroMapperBaseTest {
         container.value.f = 3;
         container.value.g = 4;
 
-        mapper.save(container);
+        reactiveMapper.save(container).subscribeOn(Schedulers.parallel()).block();
 
-        TestV3Container container2 = mapper.read(TestV3Container.class, 1);
+        TestV3Container container2 = reactiveMapper.read(TestV3Container.class, 1).subscribeOn(Schedulers.parallel()).block();
+        assert container2 != null;
         assertEquals(0, container2.value.a);
         assertEquals(100, container2.value.b);
         assertEquals(0, container2.value.c);
@@ -221,18 +222,18 @@ public class AeroMapperListTest extends AeroMapperBaseTest {
         value.b = 2;
         value.c = 3;
         value.d = 4;
-    	List<Object> list = mapper.getMappingConverter().convertToList(value);
-    	assertEquals(4, list.size());
-    	// Note that "b" is ordinal 1, so it should be first in the list, then a, c, d
-    	assertEquals(2, list.get(0));
-    	assertEquals(1, list.get(1));
-    	assertEquals(3, list.get(2));
-    	assertEquals(4, list.get(3));
-    	
-    	TestV1 value2 = mapper.getMappingConverter().convertToObject(TestV1.class, list);
-    	assertEquals(value.a, value2.a);
-    	assertEquals(value.b, value2.b);
-    	assertEquals(value.c, value2.c);
-    	assertEquals(value.d, value2.d);
+        List<Object> list = reactiveMapper.getMappingConverter().convertToList(value);
+        assertEquals(4, list.size());
+        // Note that "b" is ordinal 1, so it should be first in the list, then a, c, d
+        assertEquals(2, list.get(0));
+        assertEquals(1, list.get(1));
+        assertEquals(3, list.get(2));
+        assertEquals(4, list.get(3));
+
+        TestV1 value2 = reactiveMapper.getMappingConverter().convertToObject(TestV1.class, list);
+        assertEquals(value.a, value2.a);
+        assertEquals(value.b, value2.b);
+        assertEquals(value.c, value2.c);
+        assertEquals(value.d, value2.d);
     }
 }

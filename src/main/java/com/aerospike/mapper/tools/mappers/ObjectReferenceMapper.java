@@ -9,21 +9,20 @@ import com.aerospike.client.AerospikeException;
 import com.aerospike.client.Value;
 import com.aerospike.client.util.Crypto;
 import com.aerospike.mapper.annotations.AerospikeReference.ReferenceType;
-import com.aerospike.mapper.tools.AeroMapper;
-import com.aerospike.mapper.tools.ClassCache;
-import com.aerospike.mapper.tools.ClassCacheEntry;
+import com.aerospike.mapper.tools.*;
 import com.aerospike.mapper.tools.DeferredObjectLoader.DeferredObject;
 
 public class ObjectReferenceMapper extends ObjectMapper {
 
 	// Package visibility
 	private final ClassCacheEntry<?> referencedClass;
-	private final AeroMapper mapper;
+	private final IBaseAeroMapper mapper;
 	private final boolean lazy;
 	private final boolean allowBatch;
 	private final ReferenceType type;
 	
-	public ObjectReferenceMapper(ClassCacheEntry<?> entry, boolean lazy, boolean allowBatch, ReferenceType type, AeroMapper mapper) {
+	public ObjectReferenceMapper(ClassCacheEntry<?> entry, boolean lazy, boolean allowBatch,
+								 ReferenceType type, IBaseAeroMapper mapper) {
 		this.referencedClass = entry;
 		this.mapper = mapper;
 		this.lazy = lazy;
@@ -31,7 +30,8 @@ public class ObjectReferenceMapper extends ObjectMapper {
 		this.allowBatch = allowBatch;
 		
 		if (ReferenceType.DIGEST.equals(this.type) && this.lazy) {
-			throw new AerospikeException("An object reference to a " + entry.getClass().getSimpleName() + " cannot be both lazy and map to a digest");
+			throw new AerospikeException("An object reference to a " + entry.getClass().getSimpleName()
+					+ " cannot be both lazy and map to a digest");
 		}
 	}
 	
@@ -97,7 +97,6 @@ public class ObjectReferenceMapper extends ObjectMapper {
 		}
 		
 		if (this.lazy) {
-			//Object instance = classToUse.getUnderlyingClass().newInstance();
 			Map<String, Object> map = new HashMap<>();
 			Object instance = classToUse.constructAndHydrate(map);
 			classToUse.setKey(instance, key);
@@ -107,10 +106,10 @@ public class ObjectReferenceMapper extends ObjectMapper {
 			return new DeferredObject(key, classToUse.getUnderlyingClass(), ReferenceType.DIGEST.equals(type));
 		}
 		else if (ReferenceType.DIGEST.equals(type)) {
-			return mapper.readFromDigest(classToUse.getUnderlyingClass(), (byte[]) key, false);
+			return mapper.asMapper().readFromDigest(classToUse.getUnderlyingClass(), (byte[]) key, false);
 		}
 		else {
-			return mapper.read(classToUse.getUnderlyingClass(), key, false);
+			return mapper.asMapper().read(classToUse.getUnderlyingClass(), key, false);
 		}
 	}
 }

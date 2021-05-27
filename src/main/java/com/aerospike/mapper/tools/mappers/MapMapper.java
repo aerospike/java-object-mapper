@@ -3,13 +3,10 @@ package com.aerospike.mapper.tools.mappers;
 import java.util.Map;
 import java.util.TreeMap;
 
-import com.aerospike.mapper.tools.AeroMapper;
-import com.aerospike.mapper.tools.DeferredObjectLoader;
+import com.aerospike.mapper.tools.*;
 import com.aerospike.mapper.tools.DeferredObjectLoader.DeferredObject;
 import com.aerospike.mapper.tools.DeferredObjectLoader.DeferredObjectSetter;
 import com.aerospike.mapper.tools.DeferredObjectLoader.DeferredSetter;
-import com.aerospike.mapper.tools.TypeMapper;
-import com.aerospike.mapper.tools.TypeUtils;
 import com.aerospike.mapper.tools.TypeUtils.AnnotatedType;
 
 public class MapMapper extends TypeMapper {
@@ -20,13 +17,13 @@ public class MapMapper extends TypeMapper {
 	private final Class<?> itemClass;
 	@SuppressWarnings("unused")
 	private final Class<?> keyClass;
-	private final AeroMapper mapper;
+	private final IBaseAeroMapper mapper;
 	private final boolean supportedWithoutTranslation;
 	private final TypeMapper itemMapper;
 	private final TypeMapper keyMapper;
 	
 	public MapMapper(final Class<?> clazz, final Class<?> keyClass, final Class<?> itemClass, 
-			final TypeMapper keyMapper, final TypeMapper itemMapper, final AeroMapper mapper) {
+			final TypeMapper keyMapper, final TypeMapper itemMapper, final IBaseAeroMapper mapper) {
 		this.referencedClass = clazz;
 		this.mapper = mapper;
 		this.keyMapper = keyMapper;

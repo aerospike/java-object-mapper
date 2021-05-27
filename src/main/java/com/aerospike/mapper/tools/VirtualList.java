@@ -32,7 +32,7 @@ import com.aerospike.mapper.tools.TypeUtils.AnnotatedType;
 import com.aerospike.mapper.tools.mappers.ListMapper;
 
 public class VirtualList<E> {
-	private final AeroMapper mapper;
+	private final IAeroMapper mapper;
 	private final ValueType value;
 	private final ClassCacheEntry<?> owningEntry;
 	private final ClassCacheEntry<?> elementEntry;
@@ -44,16 +44,16 @@ public class VirtualList<E> {
 	private final Function<Object, Object> instanceMapper; 
 
 	// package level visibility
-	VirtualList(@NotNull AeroMapper mapper, @NotNull Class<?> owningClazz, @NotNull Object key, @NotNull String binName, @NotNull Class<E> clazz) {
+	VirtualList(@NotNull IAeroMapper mapper, @NotNull Class<?> owningClazz, @NotNull Object key, @NotNull String binName, @NotNull Class<E> clazz) {
 		this(mapper, null, owningClazz, key, binName, clazz);
 	}
 	
 	// package level visibility
-	VirtualList(@NotNull AeroMapper mapper, @NotNull Object object, @NotNull String binName, @NotNull Class<E> clazz) {
+	VirtualList(@NotNull IAeroMapper mapper, @NotNull Object object, @NotNull String binName, @NotNull Class<E> clazz) {
 		this(mapper, object, null, null, binName, clazz);
 	}
 
-	private VirtualList(@NotNull AeroMapper mapper, Object object, Class<?> owningClazz, Object key, @NotNull String binName, @NotNull Class<E> clazz) {
+	private VirtualList(@NotNull IAeroMapper mapper, Object object, Class<?> owningClazz, Object key, @NotNull String binName, @NotNull Class<E> clazz) {
 		if (object != null) {
 			owningClazz = object.getClass();
 		}
@@ -219,7 +219,7 @@ public class VirtualList<E> {
 				operations[count++] = thisInteractor.getOperation();
 			}
 						
-    		Record record = this.virtualList.mapper.mClient.operate(writePolicy, key, operations);
+    		Record record = this.virtualList.mapper.getClient().operate(writePolicy, key, operations);
 
     		T result;
     		if (count == 1) {
@@ -246,7 +246,7 @@ public class VirtualList<E> {
     				Collection<T> collection = (Collection<T>)result;
     				object = collection.isEmpty() ? null : collection.iterator().next();
     			}
-    			mapper.resolveDependencies(ClassCache.getInstance().loadClass(object.getClass(), mapper));
+    			mapper.getMappingConverter().resolveDependencies(ClassCache.getInstance().loadClass(object.getClass(), mapper));
     		}
 			return result;
 		}
@@ -276,7 +276,7 @@ public class VirtualList<E> {
     	}
 		Interactor interactor = getGetByValueRangeInteractor(startValue, endValue);
 		interactor.setNeedsResultOfType(returnResultsOfType);
-		Record record = this.mapper.mClient.operate(writePolicy, key, interactor.getOperation());
+		Record record = this.mapper.getClient().operate(writePolicy, key, interactor.getOperation());
 
 		return (List<E>)interactor.getResult(record.getList(binName));
 	}
@@ -315,7 +315,7 @@ public class VirtualList<E> {
     	}
 		Interactor interactor = getRemoveValueRangeInteractor(startKey, endKey);
 		interactor.setNeedsResultOfType(returnResultsOfType);
-		Record record = this.mapper.mClient.operate(writePolicy, key, interactor.getOperation());
+		Record record = this.mapper.getClient().operate(writePolicy, key, interactor.getOperation());
 
 		return (List<E>)interactor.getResult(record.getList(binName));
 	}
@@ -354,38 +354,9 @@ public class VirtualList<E> {
     	}
 		Interactor interactor = getRemoveKeyRangeInteractor(startKey, endKey);
 		interactor.setNeedsResultOfType(returnResultsOfType);
-		Record record = this.mapper.mClient.operate(writePolicy, key, interactor.getOperation());
+		Record record = this.mapper.getClient().operate(writePolicy, key, interactor.getOperation());
 
 		return (List<E>)interactor.getResult(record.getList(binName));
-	}
-	
-	private int returnTypeToListReturnType(ReturnType returnType) {
-		switch (returnType) {
-		case DEFAULT:
-		case ELEMENTS:
-			return ListReturnType.VALUE;
-		case COUNT:
-			return ListReturnType.COUNT;
-		case INDEX:
-			return ListReturnType.INDEX;
-		case NONE:
-		default:
-			return ListReturnType.NONE;
-		}
-	}
-	private int returnTypeToMapReturnType(ReturnType returnType) {
-		switch (returnType) {
-		case DEFAULT:
-		case ELEMENTS:
-			return MapReturnType.KEY_VALUE;
-		case COUNT:
-			return MapReturnType.COUNT;
-		case INDEX:
-			return MapReturnType.INDEX;
-		case NONE:
-		default:
-			return MapReturnType.NONE;
-		}
 	}
 
 	private Interactor getGetByValueRangeInteractor(Object startValue, Object endValue) {
@@ -406,11 +377,11 @@ public class VirtualList<E> {
 			public Operation getOperation(OperationParameters operationParams) {
 	    		if (listType == EmbedType.LIST) {
     				return ListOperation.getByValueRange(binName, getValue(startValue, false), getValue(endValue, false), 
-    						returnTypeToListReturnType(operationParams.getNeedsResultOfType()));
+    						TypeUtils.returnTypeToListReturnType(operationParams.getNeedsResultOfType()));
 				}
 	    		else {
-    				return MapOperation.getByValueRange(binName, getValue(startValue, false), getValue(endValue, false), 
-    						returnTypeToMapReturnType(operationParams.getNeedsResultOfType()));
+    				return MapOperation.getByValueRange(binName, getValue(startValue, false), getValue(endValue, false),
+							TypeUtils.returnTypeToMapReturnType(operationParams.getNeedsResultOfType()));
 	    		}
 			}
 
@@ -428,7 +399,7 @@ public class VirtualList<E> {
 			aerospikeObject = elementEntry.translateKeyToAerospikeKey(javaObject);
 		}
 		else {
-			aerospikeObject = this.mapper.translateToAerospike(javaObject);
+			aerospikeObject = this.mapper.getMappingConverter().translateToAerospike(javaObject);
 		}
 		if (aerospikeObject == null) {
 			return null;
@@ -455,12 +426,12 @@ public class VirtualList<E> {
 			@Override
 			public Operation getOperation(OperationParameters operationParams) {
 	    		if (listType == EmbedType.LIST) {
-    				return ListOperation.getByValueRange(binName, getValue(startKey, true), getValue(endKey, true), 
-    						returnTypeToListReturnType(operationParams.getNeedsResultOfType()));
+    				return ListOperation.getByValueRange(binName, getValue(startKey, true), getValue(endKey, true),
+							TypeUtils.returnTypeToListReturnType(operationParams.getNeedsResultOfType()));
 				}
 	    		else {
-    				return MapOperation.getByKeyRange(binName, getValue(startKey, true), getValue(endKey, true), 
-    						returnTypeToMapReturnType(operationParams.getNeedsResultOfType()));
+    				return MapOperation.getByKeyRange(binName, getValue(startKey, true), getValue(endKey, true),
+							TypeUtils.returnTypeToMapReturnType(operationParams.getNeedsResultOfType()));
 	    		}
 			}
 
@@ -489,12 +460,12 @@ public class VirtualList<E> {
 			@Override
 			public Operation getOperation(OperationParameters operationParams) {
 	    		if (listType == EmbedType.LIST) {
-    				return ListOperation.removeByValueRange(binName, getValue(startKey, true), getValue(endKey, true), 
-    						returnTypeToListReturnType(operationParams.getNeedsResultOfType()));
+    				return ListOperation.removeByValueRange(binName, getValue(startKey, true), getValue(endKey, true),
+							TypeUtils.returnTypeToListReturnType(operationParams.getNeedsResultOfType()));
 				}
 	    		else {
-    				return MapOperation.removeByKeyRange(binName, getValue(startKey, true), getValue(endKey, true), 
-    						returnTypeToMapReturnType(operationParams.getNeedsResultOfType()));
+    				return MapOperation.removeByKeyRange(binName, getValue(startKey, true), getValue(endKey, true),
+							TypeUtils.returnTypeToMapReturnType(operationParams.getNeedsResultOfType()));
 	    		}
 			}
 
@@ -523,12 +494,12 @@ public class VirtualList<E> {
 			@Override
 			public Operation getOperation(OperationParameters operationParams) {
 	    		if (listType == EmbedType.LIST) {
-    				return ListOperation.removeByValue(binName, getValue(key, true), 
-    						returnTypeToListReturnType(operationParams.getNeedsResultOfType()));
+    				return ListOperation.removeByValue(binName, getValue(key, true),
+							TypeUtils.returnTypeToListReturnType(operationParams.getNeedsResultOfType()));
 				}
 	    		else {
-    				return MapOperation.removeByKey(binName, getValue(key, true), 
-    						returnTypeToMapReturnType(operationParams.getNeedsResultOfType()));
+    				return MapOperation.removeByKey(binName, getValue(key, true),
+							TypeUtils.returnTypeToMapReturnType(operationParams.getNeedsResultOfType()));
 	    		}
 			}
 
@@ -558,12 +529,12 @@ public class VirtualList<E> {
 			@Override
 			public Operation getOperation(OperationParameters operationParams) {
 	    		if (listType == EmbedType.LIST) {
-    				return ListOperation.removeByValueRange(binName, getValue(startValue, false), getValue(endValue, false), 
-    						returnTypeToListReturnType(operationParams.getNeedsResultOfType()));
+    				return ListOperation.removeByValueRange(binName, getValue(startValue, false), getValue(endValue, false),
+							TypeUtils.returnTypeToListReturnType(operationParams.getNeedsResultOfType()));
 				}
 	    		else {
-    				return MapOperation.removeByValueRange(binName, getValue(startValue, false), getValue(endValue, false), 
-    						returnTypeToMapReturnType(operationParams.getNeedsResultOfType()));
+    				return MapOperation.removeByValueRange(binName, getValue(startValue, false), getValue(endValue, false),
+							TypeUtils.returnTypeToMapReturnType(operationParams.getNeedsResultOfType()));
 	    		}
 			}
 
@@ -594,11 +565,9 @@ public class VirtualList<E> {
         	writePolicy = new WritePolicy(owningEntry.getWritePolicy());
     		writePolicy.recordExistsAction = RecordExistsAction.UPDATE;
     	}
-		Record record = this.mapper.mClient.operate(writePolicy, key, getAppendOperation(result));
+		Record record = this.mapper.getClient().operate(writePolicy, key, getAppendOperation(result));
     	return record.getLong(binName);
 	}
-	
-	
 	
 	public E get(int index) {
 		return get(null, index);
@@ -619,7 +588,7 @@ public class VirtualList<E> {
     	}
 
     	Interactor interactor = getIndexInteractor(index);
-		Record record = this.mapper.mClient.operate(null, key, interactor.getOperation());
+		Record record = this.mapper.getClient().operate(null, key, interactor.getOperation());
 		return (E)interactor.getResult(record.getList(binName));
 	}
 	
@@ -637,7 +606,7 @@ public class VirtualList<E> {
     		policy = new Policy(owningEntry.getReadPolicy());
     	}
     	Interactor interactor = getSizeInteractor();
-		Record record = this.mapper.mClient.operate(null, key, interactor.getOperation());
+		Record record = this.mapper.getClient().operate(null, key, interactor.getOperation());
 		return record.getLong(binName);
 	}
 }
