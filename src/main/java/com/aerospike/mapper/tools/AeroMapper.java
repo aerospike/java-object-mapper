@@ -592,10 +592,10 @@ public class AeroMapper implements IAeroMapper {
 
         switch (policyType) {
             case READ: return entry == null ? mClient.getReadPolicyDefault() : entry.getReadPolicy();
-            case WRITE: return entry == null ? mClient.getWritePolicyDefault() : entry.getReadPolicy();
-            case BATCH: return entry == null ? mClient.getBatchPolicyDefault() : entry.getReadPolicy();
-            case SCAN: return entry == null ? mClient.getScanPolicyDefault() : entry.getReadPolicy();
-            case QUERY: return entry == null ? mClient.getQueryPolicyDefault() : entry.getReadPolicy();
+            case WRITE: return entry == null ? mClient.getWritePolicyDefault() : entry.getWritePolicy();
+            case BATCH: return entry == null ? mClient.getBatchPolicyDefault() : entry.getBatchPolicy();
+            case SCAN: return entry == null ? mClient.getScanPolicyDefault() : entry.getScanPolicy();
+            case QUERY: return entry == null ? mClient.getQueryPolicyDefault() : entry.getQueryPolicy();
             default: throw new UnsupportedOperationException("Provided unsupported policy.");
         }
     }
