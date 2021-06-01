@@ -427,10 +427,10 @@ public class ReactiveAeroMapper implements IReactiveAeroMapper {
 
         switch (policyType) {
             case READ: return entry == null ? reactorClient.getReadPolicyDefault() : entry.getReadPolicy();
-            case WRITE: return entry == null ? reactorClient.getWritePolicyDefault() : entry.getReadPolicy();
-            case BATCH: return entry == null ? reactorClient.getBatchPolicyDefault() : entry.getReadPolicy();
-            case SCAN: return entry == null ? reactorClient.getScanPolicyDefault() : entry.getReadPolicy();
-            case QUERY: return entry == null ? reactorClient.getQueryPolicyDefault() : entry.getReadPolicy();
+            case WRITE: return entry == null ? reactorClient.getWritePolicyDefault() : entry.getWritePolicy();
+            case BATCH: return entry == null ? reactorClient.getBatchPolicyDefault() : entry.getBatchPolicy();
+            case SCAN: return entry == null ? reactorClient.getScanPolicyDefault() : entry.getScanPolicy();
+            case QUERY: return entry == null ? reactorClient.getQueryPolicyDefault() : entry.getQueryPolicy();
             default: throw new UnsupportedOperationException("Provided unsupported policy.");
         }
     }
