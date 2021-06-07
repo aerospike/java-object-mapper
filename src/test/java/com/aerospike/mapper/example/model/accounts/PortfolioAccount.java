@@ -26,7 +26,7 @@ public class PortfolioAccount extends Account {
 		this.interestRates = new HashMap<>();
 	}
 
-	public void setContractClausesExcluded(int ... clauseIds) {
+	public void setContractClausesExcluded(int... clauseIds) {
 		this.contractClausesExcluded = clauseIds;
 	}
 	

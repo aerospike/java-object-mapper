@@ -140,13 +140,13 @@ public class VirtualList<E> {
 			return this;
 		}
 
-		public MultiOperation<E> removeByValueRange(Object startKey, Object endKey) {
-			this.interactions.add(getRemoveValueRangeInteractor(startKey, endKey));
+		public MultiOperation<E> removeByValueRange(Object startValue, Object endValue) {
+			this.interactions.add(getRemoveValueRangeInteractor(startValue, endValue));
 			return this;
 		}
 
-		public MultiOperation<E> getByValueRange(Object startKey, Object endKey) {
-			this.interactions.add(getGetByValueRangeInteractor(startKey, endKey));
+		public MultiOperation<E> getByValueRange(Object startValue, Object endValue) {
+			this.interactions.add(getGetByValueRangeInteractor(startValue, endValue));
 			return this;
 		}
 
@@ -263,12 +263,34 @@ public class VirtualList<E> {
     	}
 		return new MultiOperation<>(this, writePolicy);
 	}
-	
 
-	public List<E> getByValueRange(Object startKey, Object endKey, ReturnType returnResultsOfType) {
-		return this.getByValueRange(null, startKey, endKey, returnResultsOfType);
+	/**
+	 * Get items from the list matching the specified value. If the list is mapped to a MAP in Aerospike, the start value and end value will dictate the range of values to get,
+	 * inclusive of the start, exclusive of the end.
+	 * <p/>
+	 * If the list is mapped to a LIST in Aerospike however, the start and end range represent values to get from the list.
+	 * <p/>
+	 * @param startValue Start value of the range to get.
+	 * @param endValue End value of the range to get.
+	 * @param returnResultsOfType Type to return.
+	 * @return A list of the records which match the given value range.
+	 */
+	public List<E> getByValueRange(Object startValue, Object endValue, ReturnType returnResultsOfType) {
+		return this.getByValueRange(null, startValue, endValue, returnResultsOfType);
 	}
-	
+
+	/**
+	 * Get items from the list matching the specified value. If the list is mapped to a MAP in Aerospike, the start value and end value will dictate the range of values to get,
+	 * inclusive of the start, exclusive of the end.
+	 * <p/>
+	 * If the list is mapped to a LIST in Aerospike however, the start and end range represent values to get from the list.
+	 * <p/>
+	 * @param writePolicy An Aerospike write policy to use for the operate() operation.
+	 * @param startValue Start value of the range to get.
+	 * @param endValue End value of the range to get.
+	 * @param returnResultsOfType Type to return.
+	 * @return A list of the records which match the given value range.
+	 */
 	public List<E> getByValueRange(WritePolicy writePolicy, Object startValue, Object endValue, ReturnType returnResultsOfType) {
     	if (writePolicy == null) {
         	writePolicy = new WritePolicy(owningEntry.getWritePolicy());
@@ -282,38 +304,38 @@ public class VirtualList<E> {
 	}
 
 	/**
-	 * Remove items from the list matching the specified key. If the list is mapped to a MAP in Aerospike, the start key and end key will dictate the range of keys to be removed,
+	 * Remove items from the list matching the specified value. If the list is mapped to a MAP in Aerospike, the start value and end value will dictate the range of values to be removed,
 	 * inclusive of the start, exclusive of the end.
 	 * <p/>
-	 * If the list is mapped to a LIST in Aerospike however, the start and end range represent values to be removed from the list.
+	 * If the list is mapped to a LIST in Aerospike however, the start and end range represent values to removed from the list.
 	 * <p/>
-	 * @param startKey Start key of the range to remove.
-	 * @param endKey End key of the range to remove.
+	 * @param startValue Start value of the range to remove.
+	 * @param endValue End value of the range to remove.
 	 * @param returnResultsOfType Type to return.
 	 * @return A list of the records which have been removed from the database if returnResults is true, null otherwise.
 	 */
-	public List<E> removeByValueRange(Object startKey, Object endKey, ReturnType returnResultsOfType) {
-		return this.removeByValueRange(null, startKey, endKey, returnResultsOfType);
+	public List<E> removeByValueRange(Object startValue, Object endValue, ReturnType returnResultsOfType) {
+		return this.removeByValueRange(null, startValue, endValue, returnResultsOfType);
 	}
 
 	/**
-	 * Remove items from the list matching the specified key. If the list is mapped to a MAP in Aerospike, the start key and end key will dictate the range of keys to be removed,
+	 * Remove items from the list matching the specified value. If the list is mapped to a MAP in Aerospike, the start value and end value will dictate the range of values to be removed,
 	 * inclusive of the start, exclusive of the end.
 	 * <p/>
 	 * If the list is mapped to a LIST in Aerospike however, the start and end range represent values to be removed from the list.
 	 * <p/>
 	 * @param writePolicy An Aerospike write policy to use for the operate() operation.
-	 * @param startKey Start key of the range to remove.
-	 * @param endKey End key of the range to remove.
+	 * @param startValue Start value of the range to remove.
+	 * @param endValue End value of the range to remove.
 	 * @param returnResultsOfType Type to return.
 	 * @return A list of the records which have been removed from the database if returnResults is true, null otherwise.
 	 */
-	public List<E> removeByValueRange(WritePolicy writePolicy, Object startKey, Object endKey, ReturnType returnResultsOfType) {
+	public List<E> removeByValueRange(WritePolicy writePolicy, Object startValue, Object endValue, ReturnType returnResultsOfType) {
     	if (writePolicy == null) {
         	writePolicy = new WritePolicy(owningEntry.getWritePolicy());
     		writePolicy.recordExistsAction = RecordExistsAction.UPDATE;
     	}
-		Interactor interactor = getRemoveValueRangeInteractor(startKey, endKey);
+		Interactor interactor = getRemoveValueRangeInteractor(startValue, endValue);
 		interactor.setNeedsResultOfType(returnResultsOfType);
 		Record record = this.mapper.getClient().operate(writePolicy, key, interactor.getOperation());
 
@@ -510,7 +532,6 @@ public class VirtualList<E> {
 		};
 		return new Interactor(deferred);
 	}
-	
 
 	private Interactor getRemoveValueRangeInteractor(Object startValue, Object endValue) {
 		DeferredOperation deferred = new DeferredOperation() {
@@ -555,10 +576,22 @@ public class VirtualList<E> {
     		return ListOperation.append(binName, Value.get(aerospikeObject));
     	}
 	}
+
+	/**
+	 * Append a new element at the end of the virtual list.
+	 * @param element The given element to append.
+	 * @return The list size.
+	 */
 	public long append(E element) {
 		return this.append(null, element);
 	}
-	
+
+	/**
+	 * Append a new element at the end of the virtual list.
+	 * @param writePolicy An Aerospike write policy to use for the operate() operation.
+	 * @param element The given element to append.
+	 * @return The size of the list.
+	 */
 	public long append(WritePolicy writePolicy, E element) {
     	Object result = listMapper.toAerospikeInstanceFormat(element);
     	if (writePolicy == null) {
@@ -568,7 +601,12 @@ public class VirtualList<E> {
 		Record record = this.mapper.getClient().operate(writePolicy, key, getAppendOperation(result));
     	return record.getLong(binName);
 	}
-	
+
+	/**
+	 * Get an element from the virtual list at a specific index.
+	 * @param index The index to get the item from.
+	 * @return The element to get from the virtual list.
+	 */
 	public E get(int index) {
 		return get(null, index);
 	}
@@ -581,7 +619,13 @@ public class VirtualList<E> {
 			return new Interactor(MapOperation.getByIndex(binName, index, MapReturnType.KEY_VALUE), ListUnpacker.instance, new ElementUnpacker(instanceMapper));
 		}
 	}
-	
+
+	/**
+	 * Get an element from the virtual list at a specific index.
+	 * @param policy - The policy to use for the operate() operation.
+	 * @param index The index to get the item from.
+	 * @return The element to get from the virtual list.
+	 */
 	public E get(Policy policy, int index) {
     	if (policy == null) {
     		policy = new Policy(owningEntry.getReadPolicy());
@@ -601,6 +645,11 @@ public class VirtualList<E> {
 		}
 	}
 
+	/**
+	 * Get the size of the virtual list (number of elements)
+	 * @param policy - The policy to use for the operate() operation.
+	 * @return The size of the list.
+	 */
 	public long size(Policy policy) {
     	if (policy == null) {
     		policy = new Policy(owningEntry.getReadPolicy());

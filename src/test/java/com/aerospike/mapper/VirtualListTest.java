@@ -64,7 +64,7 @@ public class VirtualListTest extends AeroMapperBaseTest {
 			this.otherCs = new ArrayList<>();
 		}
 
-		public B(int id, String name, long date, C thisC, C ... listCs) {
+		public B(int id, String name, long date, C thisC, C... listCs) {
 			this(id, name, date);
 			this.thisC = thisC;
 			this.anonC = thisC;

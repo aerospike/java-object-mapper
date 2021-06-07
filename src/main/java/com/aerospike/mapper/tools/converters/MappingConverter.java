@@ -66,6 +66,15 @@ public class MappingConverter {
         }
     }
 
+    /**
+     * Given a record loaded from Aerospike and a class type, attempt to convert the record to
+     * an instance of the passed class.
+     * @param clazz The class type to convert the Aerospike record to.
+     * @param record The Aerospike record to convert.
+     * @param entry The entry that holds information on how to store the provided class.
+     * @return A virtual list.
+     * @throws AerospikeException an AerospikeException will be thrown in case of an encountering a ReflectiveOperationException.
+     */
     public <T> T convertToObject(Class<T> clazz, Record record, ClassCacheEntry<T> entry) throws ReflectiveOperationException {
         return this.convertToObject(clazz, record, entry, true);
     }
@@ -84,6 +93,14 @@ public class MappingConverter {
         return result;
     }
 
+    /**
+     * Given a list of records loaded from Aerospike and a class type, attempt to convert the records to
+     * an instance of the passed class.
+     * @param clazz The class type to convert the Aerospike record to.
+     * @param record The Aerospike records to convert.
+     * @return A virtual list.
+     * @throws AerospikeException an AerospikeException will be thrown in case of an encountering a ReflectiveOperationException.
+     */
     public <T> T convertToObject(Class<T> clazz, List<Object> record) {
         return this.convertToObject(clazz, record, true);
     }
@@ -106,12 +123,15 @@ public class MappingConverter {
         }
     }
 
-    public <T> List<Object> convertToList(@NotNull T instance) {
-        ClassCacheEntry<T> entry = (ClassCacheEntry<T>) ClassCache.getInstance().loadClass(instance.getClass(), mapper);
-        return entry.getList(instance, false, false);
-    }
-
-    public <T> T convertToObject(Class<T> clazz, Map<String,Object> record) {
+    /**
+     * Given a map of records loaded from Aerospike and a class type, attempt to convert the records to
+     * an instance of the passed class.
+     * @param clazz The class type to convert the Aerospike record to.
+     * @param record The Aerospike records to convert.
+     * @return A virtual list.
+     * @throws AerospikeException an AerospikeException will be thrown in case of an encountering a ReflectiveOperationException.
+     */
+    public <T> T convertToObject(Class<T> clazz, Map<String, Object> record) {
         try {
             ClassCacheEntry<T> entry = ClassCache.getInstance().loadClass(clazz, mapper);
             T result = clazz.getConstructor().newInstance();
@@ -122,6 +142,22 @@ public class MappingConverter {
         }
     }
 
+    /**
+     * Given an instance of a class (of any type), convert its properties to a list
+     * @param instance The instance of a class (of any type).
+     * @return a List of the properties of the given instance.
+     */
+    public <T> List<Object> convertToList(@NotNull T instance) {
+        ClassCacheEntry<T> entry = (ClassCacheEntry<T>) ClassCache.getInstance().loadClass(instance.getClass(), mapper);
+        return entry.getList(instance, false, false);
+    }
+
+    /**
+     * Given an instance of a class (of any type), convert its properties to a map, properties names will use as the
+     * key and properties values will be the values.
+     * @param instance The instance of a class (of any type).
+     * @return a Map of the properties <propertyName, propertyValue> of the given instance.
+     */
     public <T> Map<String, Object> convertToMap(@NotNull T instance) {
         ClassCacheEntry<T> entry = (ClassCacheEntry<T>) ClassCache.getInstance().loadClass(instance.getClass(), mapper);
         return entry.getMap(instance, false);

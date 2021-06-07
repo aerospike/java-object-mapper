@@ -240,7 +240,7 @@ After the specified policy, there are 3 possible options:
 
 - `forAll()`: The passed policy is used for all classes. This is similar to setting the defaultReadPolicy on the IAerospikeClient but allows it to be set after the client is created. 
 - `forThisOrChildrenOf(Class<?> class)`: The passed policy is used for the passed class and all subclasses of the passed class.
-- `forClasses(Class<?> ... classes)`: The passed policy is used for the passed class(es), but no subclasses.
+- `forClasses(Class<?>... classes)`: The passed policy is used for the passed class(es), but no subclasses.
 
 It is entirely possible that a class falls into more than one category, in which case the most specific policy is used. If no policy is specified, the defaultReadPolicy passed to the IAerospikeClient is used. For example, if there are classes A, B, C with C being a subclass of B, a definition could be for example:
 
