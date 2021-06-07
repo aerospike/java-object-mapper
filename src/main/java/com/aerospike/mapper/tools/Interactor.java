@@ -10,7 +10,7 @@ public class Interactor {
 	private final OperationParameters deferredParameters;
 	private ResultsUnpacker []resultsUnpackers;
 
-	public Interactor(@NotNull Operation operation, @NotNull ResultsUnpacker ... resultsUnpackers) {
+	public Interactor(@NotNull Operation operation, @NotNull ResultsUnpacker... resultsUnpackers) {
 		super();
 		this.operation = operation;
 		this.resultsUnpackers = resultsUnpackers;

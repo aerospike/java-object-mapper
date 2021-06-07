@@ -116,7 +116,7 @@ public class ReactiveAeroMapper implements IReactiveAeroMapper {
                 this.policyType = policyType;
                 this.policy = policy;
             }
-            public ReactiveAeroMapper.Builder forClasses(Class<?> ... classes) {
+            public ReactiveAeroMapper.Builder forClasses(Class<?>... classes) {
                 for (Class<?> thisClass : classes) {
                     ClassCache.getInstance().setSpecificPolicy(policyType, thisClass, policy);
                 }
@@ -164,42 +164,66 @@ public class ReactiveAeroMapper implements IReactiveAeroMapper {
         this.mappingConverter = new MappingConverter(this, reactorClient.getAerospikeClient());
     }
 
+    /**
+     * Save each object in the database. This method will perform a REPLACE on the existing record so any existing
+     * data will be overwritten by the data in the passed object. This is a convenience method for
+     * <pre>
+     * save(A);
+     * save(B);
+     * save(C);
+     * </pre>
+     * Not that no transactionality is implied by this method -- if any of the save methods fail, the exception will be
+     * thrown without trying the other objects, nor attempting to roll back previously saved objects
+     * @param objects One or two objects to save.
+     * @throws AerospikeException an AerospikeException will be thrown in case of an error.
+     */
     @Override
     public <T> Flux<T> save(@NotNull T... objects) {
         return Flux.fromStream(Arrays.stream(objects))
                 .flatMap(this::save);
     }
 
+    /**
+     * Save an object in the database. This method will perform a REPLACE on the existing record so any existing
+     * data will be overwritten by the data in the passed object
+     * @param object The object to save.
+     * @throws AerospikeException an AerospikeException will be thrown in case of an error.
+     */
     @Override
     public <T> Mono<T> save(@NotNull T object, String... binNames) {
         return save(null, object, RecordExistsAction.REPLACE, binNames);
     }
 
+    /**
+     * Save an object in the database with the given WritePolicy. This write policy will override any other set writePolicy so
+     * is effectively an upsert operation
+     * @param writePolicy The write policy for the save operation.
+     * @param object The object to save.
+     * @throws AerospikeException an AerospikeException will be thrown in case of an error.
+     */
     @Override
     public <T> Mono<T> save(@NotNull WritePolicy writePolicy, @NotNull T object, String... binNames) {
         return save(writePolicy, object, null, binNames);
     }
 
+    /**
+     * Updates the object in the database, merging the record with the existing record. This uses the RecordExistsAction
+     * of UPDATE. If bins are specified, only bins with the passed names will be updated (or all of them if null is passed)
+     * @param object The object to update.
+     * @throws AerospikeException an AerospikeException will be thrown in case of an error.
+     */
     @Override
     public <T> Mono<T> update(@NotNull T object, String... binNames) {
         return save(null, object, RecordExistsAction.UPDATE, binNames);
     }
 
-    @Override
-    public <T> Mono<T> readFromDigest(Policy readPolicy, @NotNull Class<T> clazz, @NotNull byte[] digest) {
-        return this.readFromDigest(readPolicy, clazz, digest, true);
-    }
-
     /**
-     * This method should not be used except by mappers
+     * Read a record from the repository and map it to an instance of the passed class, by providing a digest.
+     * @param clazz - The type of the record.
+     * @param digest - The Aerospike digest (Unique server hash value generated from set name and user key).
+     * @return The returned mapped record.
+     * @throws AerospikeException an AerospikeException will be thrown in case of an error.
      */
-    @Override
-    public <T> Mono<T> readFromDigest(Policy readPolicy, @NotNull Class<T> clazz, @NotNull byte[] digest, boolean resolveDependencies) {
-        ClassCacheEntry<T> entry = MapperUtils.getEntryAndValidateNamespace(clazz, this);
-        Key key = new Key(entry.getNamespace(), digest, entry.getSetName(), null);
-        return this.read(readPolicy, clazz, key, entry, resolveDependencies);
-    }
-
     @Override
     public <T> Mono<T> readFromDigest(@NotNull Class<T> clazz, @NotNull byte[] digest) {
         return this.readFromDigest(clazz, digest, true);
@@ -215,25 +239,32 @@ public class ReactiveAeroMapper implements IReactiveAeroMapper {
         return this.read(null, clazz, key, entry, resolveDependencies);
     }
 
+    /**
+     * Read a record from the repository and map it to an instance of the passed class, by providing a digest.
+     * @param readPolicy - The read policy for the read operation.
+     * @param clazz - The type of the record.
+     * @param digest - The Aerospike digest (Unique server hash value generated from set name and user key).
+     * @return The returned mapped record.
+     * @throws AerospikeException an AerospikeException will be thrown in case of an error.
+     */
     @Override
-    public <T> Mono<T> read(Policy readPolicy, @NotNull Class<T> clazz, @NotNull Object userKey) {
-        return this.read(readPolicy, clazz, userKey, true);
+    public <T> Mono<T> readFromDigest(Policy readPolicy, @NotNull Class<T> clazz, @NotNull byte[] digest) {
+        return this.readFromDigest(readPolicy, clazz, digest, true);
     }
 
     /**
      * This method should not be used except by mappers
      */
     @Override
-    public <T> Mono<T> read(Policy readPolicy, @NotNull Class<T> clazz, @NotNull Object userKey, boolean resolveDependencies) {
+    public <T> Mono<T> readFromDigest(Policy readPolicy, @NotNull Class<T> clazz, @NotNull byte[] digest, boolean resolveDependencies) {
         ClassCacheEntry<T> entry = MapperUtils.getEntryAndValidateNamespace(clazz, this);
-        String set = entry.getSetName();
-        Key key = new Key(entry.getNamespace(), set, Value.get(entry.translateKeyToAerospikeKey(userKey)));
-        return read(readPolicy, clazz, key, entry, resolveDependencies);
+        Key key = new Key(entry.getNamespace(), digest, entry.getSetName(), null);
+        return this.read(readPolicy, clazz, key, entry, resolveDependencies);
     }
 
     /**
      * Read a record from the repository and map it to an instance of the passed class.
-     * @param clazz - The type of be returned.
+     * @param clazz - The type of the record.
      * @param userKey - The key of the record. The namespace and set will be derived from the values specified on the passed class.
      * @return The returned mapped record.
      * @throws AerospikeException an AerospikeException will be thrown in case of an error.
@@ -255,8 +286,32 @@ public class ReactiveAeroMapper implements IReactiveAeroMapper {
     }
 
     /**
+     * Read a record from the repository and map it to an instance of the passed class.
+     * @param readPolicy - The read policy for the read operation.
+     * @param clazz - The type of the record.
+     * @param userKey - The key of the record. The namespace and set will be derived from the values specified on the passed class.
+     * @return The returned mapped record.
+     * @throws AerospikeException an AerospikeException will be thrown in case of an error.
+     */
+    @Override
+    public <T> Mono<T> read(Policy readPolicy, @NotNull Class<T> clazz, @NotNull Object userKey) {
+        return this.read(readPolicy, clazz, userKey, true);
+    }
+
+    /**
+     * This method should not be used except by mappers
+     */
+    @Override
+    public <T> Mono<T> read(Policy readPolicy, @NotNull Class<T> clazz, @NotNull Object userKey, boolean resolveDependencies) {
+        ClassCacheEntry<T> entry = MapperUtils.getEntryAndValidateNamespace(clazz, this);
+        String set = entry.getSetName();
+        Key key = new Key(entry.getNamespace(), set, Value.get(entry.translateKeyToAerospikeKey(userKey)));
+        return read(readPolicy, clazz, key, entry, resolveDependencies);
+    }
+
+    /**
      * Read a batch of records from the repository and map them to an instance of the passed class.
-     * @param clazz - The type of be returned.
+     * @param clazz - The type of the record.
      * @param userKeys - The keys of the record. The namespace and set will be derived from the values specified on the passed class.
      * @return The returned mapped records.
      * @throws AerospikeException an AerospikeException will be thrown in case of an error.
@@ -270,7 +325,7 @@ public class ReactiveAeroMapper implements IReactiveAeroMapper {
     /**
      * Read a batch of records from the repository and map them to an instance of the passed class.
      * @param batchPolicy A given batch policy.
-     * @param clazz - The type of be returned.
+     * @param clazz - The type of the record.
      * @param userKeys - The keys of the record. The namespace and set will be derived from the values specified on the passed class.
      * @return The returned mapped records.
      * @throws AerospikeException an AerospikeException will be thrown in case of an error.
@@ -292,11 +347,26 @@ public class ReactiveAeroMapper implements IReactiveAeroMapper {
         return readBatch(batchPolicy, clazz, keys, entry);
     }
 
+    /**
+     * Delete a record by specifying a class and a user key.
+     * @param clazz - The type of the record.
+     * @param userKey - The key of the record. The namespace and set will be derived from the values specified on the passed class.
+     * @return whether record existed on server before deletion
+     * @throws AerospikeException an AerospikeException will be thrown in case of an error.
+     */
     @Override
     public <T> Mono<Boolean> delete(@NotNull Class<T> clazz, @NotNull Object userKey) {
         return this.delete(null, clazz, userKey);
     }
 
+    /**
+     * Delete a record by specifying a write policy, a class and a user key.
+     * @param writePolicy - The write policy for the delete operation.
+     * @param clazz - The type of the record.
+     * @param userKey - The key of the record. The namespace and set will be derived from the values specified on the passed class.
+     * @return whether record existed on server before deletion
+     * @throws AerospikeException an AerospikeException will be thrown in case of an error.
+     */
     @Override
     public <T> Mono<Boolean> delete(WritePolicy writePolicy, @NotNull Class<T> clazz, @NotNull Object userKey) {
         ClassCacheEntry<T> entry = MapperUtils.getEntryAndValidateNamespace(clazz, this);
@@ -317,11 +387,24 @@ public class ReactiveAeroMapper implements IReactiveAeroMapper {
                 .map(k -> true);
     }
 
+    /**
+     * Delete a record by specifying an object.
+     * @param object The object to delete.
+     * @return whether record existed on server before deletion
+     * @throws AerospikeException an AerospikeException will be thrown in case of an error.
+     */
     @Override
     public Mono<Boolean> delete(@NotNull Object object) {
         return this.delete((WritePolicy)null, object);
     }
 
+    /**
+     * Delete a record by specifying a write policy and an object.
+     * @param writePolicy - The write policy for the delete operation.
+     * @param object The object to delete.
+     * @return whether record existed on server before deletion
+     * @throws AerospikeException an AerospikeException will be thrown in case of an error.
+     */
     @Override
     public Mono<Boolean> delete(WritePolicy writePolicy, @NotNull Object object) {
         ClassCacheEntry<?> entry = MapperUtils.getEntryAndValidateNamespace(object.getClass(), this);
@@ -339,16 +422,62 @@ public class ReactiveAeroMapper implements IReactiveAeroMapper {
                 .map(k -> true);
     }
 
+    /**
+     * Create a reactive virtual list against an attribute on a class. The list does all operations to the database and does not affect the underlying
+     * class, and is useful for situation when operations are needed to affect the database without having to return all the elements on the
+     * list each time.
+     * <p/>
+     * For example, consider a set of transactions associated with a credit card. Common operations might be
+     * <ul>
+     * 	<li>Return the last N transactions </li>
+     * 	<li>insert a new transaction into the list</li>
+     * </ul>
+     * These operation can all be done without having the full set of transactions
+     * @param <T> the type of the elements in the list.
+     * @param object The object that will use as a base for the virtual list.
+     * @param binName The Aerospike bin name.
+     * @param elementClazz The class of the elements in the list.
+     * @return A reactive virtual list.
+     */
     @Override
     public <T> ReactiveVirtualList<T> asBackedList(@NotNull Object object, @NotNull String binName, Class<T> elementClazz) {
         return new ReactiveVirtualList<>(this, object, binName, elementClazz);
     }
 
+    /**
+     * Create a reactive virtual list against an attribute on a class. The list does all operations to the database and does not affect the underlying
+     * class, and is useful for situation when operations are needed to affect the database without having to return all the elements on the
+     * list each time.
+     * <p/>
+     * Note that the object being mapped does not need to actually exist in this case. The owning class is used purely for the definitions
+     * of how to map the list elements (are they to be mapped in the database as a list or a map, is each element a list or a map, etc), as
+     * well as using the namespace / set definition for the location to map into the database.  The
+     * passed key is used to map the object to the database.
+     * <p/>
+     * For example, consider a set of transactions associated with a credit card. Common operations might be
+     * <ul>
+     * 	<li>Return the last N transactions </li>
+     * 	<li>insert a new transaction into the list</li>
+     * </ul>
+     * These operation can all be done without having the full set of transactions
+     * @param <T> the type of the elements in the list.
+     * @param owningClazz Used for the definitions of how to map the list elements.
+     * @param key The key to map the object to the database.
+     * @param binName The Aerospike bin name.
+     * @param elementClazz The class of the elements in the list.
+     * @return A reactive virtual list.
+     */
     @Override
     public <T> ReactiveVirtualList<T> asBackedList(@NotNull Class<?> owningClazz, @NotNull Object key, @NotNull String binName, Class<T> elementClazz) {
         return new ReactiveVirtualList<>(this, owningClazz, key, binName, elementClazz);
     }
 
+    /**
+     * Find a record by specifying a class and a Boolean function.
+     * @param clazz - The type of the record.
+     * @param function a Boolean function.
+     * @throws AerospikeException an AerospikeException will be thrown in case of an error.
+     */
     @Override
     public <T> Mono<Void> find(@NotNull Class<T> clazz, Function<T, Boolean> function) throws AerospikeException {
         return Mono.fromCallable(() -> {

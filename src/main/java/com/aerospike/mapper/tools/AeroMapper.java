@@ -114,7 +114,7 @@ public class AeroMapper implements IAeroMapper {
         		this.policyType = policyType;
         		this.policy = policy;
 			}
-        	public Builder forClasses(Class<?> ... classes) {
+        	public Builder forClasses(Class<?>... classes) {
         		for (Class<?> thisClass : classes) {
         			ClassCache.getInstance().setSpecificPolicy(policyType, thisClass, policy);
         		}
@@ -161,37 +161,6 @@ public class AeroMapper implements IAeroMapper {
         this.mappingConverter = new MappingConverter(this, mClient);
     }
 
-    private <T> void save(WritePolicy writePolicy, @NotNull T object, RecordExistsAction recordExistsAction, String[] binNames) {
-    	Class<T> clazz = (Class<T>) object.getClass();
-    	ClassCacheEntry<T> entry = MapperUtils.getEntryAndValidateNamespace(clazz, this);
-    	if (writePolicy == null) {
-        	writePolicy = new WritePolicy(entry.getWritePolicy());
-        	if (recordExistsAction != null) {
-        		writePolicy.recordExistsAction = recordExistsAction;
-        	}
-    	}
-    	
-        String set = entry.getSetName();
-        if ("".equals(set)) {
-        	// Use the null set
-        	set = null;
-        }
-        Integer ttl = entry.getTtl();
-        Boolean sendKey = entry.getSendKey();
-
-        if (ttl != null) {
-        	writePolicy.expiration = ttl;
-        }
-        if (sendKey != null) {
-        	writePolicy.sendKey = sendKey;
-        }
-        Key key = new Key(entry.getNamespace(), set, Value.get(entry.getKey(object)));
-
-        Bin[] bins = entry.getBins(object, writePolicy.recordExistsAction != RecordExistsAction.REPLACE, binNames);
-
-        mClient.put(writePolicy, key, bins);
-    }
-
     /**
      * Save each object in the database. This method will perform a REPLACE on the existing record so any existing
      * data will be overwritten by the data in the passed object. This is a convenience method for
@@ -206,7 +175,7 @@ public class AeroMapper implements IAeroMapper {
      * @throws AerospikeException an AerospikeException will be thrown in case of an error.
      */
     @Override
-    public void save(@NotNull Object ... objects) throws AerospikeException {
+    public void save(@NotNull Object... objects) throws AerospikeException {
     	for (Object thisObject : objects) {
     		this.save(thisObject);
     	}
@@ -219,7 +188,7 @@ public class AeroMapper implements IAeroMapper {
      * @throws AerospikeException an AerospikeException will be thrown in case of an error.
      */
     @Override
-    public void save(@NotNull Object object, String ...binNames) throws AerospikeException {
+    public void save(@NotNull Object object, String... binNames) throws AerospikeException {
         save(null, object, RecordExistsAction.REPLACE, binNames);
     }
 
@@ -231,8 +200,39 @@ public class AeroMapper implements IAeroMapper {
      * @throws AerospikeException an AerospikeException will be thrown in case of an error.
      */
     @Override
-    public void save(@NotNull WritePolicy writePolicy, @NotNull Object object, String ...binNames) throws AerospikeException {
+    public void save(@NotNull WritePolicy writePolicy, @NotNull Object object, String... binNames) throws AerospikeException {
         save(writePolicy, object, null, binNames);
+    }
+
+    private <T> void save(WritePolicy writePolicy, @NotNull T object, RecordExistsAction recordExistsAction, String[] binNames) {
+        Class<T> clazz = (Class<T>) object.getClass();
+        ClassCacheEntry<T> entry = MapperUtils.getEntryAndValidateNamespace(clazz, this);
+        if (writePolicy == null) {
+            writePolicy = new WritePolicy(entry.getWritePolicy());
+            if (recordExistsAction != null) {
+                writePolicy.recordExistsAction = recordExistsAction;
+            }
+        }
+
+        String set = entry.getSetName();
+        if ("".equals(set)) {
+            // Use the null set
+            set = null;
+        }
+        Integer ttl = entry.getTtl();
+        Boolean sendKey = entry.getSendKey();
+
+        if (ttl != null) {
+            writePolicy.expiration = ttl;
+        }
+        if (sendKey != null) {
+            writePolicy.sendKey = sendKey;
+        }
+        Key key = new Key(entry.getNamespace(), set, Value.get(entry.getKey(object)));
+
+        Bin[] bins = entry.getBins(object, writePolicy.recordExistsAction != RecordExistsAction.REPLACE, binNames);
+
+        mClient.put(writePolicy, key, bins);
     }
 
     /**
@@ -242,10 +242,40 @@ public class AeroMapper implements IAeroMapper {
      * @throws AerospikeException an AerospikeException will be thrown in case of an error.
      */
     @Override
-    public void update(@NotNull Object object, String ... binNames) throws AerospikeException {
+    public void update(@NotNull Object object, String... binNames) throws AerospikeException {
         save(null, object, RecordExistsAction.UPDATE, binNames);
     }
 
+    /**
+     * Read a record from the repository and map it to an instance of the passed class, by providing a digest.
+     * @param clazz - The type of the record.
+     * @param digest - The Aerospike digest (Unique server hash value generated from set name and user key).
+     * @return The returned mapped record.
+     * @throws AerospikeException an AerospikeException will be thrown in case of an error.
+     */
+    @Override
+    public <T> T readFromDigest(@NotNull Class<T> clazz, @NotNull byte[] digest) throws AerospikeException {
+        return this.readFromDigest(clazz, digest, true);
+    }
+
+    /**
+     * This method should not be used except by mappers
+     */
+    @Override
+    public <T> T readFromDigest(@NotNull Class<T> clazz, @NotNull byte[] digest, boolean resolveDependencies) throws AerospikeException {
+        ClassCacheEntry<T> entry = MapperUtils.getEntryAndValidateNamespace(clazz, this);
+        Key key = new Key(entry.getNamespace(), digest, entry.getSetName(), null);
+        return this.read(null, clazz, key, entry, resolveDependencies);
+    }
+
+    /**
+     * Read a record from the repository and map it to an instance of the passed class, by providing a digest.
+     * @param readPolicy - The read policy for the read operation.
+     * @param clazz - The type of the record.
+     * @param digest - The Aerospike digest (Unique server hash value generated from set name and user key).
+     * @return The returned mapped record.
+     * @throws AerospikeException an AerospikeException will be thrown in case of an error.
+     */
     @Override
     public <T> T readFromDigest(Policy readPolicy, @NotNull Class<T> clazz, @NotNull byte[] digest) throws AerospikeException {
     	return this.readFromDigest(readPolicy, clazz, digest, true);
@@ -261,21 +291,37 @@ public class AeroMapper implements IAeroMapper {
         return this.read(readPolicy, clazz, key, entry, resolveDependencies);
     }
 
-    @Override
-    public <T> T readFromDigest(@NotNull Class<T> clazz, @NotNull byte[] digest) throws AerospikeException {
-    	return this.readFromDigest(clazz, digest, true);
-    }
-    
     /**
-     * This method should not be used except by mappers
+     * Read a record from the repository and map it to an instance of the passed class.
+     * @param clazz - The type of be returned.
+     * @param userKey - The key of the record. The namespace and set will be derived from the values specified on the passed class.
+     * @return The returned mapped record.
+     * @throws AerospikeException an AerospikeException will be thrown in case of an error.
      */
     @Override
-    public <T> T readFromDigest(@NotNull Class<T> clazz, @NotNull byte[] digest, boolean resolveDependencies) throws AerospikeException {
-        ClassCacheEntry<T> entry = MapperUtils.getEntryAndValidateNamespace(clazz, this);
-        Key key = new Key(entry.getNamespace(), digest, entry.getSetName(), null);
-        return this.read(null, clazz, key, entry, resolveDependencies);
+    public <T> T read(@NotNull Class<T> clazz, @NotNull Object userKey) throws AerospikeException {
+        return this.read(clazz, userKey, true);
     }
 
+    /**
+     * This method should not be used: It is used by mappers to correctly resolved dependencies. Use read(clazz, userKey) instead
+     */
+    @Override
+    public <T> T read(@NotNull Class<T> clazz, @NotNull Object userKey, boolean resolveDependencies) throws AerospikeException {
+        ClassCacheEntry<T> entry = MapperUtils.getEntryAndValidateNamespace(clazz, this);
+        String set = entry.getSetName();
+        Key key = new Key(entry.getNamespace(), set, Value.get(entry.translateKeyToAerospikeKey(userKey)));
+        return read(null, clazz, key, entry, resolveDependencies);
+    }
+
+    /**
+     * Read a record from the repository and map it to an instance of the passed class.
+     * @param readPolicy - The read policy for the read operation.
+     * @param clazz - The type of be returned.
+     * @param userKey - The key of the record. The namespace and set will be derived from the values specified on the passed class.
+     * @return The returned mapped record.
+     * @throws AerospikeException an AerospikeException will be thrown in case of an error.
+     */
     @Override
     public <T> T read(Policy readPolicy, @NotNull Class<T> clazz, @NotNull Object userKey) throws AerospikeException {
     	return this.read(readPolicy, clazz, userKey, true);
@@ -293,29 +339,6 @@ public class AeroMapper implements IAeroMapper {
     }
 
     /**
-     * Read a record from the repository and map it to an instance of the passed class.
-     * @param clazz - The type of be returned.
-     * @param userKey - The key of the record. The namespace and set will be derived from the values specified on the passed class.
-     * @return The returned mapped record.
-     * @throws AerospikeException an AerospikeException will be thrown in case of an error.
-     */
-    @Override
-    public <T> T read(@NotNull Class<T> clazz, @NotNull Object userKey) throws AerospikeException {
-    	return this.read(clazz, userKey, true);
-    }
-    
-    /**
-     * This method should not be used: It is used by mappers to correctly resolved dependencies. Use read(clazz, userKey) instead
-     */
-    @Override
-    public <T> T read(@NotNull Class<T> clazz, @NotNull Object userKey, boolean resolveDependencies) throws AerospikeException {
-        ClassCacheEntry<T> entry = MapperUtils.getEntryAndValidateNamespace(clazz, this);
-        String set = entry.getSetName();
-        Key key = new Key(entry.getNamespace(), set, Value.get(entry.translateKeyToAerospikeKey(userKey)));
-        return read(null, clazz, key, entry, resolveDependencies);
-    }
-
-    /**
      * Read a batch of records from the repository and map them to an instance of the passed class.
      * @param clazz - The type of be returned.
      * @param userKeys - The keys of the record. The namespace and set will be derived from the values specified on the passed class.
@@ -323,7 +346,7 @@ public class AeroMapper implements IAeroMapper {
      * @throws AerospikeException an AerospikeException will be thrown in case of an error.
      */
     @Override
-    public <T> T[] read(@NotNull Class<T> clazz, @NotNull Object ... userKeys) throws AerospikeException {
+    public <T> T[] read(@NotNull Class<T> clazz, @NotNull Object... userKeys) throws AerospikeException {
     	return this.read(null, clazz, userKeys);
     }
 
@@ -336,7 +359,7 @@ public class AeroMapper implements IAeroMapper {
      * @throws AerospikeException an AerospikeException will be thrown in case of an error.
      */
     @Override
-    public <T> T[] read(BatchPolicy batchPolicy, @NotNull Class<T> clazz, @NotNull Object ... userKeys) throws AerospikeException {
+    public <T> T[] read(BatchPolicy batchPolicy, @NotNull Class<T> clazz, @NotNull Object... userKeys) throws AerospikeException {
         ClassCacheEntry<T> entry = MapperUtils.getEntryAndValidateNamespace(clazz, this);
         String set = entry.getSetName();
         Key[] keys = new Key[userKeys.length];
@@ -400,11 +423,26 @@ public class AeroMapper implements IAeroMapper {
         return results;
     }
 
+    /**
+     * Delete a record by specifying a class and a user key.
+     * @param clazz - The type of the record.
+     * @param userKey - The key of the record. The namespace and set will be derived from the values specified on the passed class.
+     * @return whether record existed on server before deletion
+     * @throws AerospikeException an AerospikeException will be thrown in case of an error.
+     */
     @Override
     public <T> boolean delete(@NotNull Class<T> clazz, @NotNull Object userKey) throws AerospikeException {
     	return this.delete(null, clazz, userKey);
     }
 
+    /**
+     * Delete a record by specifying a write policy, a class and a user key.
+     * @param writePolicy - The write policy for the delete operation.
+     * @param clazz - The type of the record.
+     * @param userKey - The key of the record. The namespace and set will be derived from the values specified on the passed class.
+     * @return whether record existed on server before deletion
+     * @throws AerospikeException an AerospikeException will be thrown in case of an error.
+     */
     @Override
     public <T> boolean delete(WritePolicy writePolicy, @NotNull Class<T> clazz, @NotNull Object userKey) throws AerospikeException {
         ClassCacheEntry<T> entry = MapperUtils.getEntryAndValidateNamespace(clazz, this);
@@ -423,11 +461,24 @@ public class AeroMapper implements IAeroMapper {
         return mClient.delete(writePolicy, key);
     }
 
+    /**
+     * Delete a record by specifying an object.
+     * @param object The object to delete.
+     * @return whether record existed on server before deletion
+     * @throws AerospikeException an AerospikeException will be thrown in case of an error.
+     */
     @Override
     public boolean delete(@NotNull Object object) throws AerospikeException {
     	return this.delete((WritePolicy)null, object);
     }
 
+    /**
+     * Delete a record by specifying a write policy and an object.
+     * @param writePolicy - The write policy for the delete operation.
+     * @param object The object to delete.
+     * @return whether record existed on server before deletion
+     * @throws AerospikeException an AerospikeException will be thrown in case of an error.
+     */
     @Override
     public boolean delete(WritePolicy writePolicy, @NotNull Object object) throws AerospikeException {
         ClassCacheEntry<?> entry = MapperUtils.getEntryAndValidateNamespace(object.getClass(), this);
@@ -493,6 +544,12 @@ public class AeroMapper implements IAeroMapper {
     	return new VirtualList<>(this, owningClazz, key, binName, elementClazz);
     }
 
+    /**
+     * Find a record by specifying a class and a Boolean function.
+     * @param clazz - The type of the record.
+     * @param function a Boolean function.
+     * @throws AerospikeException an AerospikeException will be thrown in case of an error.
+     */
     @Override
     public <T> void find(@NotNull Class<T> clazz, Function<T, Boolean> function) throws AerospikeException {
         ClassCacheEntry<T> entry = MapperUtils.getEntryAndValidateNamespace(clazz, this);
