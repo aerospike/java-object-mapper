@@ -23,7 +23,7 @@ public class EnumMapper extends TypeMapper {
 				enumRequestedField.setAccessible(true);
 				return enumRequestedField.get(value).toString();
 			} catch (NoSuchFieldException | IllegalAccessException e) {
-				throw new AerospikeException("Cannot Map requested enum, issue with requested field.");
+				throw new AerospikeException("Cannot Map requested enum, issue with the requested enumField.");
 			}
 		}
 		return value.toString();
@@ -48,7 +48,7 @@ public class EnumMapper extends TypeMapper {
 					}
 				}
 			} catch (NoSuchFieldException | IllegalAccessException e) {
-				throw new AerospikeException("Cannot Map requested enum, issue with requested field.");
+				throw new AerospikeException("Cannot Map requested enum, issue with the requested enumField.");
 			}
 		} else {
 			for (Enum<?> thisEnum : constants) {
