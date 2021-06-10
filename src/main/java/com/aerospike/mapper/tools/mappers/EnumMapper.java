@@ -9,20 +9,29 @@ public class EnumMapper extends TypeMapper {
 
 	private final Class<? extends Enum<?>> clazz;
 	private final String enumField;
+	private final Field enumRequestedField;
 
 	public EnumMapper(Class<? extends Enum<?>> clazz, String enumField) {
 		this.clazz = clazz;
 		this.enumField = enumField;
+		if (!enumField.equals("")) {
+			try {
+				this.enumRequestedField = clazz.getDeclaredField(enumField);
+				this.enumRequestedField.setAccessible(true);
+			} catch (NoSuchFieldException e) {
+				throw new AerospikeException("Cannot Map requested enum, issue with the requested enumField.");
+			}
+		} else {
+			this.enumRequestedField = null;
+		}
 	}
 
 	@Override
 	public Object toAerospikeFormat(Object value) {
 		if (!enumField.equals("")) {
 			try {
-				Field enumRequestedField = clazz.getDeclaredField(enumField);
-				enumRequestedField.setAccessible(true);
 				return enumRequestedField.get(value).toString();
-			} catch (NoSuchFieldException | IllegalAccessException e) {
+			} catch (IllegalAccessException e) {
 				throw new AerospikeException("Cannot Map requested enum, issue with the requested enumField.");
 			}
 		}
@@ -40,14 +49,12 @@ public class EnumMapper extends TypeMapper {
 
 		if (!enumField.equals("")) {
 			try {
-				Field enumRequestedField = clazz.getDeclaredField(enumField);
-				enumRequestedField.setAccessible(true);
 				for (Enum<?> thisEnum : constants) {
 					if (enumRequestedField.get(thisEnum).equals(stringValue)) {
 						return thisEnum;
 					}
 				}
-			} catch (NoSuchFieldException | IllegalAccessException e) {
+			} catch (IllegalAccessException e) {
 				throw new AerospikeException("Cannot Map requested enum, issue with the requested enumField.");
 			}
 		} else {
