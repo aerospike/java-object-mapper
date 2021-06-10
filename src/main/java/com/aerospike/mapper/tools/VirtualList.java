@@ -145,6 +145,11 @@ public class VirtualList<E> {
 			this.interactions.add(virtualListInteractors.getSizeInteractor());
 			return this;
 		}
+
+		public MultiOperation<E> clear() {
+			this.interactions.add(virtualListInteractors.getClearInteractor());
+			return this;
+		}
 		
 		public MultiOperation<E> asResult() {
 			return this.asResultOfType(ReturnType.DEFAULT);
