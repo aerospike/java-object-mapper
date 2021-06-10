@@ -1,47 +1,28 @@
 package com.aerospike.mapper.tools;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.function.Function;
-
-import javax.validation.constraints.NotNull;
-
-import com.aerospike.client.AerospikeException;
-import com.aerospike.client.Key;
-import com.aerospike.client.Operation;
-import com.aerospike.client.Record;
-import com.aerospike.client.Value;
-import com.aerospike.client.cdt.ListOperation;
-import com.aerospike.client.cdt.ListReturnType;
-import com.aerospike.client.cdt.MapOperation;
-import com.aerospike.client.cdt.MapOrder;
-import com.aerospike.client.cdt.MapPolicy;
-import com.aerospike.client.cdt.MapReturnType;
+import com.aerospike.client.*;
 import com.aerospike.client.policy.Policy;
 import com.aerospike.client.policy.RecordExistsAction;
 import com.aerospike.client.policy.WritePolicy;
 import com.aerospike.mapper.annotations.AerospikeEmbed;
 import com.aerospike.mapper.annotations.AerospikeEmbed.EmbedType;
-import com.aerospike.mapper.tools.ResultsUnpacker.ArrayUnpacker;
-import com.aerospike.mapper.tools.ResultsUnpacker.ElementUnpacker;
-import com.aerospike.mapper.tools.ResultsUnpacker.ListUnpacker;
 import com.aerospike.mapper.tools.TypeUtils.AnnotatedType;
 import com.aerospike.mapper.tools.mappers.ListMapper;
 
+import javax.validation.constraints.NotNull;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+
 public class VirtualList<E> {
 	private final IAeroMapper mapper;
-	private final ValueType value;
 	private final ClassCacheEntry<?> owningEntry;
-	private final ClassCacheEntry<?> elementEntry;
 	private final String binName;
 	private final ListMapper listMapper;
 	private Key key;
-	private final EmbedType listType;
-	private final EmbedType elementType;
-	private final Function<Object, Object> instanceMapper; 
+	private final VirtualListInteractors virtualListInteractors;
 
 	// package level visibility
 	VirtualList(@NotNull IAeroMapper mapper, @NotNull Class<?> owningClazz, @NotNull Object key, @NotNull String binName, @NotNull Class<E> clazz) {
@@ -65,10 +46,10 @@ public class VirtualList<E> {
         else {
         	aerospikeKey = owningEntry.translateKeyToAerospikeKey(key);
         }
-        this.elementEntry = ClassCache.getInstance().loadClass(clazz, mapper);
+		ClassCacheEntry<?> elementEntry = ClassCache.getInstance().loadClass(clazz, mapper);
         this.mapper = mapper;
         this.binName = binName;
-        this.value = owningEntry.getValueFromBinName(binName);
+		ValueType value = owningEntry.getValueFromBinName(binName);
         if (value == null) {
         	throw new AerospikeException(String.format("Class %s has no bin called %s", clazz.getSimpleName(), binName));
         }
@@ -84,8 +65,8 @@ public class VirtualList<E> {
         if (embed == null) {
         	throw new AerospikeException(String.format("Bin %s on class %s is not specified as a embedded", binName, clazz.getSimpleName()));
         }
-        listType = embed.type() == EmbedType.DEFAULT ? EmbedType.LIST : embed.type();
-        elementType = embed.elementType() == EmbedType.DEFAULT ? EmbedType.MAP : embed.elementType();
+		EmbedType listType = embed.type() == EmbedType.DEFAULT ? EmbedType.LIST : embed.type();
+		EmbedType elementType = embed.elementType() == EmbedType.DEFAULT ? EmbedType.MAP : embed.elementType();
         Class<?> binClazz = value.getType();
         if (!(binClazz.isArray() || (Map.class.isAssignableFrom(binClazz)) || List.class.isAssignableFrom(binClazz))) {
         	throw new AerospikeException(String.format("Bin %s on class %s is not a collection class", binName, clazz.getSimpleName()));
@@ -98,8 +79,8 @@ public class VirtualList<E> {
         else {
         	throw new AerospikeException(String.format("Bin %s on class %s is not mapped via a listMapper. This is unexpected", binName, clazz.getSimpleName()));
         }
-        this.instanceMapper = listMapper::fromAerospikeInstanceFormat;
-
+		Function<Object, Object> instanceMapper = listMapper::fromAerospikeInstanceFormat;
+		this.virtualListInteractors = new VirtualListInteractors(binName, listType, elementEntry, instanceMapper, mapper);
 	}
 	
 	public VirtualList<E> changeKey(Object newKey) {
@@ -126,42 +107,42 @@ public class VirtualList<E> {
 		
 		public MultiOperation<E> append(E item) {
 			Object aerospikeItem = listMapper.toAerospikeInstanceFormat(item);
-			this.interactions.add(new Interactor(virtualList.getAppendOperation(aerospikeItem)));
+			this.interactions.add(new Interactor(virtualList.virtualListInteractors.getAppendOperation(aerospikeItem)));
 			return this;
 		}
 
 		public MultiOperation<E> removeByKey(Object key) {
-			this.interactions.add(getRemoveKeyInteractor(key));
+			this.interactions.add(virtualListInteractors.getRemoveKeyInteractor(key));
 			return this;
 		}
 
 		public MultiOperation<E> removeByKeyRange(Object startKey, Object endKey) {
-			this.interactions.add(getRemoveKeyRangeInteractor(startKey, endKey));
+			this.interactions.add(virtualListInteractors.getRemoveKeyRangeInteractor(startKey, endKey));
 			return this;
 		}
 
 		public MultiOperation<E> removeByValueRange(Object startValue, Object endValue) {
-			this.interactions.add(getRemoveValueRangeInteractor(startValue, endValue));
+			this.interactions.add(virtualListInteractors.getRemoveValueRangeInteractor(startValue, endValue));
 			return this;
 		}
 
 		public MultiOperation<E> getByValueRange(Object startValue, Object endValue) {
-			this.interactions.add(getGetByValueRangeInteractor(startValue, endValue));
+			this.interactions.add(virtualListInteractors.getGetByValueRangeInteractor(startValue, endValue));
 			return this;
 		}
 
 		public MultiOperation<E> getByKeyRange(Object startKey, Object endKey) {
-			this.interactions.add(getGetByKeyRangeInteractor(startKey, endKey));
+			this.interactions.add(virtualListInteractors.getGetByKeyRangeInteractor(startKey, endKey));
 			return this;
 		}
 		
 		public MultiOperation<E> get(int index) {
-			this.interactions.add(getIndexInteractor(index));
+			this.interactions.add(virtualListInteractors.getIndexInteractor(index));
 			return this;
 		}
 		
 		public MultiOperation<E> size() {
-			this.interactions.add(getSizeInteractor());
+			this.interactions.add(virtualListInteractors.getSizeInteractor());
 			return this;
 		}
 		
@@ -296,7 +277,7 @@ public class VirtualList<E> {
         	writePolicy = new WritePolicy(owningEntry.getWritePolicy());
     		writePolicy.recordExistsAction = RecordExistsAction.UPDATE;
     	}
-		Interactor interactor = getGetByValueRangeInteractor(startValue, endValue);
+		Interactor interactor = virtualListInteractors.getGetByValueRangeInteractor(startValue, endValue);
 		interactor.setNeedsResultOfType(returnResultsOfType);
 		Record record = this.mapper.getClient().operate(writePolicy, key, interactor.getOperation());
 
@@ -335,7 +316,7 @@ public class VirtualList<E> {
         	writePolicy = new WritePolicy(owningEntry.getWritePolicy());
     		writePolicy.recordExistsAction = RecordExistsAction.UPDATE;
     	}
-		Interactor interactor = getRemoveValueRangeInteractor(startValue, endValue);
+		Interactor interactor = virtualListInteractors.getRemoveValueRangeInteractor(startValue, endValue);
 		interactor.setNeedsResultOfType(returnResultsOfType);
 		Record record = this.mapper.getClient().operate(writePolicy, key, interactor.getOperation());
 
@@ -374,207 +355,11 @@ public class VirtualList<E> {
         	writePolicy = new WritePolicy(owningEntry.getWritePolicy());
     		writePolicy.recordExistsAction = RecordExistsAction.UPDATE;
     	}
-		Interactor interactor = getRemoveKeyRangeInteractor(startKey, endKey);
+		Interactor interactor = virtualListInteractors.getRemoveKeyRangeInteractor(startKey, endKey);
 		interactor.setNeedsResultOfType(returnResultsOfType);
 		Record record = this.mapper.getClient().operate(writePolicy, key, interactor.getOperation());
 
 		return (List<E>)interactor.getResult(record.getList(binName));
-	}
-
-	private Interactor getGetByValueRangeInteractor(Object startValue, Object endValue) {
-		DeferredOperation deferred = new DeferredOperation() {
-			
-			@Override
-			public ResultsUnpacker[] getUnpackers(OperationParameters operationParams) {
-				switch (operationParams.getNeedsResultOfType()) {
-				case DEFAULT:
-				case ELEMENTS:
-					return new ResultsUnpacker[] { new ArrayUnpacker(instanceMapper) };
-				default:
-					return new ResultsUnpacker[0];
-				}
-			}
-			
-			@Override
-			public Operation getOperation(OperationParameters operationParams) {
-	    		if (listType == EmbedType.LIST) {
-    				return ListOperation.getByValueRange(binName, getValue(startValue, false), getValue(endValue, false), 
-    						TypeUtils.returnTypeToListReturnType(operationParams.getNeedsResultOfType()));
-				}
-	    		else {
-    				return MapOperation.getByValueRange(binName, getValue(startValue, false), getValue(endValue, false),
-							TypeUtils.returnTypeToMapReturnType(operationParams.getNeedsResultOfType()));
-	    		}
-			}
-
-			@Override
-			public boolean isGetOperation() {
-				return true;
-			}
-		};
-		return new Interactor(deferred);
-	}
-
-	private Value getValue(Object javaObject, boolean isKey) {
-		Object aerospikeObject;
-		if (isKey) {
-			aerospikeObject = elementEntry.translateKeyToAerospikeKey(javaObject);
-		}
-		else {
-			aerospikeObject = this.mapper.getMappingConverter().translateToAerospike(javaObject);
-		}
-		if (aerospikeObject == null) {
-			return null;
-		}
-		else {
-			return Value.get(aerospikeObject);
-		}
-	}
-	
-	private Interactor getGetByKeyRangeInteractor(Object startKey, Object endKey) {
-		DeferredOperation deferred = new DeferredOperation() {
-			
-			@Override
-			public ResultsUnpacker[] getUnpackers(OperationParameters operationParams) {
-				switch (operationParams.getNeedsResultOfType()) {
-				case DEFAULT:
-				case ELEMENTS:
-					return new ResultsUnpacker[] { new ArrayUnpacker(instanceMapper) };
-				default:
-					return new ResultsUnpacker[0];
-				}
-			}
-			
-			@Override
-			public Operation getOperation(OperationParameters operationParams) {
-	    		if (listType == EmbedType.LIST) {
-    				return ListOperation.getByValueRange(binName, getValue(startKey, true), getValue(endKey, true),
-							TypeUtils.returnTypeToListReturnType(operationParams.getNeedsResultOfType()));
-				}
-	    		else {
-    				return MapOperation.getByKeyRange(binName, getValue(startKey, true), getValue(endKey, true),
-							TypeUtils.returnTypeToMapReturnType(operationParams.getNeedsResultOfType()));
-	    		}
-			}
-
-			@Override
-			public boolean isGetOperation() {
-				return true;
-			}
-		};
-		return new Interactor(deferred);
-	}
-
-	private Interactor getRemoveKeyRangeInteractor(Object startKey, Object endKey) {
-		DeferredOperation deferred = new DeferredOperation() {
-			
-			@Override
-			public ResultsUnpacker[] getUnpackers(OperationParameters operationParams) {
-				switch (operationParams.getNeedsResultOfType()) {
-				case DEFAULT:
-				case ELEMENTS:
-					return new ResultsUnpacker[] { new ArrayUnpacker(instanceMapper) };
-				default:
-					return new ResultsUnpacker[0];
-				}
-			}
-			
-			@Override
-			public Operation getOperation(OperationParameters operationParams) {
-	    		if (listType == EmbedType.LIST) {
-    				return ListOperation.removeByValueRange(binName, getValue(startKey, true), getValue(endKey, true),
-							TypeUtils.returnTypeToListReturnType(operationParams.getNeedsResultOfType()));
-				}
-	    		else {
-    				return MapOperation.removeByKeyRange(binName, getValue(startKey, true), getValue(endKey, true),
-							TypeUtils.returnTypeToMapReturnType(operationParams.getNeedsResultOfType()));
-	    		}
-			}
-
-			@Override
-			public boolean isGetOperation() {
-				return false;
-			}
-		};
-		return new Interactor(deferred);
-	}
-
-	private Interactor getRemoveKeyInteractor(Object key) {
-		DeferredOperation deferred = new DeferredOperation() {
-			
-			@Override
-			public ResultsUnpacker[] getUnpackers(OperationParameters operationParams) {
-				switch (operationParams.getNeedsResultOfType()) {
-				case DEFAULT:
-				case ELEMENTS:
-					return new ResultsUnpacker[] { new ArrayUnpacker(instanceMapper) };
-				default:
-					return new ResultsUnpacker[0];
-				}
-			}
-			
-			@Override
-			public Operation getOperation(OperationParameters operationParams) {
-	    		if (listType == EmbedType.LIST) {
-    				return ListOperation.removeByValue(binName, getValue(key, true),
-							TypeUtils.returnTypeToListReturnType(operationParams.getNeedsResultOfType()));
-				}
-	    		else {
-    				return MapOperation.removeByKey(binName, getValue(key, true),
-							TypeUtils.returnTypeToMapReturnType(operationParams.getNeedsResultOfType()));
-	    		}
-			}
-
-			@Override
-			public boolean isGetOperation() {
-				return false;
-			}
-		};
-		return new Interactor(deferred);
-	}
-
-	private Interactor getRemoveValueRangeInteractor(Object startValue, Object endValue) {
-		DeferredOperation deferred = new DeferredOperation() {
-			
-			@Override
-			public ResultsUnpacker[] getUnpackers(OperationParameters operationParams) {
-				switch (operationParams.getNeedsResultOfType()) {
-				case DEFAULT:
-				case ELEMENTS:
-					return new ResultsUnpacker[] { new ArrayUnpacker(instanceMapper) };
-				default:
-					return new ResultsUnpacker[0];
-				}
-			}
-			
-			@Override
-			public Operation getOperation(OperationParameters operationParams) {
-	    		if (listType == EmbedType.LIST) {
-    				return ListOperation.removeByValueRange(binName, getValue(startValue, false), getValue(endValue, false),
-							TypeUtils.returnTypeToListReturnType(operationParams.getNeedsResultOfType()));
-				}
-	    		else {
-    				return MapOperation.removeByValueRange(binName, getValue(startValue, false), getValue(endValue, false),
-							TypeUtils.returnTypeToMapReturnType(operationParams.getNeedsResultOfType()));
-	    		}
-			}
-
-			@Override
-			public boolean isGetOperation() {
-				return false;
-			}
-		};
-		return new Interactor(deferred);
-	}
-	
-	private Operation getAppendOperation(Object aerospikeObject) {
-    	if (aerospikeObject instanceof Entry) {
-    		Entry<Object, Object> entry = (Entry) aerospikeObject;
-    		return MapOperation.put(new MapPolicy(MapOrder.KEY_ORDERED, 0), binName, Value.get(entry.getKey()), Value.get(entry.getValue()));
-    	}
-    	else {
-    		return ListOperation.append(binName, Value.get(aerospikeObject));
-    	}
 	}
 
 	/**
@@ -598,7 +383,7 @@ public class VirtualList<E> {
         	writePolicy = new WritePolicy(owningEntry.getWritePolicy());
     		writePolicy.recordExistsAction = RecordExistsAction.UPDATE;
     	}
-		Record record = this.mapper.getClient().operate(writePolicy, key, getAppendOperation(result));
+		Record record = this.mapper.getClient().operate(writePolicy, key, virtualListInteractors.getAppendOperation(result));
     	return record.getLong(binName);
 	}
 
@@ -609,15 +394,6 @@ public class VirtualList<E> {
 	 */
 	public E get(int index) {
 		return get(null, index);
-	}
-	
-	private Interactor getIndexInteractor(int index) {
-		if (listType == EmbedType.LIST) {
-			return new Interactor(ListOperation.getByIndex(binName, index, ListReturnType.VALUE), new ElementUnpacker(instanceMapper));
-		}
-		else {
-			return new Interactor(MapOperation.getByIndex(binName, index, MapReturnType.KEY_VALUE), ListUnpacker.instance, new ElementUnpacker(instanceMapper));
-		}
 	}
 
 	/**
@@ -631,18 +407,9 @@ public class VirtualList<E> {
     		policy = new Policy(owningEntry.getReadPolicy());
     	}
 
-    	Interactor interactor = getIndexInteractor(index);
+    	Interactor interactor = virtualListInteractors.getIndexInteractor(index);
 		Record record = this.mapper.getClient().operate(null, key, interactor.getOperation());
 		return (E)interactor.getResult(record.getList(binName));
-	}
-	
-	private Interactor getSizeInteractor() {
-		if (listType == EmbedType.LIST) {
-			 return new Interactor(ListOperation.size(binName));
-		}
-		else {
-			return new Interactor(MapOperation.size(binName));
-		}
 	}
 
 	/**
@@ -654,8 +421,16 @@ public class VirtualList<E> {
     	if (policy == null) {
     		policy = new Policy(owningEntry.getReadPolicy());
     	}
-    	Interactor interactor = getSizeInteractor();
+    	Interactor interactor = virtualListInteractors.getSizeInteractor();
 		Record record = this.mapper.getClient().operate(null, key, interactor.getOperation());
 		return record.getLong(binName);
+	}
+
+	/**
+	 * Remove all the items in the virtual list.
+	 */
+	public void clear() {
+		Interactor interactor = virtualListInteractors.getClearInteractor();
+		this.mapper.getClient().operate(null, key, interactor.getOperation());
 	}
 }

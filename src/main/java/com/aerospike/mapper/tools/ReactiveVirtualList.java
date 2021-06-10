@@ -1,7 +1,9 @@
 package com.aerospike.mapper.tools;
 
-import com.aerospike.client.*;
-import com.aerospike.client.cdt.*;
+import com.aerospike.client.AerospikeException;
+import com.aerospike.client.Key;
+import com.aerospike.client.Operation;
+import com.aerospike.client.Value;
 import com.aerospike.client.policy.Policy;
 import com.aerospike.client.policy.RecordExistsAction;
 import com.aerospike.client.policy.WritePolicy;
@@ -18,15 +20,11 @@ import java.util.function.Function;
 
 public class ReactiveVirtualList<E> {
     private final IReactiveAeroMapper reactiveAeroMapper;
-    private final ValueType value;
     private final ClassCacheEntry<?> owningEntry;
-    private final ClassCacheEntry<?> elementEntry;
     private final String binName;
     private final ListMapper listMapper;
     private Key key;
-    private final AerospikeEmbed.EmbedType listType;
-    private final AerospikeEmbed.EmbedType elementType;
-    private final Function<Object, Object> instanceMapper;
+    private final VirtualListInteractors virtualListInteractors;
 
     // package level visibility
     ReactiveVirtualList(@NotNull IReactiveAeroMapper reactiveAeroMapper, @NotNull Class<?> owningClazz, @NotNull Object key, @NotNull String binName, @NotNull Class<E> clazz) {
@@ -49,10 +47,10 @@ public class ReactiveVirtualList<E> {
         } else {
             aerospikeKey = owningEntry.translateKeyToAerospikeKey(key);
         }
-        this.elementEntry = ClassCache.getInstance().loadClass(clazz, reactiveAeroMapper);
+        ClassCacheEntry<?> elementEntry = ClassCache.getInstance().loadClass(clazz, reactiveAeroMapper);
         this.reactiveAeroMapper = reactiveAeroMapper;
         this.binName = binName;
-        this.value = owningEntry.getValueFromBinName(binName);
+        ValueType value = owningEntry.getValueFromBinName(binName);
         if (value == null) {
             throw new AerospikeException(String.format("Class %s has no bin called %s", clazz.getSimpleName(), binName));
         }
@@ -68,8 +66,8 @@ public class ReactiveVirtualList<E> {
         if (embed == null) {
             throw new AerospikeException(String.format("Bin %s on class %s is not specified as a embedded", binName, clazz.getSimpleName()));
         }
-        listType = embed.type() == AerospikeEmbed.EmbedType.DEFAULT ? AerospikeEmbed.EmbedType.LIST : embed.type();
-        elementType = embed.elementType() == AerospikeEmbed.EmbedType.DEFAULT ? AerospikeEmbed.EmbedType.MAP : embed.elementType();
+        AerospikeEmbed.EmbedType listType = embed.type() == AerospikeEmbed.EmbedType.DEFAULT ? AerospikeEmbed.EmbedType.LIST : embed.type();
+        AerospikeEmbed.EmbedType elementType = embed.elementType() == AerospikeEmbed.EmbedType.DEFAULT ? AerospikeEmbed.EmbedType.MAP : embed.elementType();
         Class<?> binClazz = value.getType();
         if (!(binClazz.isArray() || (Map.class.isAssignableFrom(binClazz)) || List.class.isAssignableFrom(binClazz))) {
             throw new AerospikeException(String.format("Bin %s on class %s is not a collection class", binName, clazz.getSimpleName()));
@@ -81,7 +79,8 @@ public class ReactiveVirtualList<E> {
         } else {
             throw new AerospikeException(String.format("Bin %s on class %s is not mapped via a listMapper. This is unexpected", binName, clazz.getSimpleName()));
         }
-        this.instanceMapper = listMapper::fromAerospikeInstanceFormat;
+        Function<Object, Object> instanceMapper = listMapper::fromAerospikeInstanceFormat;
+        this.virtualListInteractors = new VirtualListInteractors(binName, listType, elementEntry, instanceMapper, reactiveAeroMapper);
     }
 
     public ReactiveVirtualList<E> changeKey(Object newKey) {
@@ -108,42 +107,42 @@ public class ReactiveVirtualList<E> {
 
         public MultiOperation<E> append(E item) {
             Object aerospikeItem = listMapper.toAerospikeInstanceFormat(item);
-            this.interactions.add(new Interactor(reactiveVirtualList.getAppendOperation(aerospikeItem)));
+            this.interactions.add(new Interactor(reactiveVirtualList.virtualListInteractors.getAppendOperation(aerospikeItem)));
             return this;
         }
 
         public MultiOperation<E> removeByKey(Object key) {
-            this.interactions.add(getRemoveKeyInteractor(key));
+            this.interactions.add(virtualListInteractors.getRemoveKeyInteractor(key));
             return this;
         }
 
         public MultiOperation<E> removeByKeyRange(Object startKey, Object endKey) {
-            this.interactions.add(getRemoveKeyRangeInteractor(startKey, endKey));
+            this.interactions.add(virtualListInteractors.getRemoveKeyRangeInteractor(startKey, endKey));
             return this;
         }
 
         public MultiOperation<E> removeByValueRange(Object startValue, Object endValue) {
-            this.interactions.add(getRemoveValueRangeInteractor(startValue, endValue));
+            this.interactions.add(virtualListInteractors.getRemoveValueRangeInteractor(startValue, endValue));
             return this;
         }
 
         public MultiOperation<E> getByValueRange(Object startValue, Object endValue) {
-            this.interactions.add(getGetByValueRangeInteractor(startValue, endValue));
+            this.interactions.add(virtualListInteractors.getGetByValueRangeInteractor(startValue, endValue));
             return this;
         }
 
         public MultiOperation<E> getByKeyRange(Object startKey, Object endKey) {
-            this.interactions.add(getGetByKeyRangeInteractor(startKey, endKey));
+            this.interactions.add(virtualListInteractors.getGetByKeyRangeInteractor(startKey, endKey));
             return this;
         }
 
         public MultiOperation<E> get(int index) {
-            this.interactions.add(getIndexInteractor(index));
+            this.interactions.add(virtualListInteractors.getIndexInteractor(index));
             return this;
         }
 
         public MultiOperation<E> size() {
-            this.interactions.add(getSizeInteractor());
+            this.interactions.add(virtualListInteractors.getSizeInteractor());
             return this;
         }
 
@@ -279,7 +278,7 @@ public class ReactiveVirtualList<E> {
             writePolicy = new WritePolicy(owningEntry.getWritePolicy());
             writePolicy.recordExistsAction = RecordExistsAction.UPDATE;
         }
-        Interactor interactor = getGetByValueRangeInteractor(startValue, endValue);
+        Interactor interactor = virtualListInteractors.getGetByValueRangeInteractor(startValue, endValue);
         interactor.setNeedsResultOfType(returnResultsOfType);
 
         return reactiveAeroMapper.getReactorClient()
@@ -319,7 +318,7 @@ public class ReactiveVirtualList<E> {
             writePolicy = new WritePolicy(owningEntry.getWritePolicy());
             writePolicy.recordExistsAction = RecordExistsAction.UPDATE;
         }
-        Interactor interactor = getRemoveValueRangeInteractor(startValue, endValue);
+        Interactor interactor = virtualListInteractors.getRemoveValueRangeInteractor(startValue, endValue);
         interactor.setNeedsResultOfType(returnResultsOfType);
 
         return reactiveAeroMapper.getReactorClient()
@@ -359,208 +358,12 @@ public class ReactiveVirtualList<E> {
             writePolicy = new WritePolicy(owningEntry.getWritePolicy());
             writePolicy.recordExistsAction = RecordExistsAction.UPDATE;
         }
-        Interactor interactor = getRemoveKeyRangeInteractor(startKey, endKey);
+        Interactor interactor = virtualListInteractors.getRemoveKeyRangeInteractor(startKey, endKey);
         interactor.setNeedsResultOfType(returnResultsOfType);
 
         return reactiveAeroMapper.getReactorClient()
                 .operate(writePolicy, key, interactor.getOperation())
                 .map(keyRecord -> (E)interactor.getResult(keyRecord.record.getList(binName)));
-    }
-
-    private Interactor getGetByValueRangeInteractor(Object startValue, Object endValue) {
-        DeferredOperation deferred = new DeferredOperation() {
-
-            @Override
-            public ResultsUnpacker[] getUnpackers(OperationParameters operationParams) {
-                switch (operationParams.getNeedsResultOfType()) {
-                    case DEFAULT:
-                    case ELEMENTS:
-                        return new ResultsUnpacker[] { new ResultsUnpacker.ArrayUnpacker(instanceMapper) };
-                    default:
-                        return new ResultsUnpacker[0];
-                }
-            }
-
-            @Override
-            public Operation getOperation(OperationParameters operationParams) {
-                if (listType == AerospikeEmbed.EmbedType.LIST) {
-                    return ListOperation.getByValueRange(binName, getValue(startValue, false), getValue(endValue, false),
-                            TypeUtils.returnTypeToListReturnType(operationParams.getNeedsResultOfType()));
-                }
-                else {
-                    return MapOperation.getByValueRange(binName, getValue(startValue, false), getValue(endValue, false),
-                            TypeUtils.returnTypeToMapReturnType(operationParams.getNeedsResultOfType()));
-                }
-            }
-
-            @Override
-            public boolean isGetOperation() {
-                return true;
-            }
-        };
-        return new Interactor(deferred);
-    }
-
-    private Value getValue(Object javaObject, boolean isKey) {
-        Object aerospikeObject;
-        if (isKey) {
-            aerospikeObject = elementEntry.translateKeyToAerospikeKey(javaObject);
-        }
-        else {
-            aerospikeObject = reactiveAeroMapper.getMappingConverter().translateToAerospike(javaObject);
-        }
-        if (aerospikeObject == null) {
-            return null;
-        }
-        else {
-            return Value.get(aerospikeObject);
-        }
-    }
-
-    private Interactor getGetByKeyRangeInteractor(Object startKey, Object endKey) {
-        DeferredOperation deferred = new DeferredOperation() {
-
-            @Override
-            public ResultsUnpacker[] getUnpackers(OperationParameters operationParams) {
-                switch (operationParams.getNeedsResultOfType()) {
-                    case DEFAULT:
-                    case ELEMENTS:
-                        return new ResultsUnpacker[] { new ResultsUnpacker.ArrayUnpacker(instanceMapper) };
-                    default:
-                        return new ResultsUnpacker[0];
-                }
-            }
-
-            @Override
-            public Operation getOperation(OperationParameters operationParams) {
-                if (listType == AerospikeEmbed.EmbedType.LIST) {
-                    return ListOperation.getByValueRange(binName, getValue(startKey, true), getValue(endKey, true),
-                            TypeUtils.returnTypeToListReturnType(operationParams.getNeedsResultOfType()));
-                }
-                else {
-                    return MapOperation.getByKeyRange(binName, getValue(startKey, true), getValue(endKey, true),
-                            TypeUtils.returnTypeToMapReturnType(operationParams.getNeedsResultOfType()));
-                }
-            }
-
-            @Override
-            public boolean isGetOperation() {
-                return true;
-            }
-        };
-        return new Interactor(deferred);
-    }
-
-    private Interactor getRemoveKeyRangeInteractor(Object startKey, Object endKey) {
-        DeferredOperation deferred = new DeferredOperation() {
-
-            @Override
-            public ResultsUnpacker[] getUnpackers(OperationParameters operationParams) {
-                switch (operationParams.getNeedsResultOfType()) {
-                    case DEFAULT:
-                    case ELEMENTS:
-                        return new ResultsUnpacker[] { new ResultsUnpacker.ArrayUnpacker(instanceMapper) };
-                    default:
-                        return new ResultsUnpacker[0];
-                }
-            }
-
-            @Override
-            public Operation getOperation(OperationParameters operationParams) {
-                if (listType == AerospikeEmbed.EmbedType.LIST) {
-                    return ListOperation.removeByValueRange(binName, getValue(startKey, true), getValue(endKey, true),
-                            TypeUtils.returnTypeToListReturnType(operationParams.getNeedsResultOfType()));
-                }
-                else {
-                    return MapOperation.removeByKeyRange(binName, getValue(startKey, true), getValue(endKey, true),
-                            TypeUtils.returnTypeToMapReturnType(operationParams.getNeedsResultOfType()));
-                }
-            }
-
-            @Override
-            public boolean isGetOperation() {
-                return false;
-            }
-        };
-        return new Interactor(deferred);
-    }
-
-    private Interactor getRemoveKeyInteractor(Object key) {
-        DeferredOperation deferred = new DeferredOperation() {
-
-            @Override
-            public ResultsUnpacker[] getUnpackers(OperationParameters operationParams) {
-                switch (operationParams.getNeedsResultOfType()) {
-                    case DEFAULT:
-                    case ELEMENTS:
-                        return new ResultsUnpacker[] { new ResultsUnpacker.ArrayUnpacker(instanceMapper) };
-                    default:
-                        return new ResultsUnpacker[0];
-                }
-            }
-
-            @Override
-            public Operation getOperation(OperationParameters operationParams) {
-                if (listType == AerospikeEmbed.EmbedType.LIST) {
-                    return ListOperation.removeByValue(binName, getValue(key, true),
-                            TypeUtils.returnTypeToListReturnType(operationParams.getNeedsResultOfType()));
-                }
-                else {
-                    return MapOperation.removeByKey(binName, getValue(key, true),
-                            TypeUtils.returnTypeToMapReturnType(operationParams.getNeedsResultOfType()));
-                }
-            }
-
-            @Override
-            public boolean isGetOperation() {
-                return false;
-            }
-        };
-        return new Interactor(deferred);
-    }
-
-    private Interactor getRemoveValueRangeInteractor(Object startValue, Object endValue) {
-        DeferredOperation deferred = new DeferredOperation() {
-
-            @Override
-            public ResultsUnpacker[] getUnpackers(OperationParameters operationParams) {
-                switch (operationParams.getNeedsResultOfType()) {
-                    case DEFAULT:
-                    case ELEMENTS:
-                        return new ResultsUnpacker[] { new ResultsUnpacker.ArrayUnpacker(instanceMapper) };
-                    default:
-                        return new ResultsUnpacker[0];
-                }
-            }
-
-            @Override
-            public Operation getOperation(OperationParameters operationParams) {
-                if (listType == AerospikeEmbed.EmbedType.LIST) {
-                    return ListOperation.removeByValueRange(binName, getValue(startValue, false), getValue(endValue, false),
-                            TypeUtils.returnTypeToListReturnType(operationParams.getNeedsResultOfType()));
-                }
-                else {
-                    return MapOperation.removeByValueRange(binName, getValue(startValue, false), getValue(endValue, false),
-                            TypeUtils.returnTypeToMapReturnType(operationParams.getNeedsResultOfType()));
-                }
-            }
-
-            @Override
-            public boolean isGetOperation() {
-                return false;
-            }
-        };
-        return new Interactor(deferred);
-    }
-
-    private Operation getAppendOperation(Object aerospikeObject) {
-        if (aerospikeObject instanceof Map.Entry) {
-            Map.Entry<Object, Object> entry = (Map.Entry) aerospikeObject;
-            return MapOperation.put(new MapPolicy(MapOrder.KEY_ORDERED, 0), binName, Value.get(entry.getKey()), Value.get(entry.getValue()));
-        }
-        else {
-            return ListOperation.append(binName, Value.get(aerospikeObject));
-        }
     }
 
     /**
@@ -585,7 +388,7 @@ public class ReactiveVirtualList<E> {
             writePolicy.recordExistsAction = RecordExistsAction.UPDATE;
         }
         return reactiveAeroMapper.getReactorClient()
-                .operate(writePolicy, key, getAppendOperation(result))
+                .operate(writePolicy, key, virtualListInteractors.getAppendOperation(result))
                 .map(keyRecord -> keyRecord.record.getLong(binName));
     }
 
@@ -596,15 +399,6 @@ public class ReactiveVirtualList<E> {
      */
     public Mono<E> get(int index) {
         return get(null, index);
-    }
-
-    private Interactor getIndexInteractor(int index) {
-        if (listType == AerospikeEmbed.EmbedType.LIST) {
-            return new Interactor(ListOperation.getByIndex(binName, index, ListReturnType.VALUE), new ResultsUnpacker.ElementUnpacker(instanceMapper));
-        }
-        else {
-            return new Interactor(MapOperation.getByIndex(binName, index, MapReturnType.KEY_VALUE), ResultsUnpacker.ListUnpacker.instance, new ResultsUnpacker.ElementUnpacker(instanceMapper));
-        }
     }
 
     /**
@@ -618,19 +412,10 @@ public class ReactiveVirtualList<E> {
             policy = new Policy(owningEntry.getReadPolicy());
         }
 
-        Interactor interactor = getIndexInteractor(index);
+        Interactor interactor = virtualListInteractors.getIndexInteractor(index);
         return reactiveAeroMapper.getReactorClient()
                 .operate(null, key, interactor.getOperation())
                 .map(keyRecord -> (E)interactor.getResult(keyRecord.record.getList(binName)));
-    }
-
-    private Interactor getSizeInteractor() {
-        if (listType == AerospikeEmbed.EmbedType.LIST) {
-            return new Interactor(ListOperation.size(binName));
-        }
-        else {
-            return new Interactor(MapOperation.size(binName));
-        }
     }
 
     /**
@@ -642,9 +427,15 @@ public class ReactiveVirtualList<E> {
         if (policy == null) {
             policy = new Policy(owningEntry.getReadPolicy());
         }
-        Interactor interactor = getSizeInteractor();
-        return reactiveAeroMapper.getReactorClient().
-                operate(null, key, interactor.getOperation())
+        Interactor interactor = virtualListInteractors.getSizeInteractor();
+        return reactiveAeroMapper.getReactorClient()
+                .operate(null, key, interactor.getOperation())
                 .map(keyRecord -> keyRecord.record.getLong(binName));
+    }
+
+    public Mono<Void> clear() {
+        Interactor interactor = virtualListInteractors.getClearInteractor();
+        return reactiveAeroMapper.getReactorClient()
+                .operate(null, key, interactor.getOperation()).then();
     }
 }
