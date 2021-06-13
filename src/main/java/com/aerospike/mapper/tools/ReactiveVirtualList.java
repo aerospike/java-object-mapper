@@ -289,6 +289,9 @@ public class ReactiveVirtualList<E> {
                 .map(keyRecord -> keyRecord.record.getLong(binName));
     }
 
+    /**
+     * Remove all the items in the virtual list.
+     */
     public Mono<Void> clear() {
         Interactor interactor = virtualListInteractors.getClearInteractor();
         return reactiveAeroMapper.getReactorClient()
