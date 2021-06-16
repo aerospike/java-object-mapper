@@ -8,7 +8,8 @@ import java.lang.reflect.Type;
 import com.aerospike.client.AerospikeException;
 import com.aerospike.client.Key;
 import com.aerospike.client.Value;
-import com.aerospike.mapper.tools.TypeUtils.AnnotatedType;
+import com.aerospike.mapper.tools.utils.TypeUtils;
+import com.aerospike.mapper.tools.utils.TypeUtils.AnnotatedType;
 import com.aerospike.mapper.tools.configuration.ClassConfig;
 
 public class PropertyDefinition {

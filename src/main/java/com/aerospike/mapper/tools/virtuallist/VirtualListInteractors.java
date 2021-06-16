@@ -1,9 +1,11 @@
-package com.aerospike.mapper.tools;
+package com.aerospike.mapper.tools.virtuallist;
 
 import com.aerospike.client.Operation;
 import com.aerospike.client.Value;
 import com.aerospike.client.cdt.*;
 import com.aerospike.mapper.annotations.AerospikeEmbed;
+import com.aerospike.mapper.tools.*;
+import com.aerospike.mapper.tools.utils.TypeUtils;
 
 import java.util.Map;
 import java.util.function.Function;

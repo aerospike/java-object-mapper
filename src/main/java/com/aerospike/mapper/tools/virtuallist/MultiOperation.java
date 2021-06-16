@@ -1,10 +1,12 @@
-package com.aerospike.mapper.tools;
+package com.aerospike.mapper.tools.virtuallist;
 
 import com.aerospike.client.AerospikeException;
 import com.aerospike.client.Key;
 import com.aerospike.client.Operation;
 import com.aerospike.client.Record;
 import com.aerospike.client.policy.WritePolicy;
+import com.aerospike.mapper.tools.ClassCache;
+import com.aerospike.mapper.tools.IAeroMapper;
 import com.aerospike.mapper.tools.mappers.ListMapper;
 
 import javax.validation.constraints.NotNull;

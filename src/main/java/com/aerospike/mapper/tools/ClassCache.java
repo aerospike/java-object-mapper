@@ -15,6 +15,7 @@ import com.aerospike.client.policy.WritePolicy;
 import com.aerospike.client.reactor.IAerospikeReactorClient;
 import com.aerospike.mapper.tools.configuration.ClassConfig;
 import com.aerospike.mapper.tools.configuration.Configuration;
+import com.aerospike.mapper.tools.utils.TypeUtils;
 
 public class ClassCache {
 	private static final ClassCache instance = new ClassCache();

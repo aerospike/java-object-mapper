@@ -4,6 +4,7 @@ import com.aerospike.client.IAerospikeClient;
 import com.aerospike.client.policy.BatchPolicy;
 import com.aerospike.client.policy.Policy;
 import com.aerospike.client.policy.WritePolicy;
+import com.aerospike.mapper.tools.virtuallist.VirtualList;
 
 import javax.validation.constraints.NotNull;
 import java.util.function.Function;

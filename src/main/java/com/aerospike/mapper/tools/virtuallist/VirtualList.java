@@ -1,4 +1,4 @@
-package com.aerospike.mapper.tools;
+package com.aerospike.mapper.tools.virtuallist;
 
 import com.aerospike.client.AerospikeException;
 import com.aerospike.client.Key;
@@ -9,7 +9,8 @@ import com.aerospike.client.policy.RecordExistsAction;
 import com.aerospike.client.policy.WritePolicy;
 import com.aerospike.mapper.annotations.AerospikeEmbed;
 import com.aerospike.mapper.annotations.AerospikeEmbed.EmbedType;
-import com.aerospike.mapper.tools.TypeUtils.AnnotatedType;
+import com.aerospike.mapper.tools.*;
+import com.aerospike.mapper.tools.utils.TypeUtils.AnnotatedType;
 import com.aerospike.mapper.tools.mappers.ListMapper;
 
 import javax.validation.constraints.NotNull;
@@ -25,13 +26,11 @@ public class VirtualList<E> {
 	private Key key;
 	private final VirtualListInteractors virtualListInteractors;
 
-	// package level visibility
-	VirtualList(@NotNull IAeroMapper mapper, @NotNull Class<?> owningClazz, @NotNull Object key, @NotNull String binName, @NotNull Class<E> clazz) {
+	public VirtualList(@NotNull IAeroMapper mapper, @NotNull Class<?> owningClazz, @NotNull Object key, @NotNull String binName, @NotNull Class<E> clazz) {
 		this(mapper, null, owningClazz, key, binName, clazz);
 	}
-	
-	// package level visibility
-	VirtualList(@NotNull IAeroMapper mapper, @NotNull Object object, @NotNull String binName, @NotNull Class<E> clazz) {
+
+	public VirtualList(@NotNull IAeroMapper mapper, @NotNull Object object, @NotNull String binName, @NotNull Class<E> clazz) {
 		this(mapper, object, null, null, binName, clazz);
 	}
 
@@ -141,6 +140,66 @@ public class VirtualList<E> {
 		Interactor interactor = virtualListInteractors.getGetByValueRangeInteractor(startValue, endValue);
 		interactor.setNeedsResultOfType(returnResultsOfType);
 		Record record = this.mapper.getClient().operate(writePolicy, key, interactor.getOperation());
+
+		return (List<E>)interactor.getResult(record.getList(binName));
+	}
+
+	/**
+	 *
+	 * @param startKey
+	 * @param endKey
+	 * @param returnResultsOfType
+	 * @return
+	 */
+	public List<E> getByKeyRange(Object startKey, Object endKey, ReturnType returnResultsOfType) {
+		return getByKeyRange(null, startKey, endKey, returnResultsOfType);
+	}
+
+	/**
+	 *
+	 * @param writePolicy
+	 * @param startKey
+	 * @param endKey
+	 * @param returnResultsOfType
+	 * @return
+	 */
+	public List<E> getByKeyRange(WritePolicy writePolicy, Object startKey, Object endKey, ReturnType returnResultsOfType) {
+		if (writePolicy == null) {
+			writePolicy = new WritePolicy(owningEntry.getWritePolicy());
+			writePolicy.recordExistsAction = RecordExistsAction.UPDATE;
+		}
+		Interactor interactor = virtualListInteractors.getGetByKeyRangeInteractor(startKey, endKey);
+		interactor.setNeedsResultOfType(returnResultsOfType);
+		Record record = this.mapper.getClient().operate(writePolicy, this.key, interactor.getOperation());
+
+		return (List<E>)interactor.getResult(record.getList(binName));
+	}
+
+	/**
+	 *
+	 * @param key
+	 * @param returnResultsOfType
+	 * @return
+	 */
+	public List<E> removeByKey(Object key, ReturnType returnResultsOfType) {
+		return removeByKey(null, key, returnResultsOfType);
+	}
+
+	/**
+	 *
+	 * @param writePolicy
+	 * @param key
+	 * @param returnResultsOfType
+	 * @return
+	 */
+	public List<E> removeByKey(WritePolicy writePolicy, Object key, ReturnType returnResultsOfType) {
+		if (writePolicy == null) {
+			writePolicy = new WritePolicy(owningEntry.getWritePolicy());
+			writePolicy.recordExistsAction = RecordExistsAction.UPDATE;
+		}
+		Interactor interactor = virtualListInteractors.getRemoveKeyInteractor(key);
+		interactor.setNeedsResultOfType(returnResultsOfType);
+		Record record = this.mapper.getClient().operate(writePolicy, this.key, interactor.getOperation());
 
 		return (List<E>)interactor.getResult(record.getList(binName));
 	}

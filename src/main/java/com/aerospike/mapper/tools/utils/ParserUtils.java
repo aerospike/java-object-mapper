@@ -1,4 +1,4 @@
-package com.aerospike.mapper.tools;
+package com.aerospike.mapper.tools.utils;
 
 public class ParserUtils {
 	private static final ParserUtils instance = new ParserUtils();

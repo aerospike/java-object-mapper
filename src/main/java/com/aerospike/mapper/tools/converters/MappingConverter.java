@@ -3,6 +3,8 @@ package com.aerospike.mapper.tools.converters;
 import com.aerospike.client.*;
 import com.aerospike.client.policy.BatchPolicy;
 import com.aerospike.mapper.tools.*;
+import com.aerospike.mapper.tools.utils.MapperUtils;
+import com.aerospike.mapper.tools.utils.TypeUtils;
 
 import javax.validation.constraints.NotNull;
 import java.util.List;

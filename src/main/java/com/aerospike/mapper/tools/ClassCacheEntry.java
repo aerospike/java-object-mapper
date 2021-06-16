@@ -6,7 +6,9 @@ import com.aerospike.client.Record;
 import com.aerospike.client.cdt.MapOrder;
 import com.aerospike.client.policy.*;
 import com.aerospike.mapper.annotations.*;
-import com.aerospike.mapper.tools.TypeUtils.AnnotatedType;
+import com.aerospike.mapper.tools.utils.ParserUtils;
+import com.aerospike.mapper.tools.utils.TypeUtils;
+import com.aerospike.mapper.tools.utils.TypeUtils.AnnotatedType;
 import com.aerospike.mapper.tools.configuration.BinConfig;
 import com.aerospike.mapper.tools.configuration.ClassConfig;
 import com.aerospike.mapper.tools.configuration.KeyConfig;
@@ -944,9 +946,8 @@ public class ClassCacheEntry<T> {
 			throw new AerospikeException(ref);
 		}
 	}
-	
-	// package visible
-	ValueType getValueFromBinName(String name) {
+
+	public ValueType getValueFromBinName(String name) {
 		return this.values.get(name);
 	}
 	

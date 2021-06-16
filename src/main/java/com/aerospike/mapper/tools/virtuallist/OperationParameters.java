@@ -1,4 +1,4 @@
-package com.aerospike.mapper.tools;
+package com.aerospike.mapper.tools.virtuallist;
 
 public class OperationParameters {
 	private ReturnType needsResultOfType = ReturnType.NONE;

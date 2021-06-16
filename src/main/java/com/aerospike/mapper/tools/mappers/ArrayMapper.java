@@ -6,7 +6,7 @@ import java.util.List;
 
 import com.aerospike.mapper.tools.DeferredObjectLoader;
 import com.aerospike.mapper.tools.TypeMapper;
-import com.aerospike.mapper.tools.TypeUtils;
+import com.aerospike.mapper.tools.utils.TypeUtils;
 import com.aerospike.mapper.tools.DeferredObjectLoader.DeferredObject;
 import com.aerospike.mapper.tools.DeferredObjectLoader.DeferredObjectSetter;
 import com.aerospike.mapper.tools.DeferredObjectLoader.DeferredSetter;

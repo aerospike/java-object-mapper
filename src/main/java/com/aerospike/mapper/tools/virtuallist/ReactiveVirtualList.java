@@ -1,4 +1,4 @@
-package com.aerospike.mapper.tools;
+package com.aerospike.mapper.tools.virtuallist;
 
 import com.aerospike.client.AerospikeException;
 import com.aerospike.client.Key;
@@ -7,7 +7,9 @@ import com.aerospike.client.policy.Policy;
 import com.aerospike.client.policy.RecordExistsAction;
 import com.aerospike.client.policy.WritePolicy;
 import com.aerospike.mapper.annotations.AerospikeEmbed;
+import com.aerospike.mapper.tools.*;
 import com.aerospike.mapper.tools.mappers.ListMapper;
+import com.aerospike.mapper.tools.utils.TypeUtils;
 import reactor.core.publisher.Mono;
 
 import javax.validation.constraints.NotNull;
@@ -23,13 +25,11 @@ public class ReactiveVirtualList<E> {
     private Key key;
     private final VirtualListInteractors virtualListInteractors;
 
-    // package level visibility
-    ReactiveVirtualList(@NotNull IReactiveAeroMapper reactiveAeroMapper, @NotNull Class<?> owningClazz, @NotNull Object key, @NotNull String binName, @NotNull Class<E> clazz) {
+    public ReactiveVirtualList(@NotNull IReactiveAeroMapper reactiveAeroMapper, @NotNull Class<?> owningClazz, @NotNull Object key, @NotNull String binName, @NotNull Class<E> clazz) {
         this(reactiveAeroMapper, null, owningClazz, key, binName, clazz);
     }
 
-    // package level visibility
-    ReactiveVirtualList(@NotNull IReactiveAeroMapper reactiveAeroMapper, @NotNull Object object, @NotNull String binName, @NotNull Class<E> clazz) {
+    public ReactiveVirtualList(@NotNull IReactiveAeroMapper reactiveAeroMapper, @NotNull Object object, @NotNull String binName, @NotNull Class<E> clazz) {
         this(reactiveAeroMapper, object, null, null, binName, clazz);
     }
 
@@ -139,6 +139,68 @@ public class ReactiveVirtualList<E> {
 
         return reactiveAeroMapper.getReactorClient()
                 .operate(writePolicy, key, interactor.getOperation())
+                .map(keyRecord -> (E)interactor.getResult(keyRecord.record.getList(binName)));
+    }
+
+    /**
+     *
+     * @param startKey
+     * @param endKey
+     * @param returnResultsOfType
+     * @return
+     */
+    public Mono<E> getByKeyRange(Object startKey, Object endKey, ReturnType returnResultsOfType) {
+        return getByKeyRange(null, startKey, endKey, returnResultsOfType);
+    }
+
+    /**
+     *
+     * @param writePolicy
+     * @param startKey
+     * @param endKey
+     * @param returnResultsOfType
+     * @return
+     */
+    public Mono<E> getByKeyRange(WritePolicy writePolicy, Object startKey, Object endKey, ReturnType returnResultsOfType) {
+        if (writePolicy == null) {
+            writePolicy = new WritePolicy(owningEntry.getWritePolicy());
+            writePolicy.recordExistsAction = RecordExistsAction.UPDATE;
+        }
+        Interactor interactor = virtualListInteractors.getGetByKeyRangeInteractor(startKey, endKey);
+        interactor.setNeedsResultOfType(returnResultsOfType);
+
+        return reactiveAeroMapper.getReactorClient()
+                .operate(writePolicy, this.key, interactor.getOperation())
+                .map(keyRecord -> (E)interactor.getResult(keyRecord.record.getList(binName)));
+    }
+
+    /**
+     *
+     * @param key
+     * @param returnResultsOfType
+     * @return
+     */
+    public Mono<E> removeByKey(Object key, ReturnType returnResultsOfType) {
+        return removeByKey(null, key, returnResultsOfType);
+    }
+
+    /**
+     *
+     * @param writePolicy
+     * @param key
+     * @param returnResultsOfType
+     * @return
+     */
+    public Mono<E> removeByKey(WritePolicy writePolicy, Object key, ReturnType returnResultsOfType) {
+        if (writePolicy == null) {
+            writePolicy = new WritePolicy(owningEntry.getWritePolicy());
+            writePolicy.recordExistsAction = RecordExistsAction.UPDATE;
+        }
+        Interactor interactor = virtualListInteractors.getRemoveKeyInteractor(key);
+        interactor.setNeedsResultOfType(returnResultsOfType);
+
+        return reactiveAeroMapper.getReactorClient()
+                .operate(writePolicy, this.key, interactor.getOperation())
                 .map(keyRecord -> (E)interactor.getResult(keyRecord.record.getList(binName)));
     }
 
