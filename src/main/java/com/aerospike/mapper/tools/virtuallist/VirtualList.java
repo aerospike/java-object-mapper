@@ -145,23 +145,31 @@ public class VirtualList<E> {
 	}
 
 	/**
-	 *
-	 * @param startKey
-	 * @param endKey
-	 * @param returnResultsOfType
-	 * @return
+	 * Get items from the list matching the specified key range. If the list is mapped to a MAP in Aerospike, the start key and end key will dictate the range of keys to get,
+	 * inclusive of the start, exclusive of the end.
+	 * <p/>
+	 * If the list is mapped to a LIST in Aerospike however, the start and end range represent values to get from the list.
+	 * <p/>
+	 * @param startKey Start key of the range to get.
+	 * @param endKey End key of the range to get.
+	 * @param returnResultsOfType Type to return.
+	 * @return A list of the records which match the given key range.
 	 */
 	public List<E> getByKeyRange(Object startKey, Object endKey, ReturnType returnResultsOfType) {
 		return getByKeyRange(null, startKey, endKey, returnResultsOfType);
 	}
 
 	/**
-	 *
-	 * @param writePolicy
-	 * @param startKey
-	 * @param endKey
-	 * @param returnResultsOfType
-	 * @return
+	 * Get items from the list matching the specified key range. If the list is mapped to a MAP in Aerospike, the start key and end key will dictate the range of keys to get,
+	 * inclusive of the start, exclusive of the end.
+	 * <p/>
+	 * If the list is mapped to a LIST in Aerospike however, the start and end range represent values to get from the list.
+	 * <p/>
+	 * @param writePolicy An Aerospike write policy to use for the operate() operation.
+	 * @param startKey Start key of the range to get.
+	 * @param endKey End key of the range to get.
+	 * @param returnResultsOfType Type to return.
+	 * @return A list of the records which match the given key range.
 	 */
 	public List<E> getByKeyRange(WritePolicy writePolicy, Object startKey, Object endKey, ReturnType returnResultsOfType) {
 		if (writePolicy == null) {
@@ -176,21 +184,27 @@ public class VirtualList<E> {
 	}
 
 	/**
-	 *
-	 * @param key
-	 * @param returnResultsOfType
-	 * @return
+	 * Remove items from the list matching the specified key. If the list is mapped to a MAP in Aerospike, the key will dictate the map key to be removed.
+	 * <p/>
+	 * If the list is mapped to a LIST in Aerospike however, the given key will use as the value to remove from the list.
+	 * <p/>
+	 * @param key Key to remove.
+	 * @param returnResultsOfType Type to return.
+	 * @return A list of the records which have been removed from the database if returnResults is true, null otherwise.
 	 */
 	public List<E> removeByKey(Object key, ReturnType returnResultsOfType) {
 		return removeByKey(null, key, returnResultsOfType);
 	}
 
 	/**
-	 *
-	 * @param writePolicy
-	 * @param key
-	 * @param returnResultsOfType
-	 * @return
+	 * Remove items from the list matching the specified key. If the list is mapped to a MAP in Aerospike, the key will dictate the map key to be removed.
+	 * <p/>
+	 * If the list is mapped to a LIST in Aerospike however, the given key will use as the value to remove from the list.
+	 * <p/>
+	 * @param writePolicy An Aerospike write policy to use for the operate() operation.
+	 * @param key Key to remove.
+	 * @param returnResultsOfType Type to return.
+	 * @return A list of the records which have been removed from the database if returnResults is true, null otherwise.
 	 */
 	public List<E> removeByKey(WritePolicy writePolicy, Object key, ReturnType returnResultsOfType) {
 		if (writePolicy == null) {
