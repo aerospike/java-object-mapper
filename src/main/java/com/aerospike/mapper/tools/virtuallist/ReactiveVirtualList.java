@@ -17,7 +17,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
-public class ReactiveVirtualList<E> {
+public class ReactiveVirtualList<E> implements IReactiveVirtualList<E> {
     private final IReactiveAeroMapper reactiveAeroMapper;
     private final ClassCacheEntry<?> owningEntry;
     private final String binName;

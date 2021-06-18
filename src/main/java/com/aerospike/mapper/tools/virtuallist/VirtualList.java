@@ -18,7 +18,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
-public class VirtualList<E> {
+public class VirtualList<E> implements IVirtualList<E> {
 	private final IAeroMapper mapper;
 	private final ClassCacheEntry<?> owningEntry;
 	private final String binName;
