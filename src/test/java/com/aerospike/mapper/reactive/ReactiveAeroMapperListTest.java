@@ -2,19 +2,19 @@ package com.aerospike.mapper.reactive;
 
 import com.aerospike.mapper.annotations.*;
 import com.aerospike.mapper.tools.ReactiveAeroMapper;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import reactor.core.scheduler.Schedulers;
 
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class ReactiveAeroMapperListTest extends ReactiveAeroMapperBaseTest {
 
     private ReactiveAeroMapper reactiveMapper;
 
-    @Before
+    @BeforeEach
     public void setup() {
         reactiveMapper = new ReactiveAeroMapper.Builder(reactorClient).build();
         reactorClient.getAerospikeClient().truncate(null, NAMESPACE, "testSet", null);
@@ -212,7 +212,7 @@ public class ReactiveAeroMapperListTest extends ReactiveAeroMapperBaseTest {
         assertEquals(2, container2.value.d);
         assertEquals(0, container2.value.e);
         assertEquals(3, container2.value.f);
-        assertEquals(4, container2.value.g);
+         assertEquals(4, container2.value.g);
     }
 
     @Test

@@ -1,10 +1,8 @@
 package com.aerospike.mapper;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.List;
-
-import org.junit.Test;
 
 import com.aerospike.client.Key;
 import com.aerospike.client.Record;
@@ -14,6 +12,7 @@ import com.aerospike.mapper.annotations.AerospikeKey;
 import com.aerospike.mapper.annotations.AerospikeRecord;
 import com.aerospike.mapper.tools.AeroMapper;
 import com.aerospike.mapper.tools.ClassCache;
+import org.junit.jupiter.api.Test;
 
 public class AeroMapperArrayTests extends AeroMapperBaseTest {
 	@AerospikeRecord(namespace = "test", set = "testSet")

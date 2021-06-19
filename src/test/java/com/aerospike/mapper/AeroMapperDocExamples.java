@@ -5,14 +5,14 @@ import com.aerospike.mapper.annotations.*;
 import com.aerospike.mapper.annotations.AerospikeEmbed.EmbedType;
 import com.aerospike.mapper.annotations.AerospikeReference.ReferenceType;
 import com.aerospike.mapper.tools.AeroMapper;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
 
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class AeroMapperDocExamples extends AeroMapperBaseTest {
 
@@ -77,7 +77,7 @@ public class AeroMapperDocExamples extends AeroMapperBaseTest {
 
     private AeroMapper mapper;
 
-    @Before
+    @BeforeEach
     public void setup() {
         mapper = new AeroMapper.Builder(client).build();
         client.truncate(null, NAMESPACE, "people", null);

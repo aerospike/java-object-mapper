@@ -1,20 +1,19 @@
 package com.aerospike.mapper;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-import org.junit.Before;
-import org.junit.Test;
-
 import com.aerospike.mapper.tools.AeroMapper;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class AeroMapperConfigurationYamlTest extends AeroMapperBaseTest {
     private AeroMapper mapper;
 
-    @Before
+    @BeforeEach
     public void setup() {
         mapper = new AeroMapper.Builder(client).build();
         client.truncate(null, NAMESPACE, "testSet", null);

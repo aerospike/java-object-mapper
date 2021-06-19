@@ -1,6 +1,6 @@
 package com.aerospike.mapper;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import com.aerospike.client.AerospikeClient;
 import com.aerospike.client.IAerospikeClient;

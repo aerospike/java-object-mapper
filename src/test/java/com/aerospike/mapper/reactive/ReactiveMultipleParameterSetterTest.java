@@ -4,10 +4,10 @@ import com.aerospike.client.Key;
 import com.aerospike.client.Value;
 import com.aerospike.mapper.annotations.*;
 import com.aerospike.mapper.tools.ReactiveAeroMapper;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import reactor.core.scheduler.Schedulers;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class ReactiveMultipleParameterSetterTest extends ReactiveAeroMapperBaseTest {
 

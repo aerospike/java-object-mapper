@@ -7,7 +7,7 @@ import com.aerospike.mapper.annotations.AerospikeRecord;
 import com.aerospike.mapper.annotations.ParamFrom;
 import com.aerospike.mapper.tools.AeroMapper;
 import com.aerospike.mapper.tools.VirtualList;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
