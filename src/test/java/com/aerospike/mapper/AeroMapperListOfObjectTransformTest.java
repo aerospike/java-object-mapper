@@ -4,8 +4,8 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.aerospike.mapper.annotations.AerospikeEmbed;
 import com.aerospike.mapper.annotations.AerospikeEmbed.EmbedType;
@@ -44,7 +44,7 @@ public class AeroMapperListOfObjectTransformTest extends AeroMapperBaseTest {
 	
     private AeroMapper mapper;
 
-    @Before
+    @BeforeEach
     public void setup() {
         mapper = new AeroMapper.Builder(client).build();
         client.truncate(null, "test", "testSet", null);

@@ -4,8 +4,8 @@ import com.aerospike.mapper.annotations.AerospikeEmbed;
 import com.aerospike.mapper.annotations.AerospikeKey;
 import com.aerospike.mapper.annotations.AerospikeRecord;
 import com.aerospike.mapper.tools.ReactiveAeroMapper;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import reactor.core.scheduler.Schedulers;
 
 import java.util.ArrayList;
@@ -43,7 +43,7 @@ public class ReactiveAeroMapperListOfObjectTransformTest extends ReactiveAeroMap
 
     private ReactiveAeroMapper reactiveMapper;
 
-    @Before
+    @BeforeEach
     public void setup() {
         reactiveMapper = new ReactiveAeroMapper.Builder(reactorClient).build();
         reactorClient.getAerospikeClient().truncate(null, "test", "testSet", null);

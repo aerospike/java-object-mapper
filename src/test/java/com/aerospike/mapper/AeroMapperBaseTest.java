@@ -1,12 +1,9 @@
 package com.aerospike.mapper;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.aerospike.client.async.NioEventLoops;
 import com.aerospike.client.policy.ClientPolicy;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
 
 import com.aerospike.client.AerospikeClient;
 import com.aerospike.client.IAerospikeClient;
@@ -14,13 +11,16 @@ import com.aerospike.mapper.tools.ClassCache;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 
 public abstract class AeroMapperBaseTest {
 
     public static final String NAMESPACE = "test";
     protected static IAerospikeClient client;
 
-    @BeforeClass
+    @BeforeAll
     public static void setupClass() {
         ClientPolicy policy = new ClientPolicy();
         // Set event loops to use in asynchronous commands.
@@ -28,14 +28,14 @@ public abstract class AeroMapperBaseTest {
         client = new AerospikeClient(policy, "localhost", 3000);
     }
 
-    @AfterClass
+    @AfterAll
     public static void cleanupClass() {
         if (client != null) {
             client.close();
         }
     }
     
-    @Before
+    @BeforeEach
     public void clearCache() {
 		ClassCache.getInstance().clear();
     }

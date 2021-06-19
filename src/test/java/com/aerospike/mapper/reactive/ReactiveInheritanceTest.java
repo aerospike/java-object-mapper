@@ -4,7 +4,7 @@ import com.aerospike.mapper.annotations.AerospikeEmbed;
 import com.aerospike.mapper.annotations.AerospikeKey;
 import com.aerospike.mapper.annotations.AerospikeRecord;
 import com.aerospike.mapper.tools.ReactiveAeroMapper;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import reactor.core.scheduler.Schedulers;
 
 public class ReactiveInheritanceTest extends ReactiveAeroMapperBaseTest {

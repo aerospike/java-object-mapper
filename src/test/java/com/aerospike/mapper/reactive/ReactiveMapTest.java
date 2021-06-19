@@ -3,13 +3,13 @@ package com.aerospike.mapper.reactive;
 import com.aerospike.mapper.annotations.AerospikeKey;
 import com.aerospike.mapper.annotations.AerospikeRecord;
 import com.aerospike.mapper.tools.ReactiveAeroMapper;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import reactor.core.scheduler.Schedulers;
 
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class ReactiveMapTest extends ReactiveAeroMapperBaseTest {
     @AerospikeRecord(namespace = "test", set = "A")

@@ -5,20 +5,20 @@ import com.aerospike.client.query.KeyRecord;
 import com.aerospike.mapper.model.Person;
 import com.aerospike.mapper.model.PersonDifferentNames;
 import com.aerospike.mapper.tools.ReactiveAeroMapper;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import reactor.core.scheduler.Schedulers;
 
 import java.util.Date;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 public class ReactiveAeroMapperTest extends ReactiveAeroMapperBaseTest {
 
     private ReactiveAeroMapper reactiveMapper;
 
-    @Before
+    @BeforeEach
     public void setup() {
         reactiveMapper = new ReactiveAeroMapper.Builder(reactorClient).build();
         client.truncate(null, NAMESPACE, "people", null);

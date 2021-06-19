@@ -5,12 +5,12 @@ import com.aerospike.client.Value;
 import com.aerospike.mapper.annotations.*;
 import com.aerospike.mapper.annotations.AerospikeEmbed.EmbedType;
 import com.aerospike.mapper.tools.AeroMapper;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class KeysViaMethodTest extends AeroMapperBaseTest {
 

@@ -26,7 +26,7 @@
 		<maven.javadoc.plugin.version>3.3.0</maven.javadoc.plugin.version>
 		<maven.gpg.plugin.version>1.6</maven.gpg.plugin.version>
 		<maven.compiler.plugin.version>3.8.1</maven.compiler.plugin.version>
-		<junit.version>4.13.2</junit.version>
+		<maven-surefire-plugin.version>3.0.0-M5</maven-surefire-plugin.version>
 		<javax.validation-api.version>2.0.1.Final</javax.validation-api.version>
 		<aerospike-client.version>5.1.2</aerospike-client.version>
 		<aerospike-reactor.version>5.0.7</aerospike-reactor.version>
@@ -35,6 +35,7 @@
 		<lombok.version>1.18.18</lombok.version>
 		<reactor-test.version>3.4.5</reactor-test.version>
 		<blockhound.version>1.0.6.RELEASE</blockhound.version>
+		<junit-jupiter.version>5.7.2</junit-jupiter.version>
 	</properties>
 
 	<licenses>
@@ -73,13 +74,6 @@
 	</distributionManagement>
 
 	<dependencies>
-		<dependency>
-			<groupId>junit</groupId>
-			<artifactId>junit</artifactId>
-			<version>${junit.version}</version>
-			<scope>test</scope>
-		</dependency>
-		
 		<!-- https://mvnrepository.com/artifact/javax.validation/validation-api -->
 		<dependency>
 		    <groupId>javax.validation</groupId>
@@ -138,7 +132,7 @@
 		<dependency>
 			<groupId>org.junit.jupiter</groupId>
 			<artifactId>junit-jupiter</artifactId>
-			<version>RELEASE</version>
+			<version>${junit-jupiter.version}</version>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
@@ -201,6 +195,11 @@
 					<source>${maven.compiler.source}</source>
 					<target>${maven.compiler.target}</target>
 				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<version>${maven-surefire-plugin.version}</version>
 			</plugin>
 		</plugins>
 		<resources>
