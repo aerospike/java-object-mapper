@@ -4,11 +4,11 @@ import com.aerospike.mapper.annotations.AerospikeKey;
 import com.aerospike.mapper.annotations.AerospikeRecord;
 import com.aerospike.mapper.annotations.AerospikeReference;
 import com.aerospike.mapper.tools.ReactiveAeroMapper;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import reactor.core.scheduler.Schedulers;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 public class ReactiveArrayTest extends ReactiveAeroMapperBaseTest {
     @AerospikeRecord(namespace = "test", set = "A")

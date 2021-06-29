@@ -8,20 +8,20 @@ import com.aerospike.mapper.annotations.AerospikeRecord;
 import com.aerospike.mapper.annotations.FromAerospike;
 import com.aerospike.mapper.annotations.ToAerospike;
 import com.aerospike.mapper.tools.ReactiveAeroMapper;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import reactor.core.scheduler.Schedulers;
 
 import java.util.Arrays;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class ReactiveAeroMapperCustomConverterTest extends ReactiveAeroMapperBaseTest {
 
     private ReactiveAeroMapper reactiveMapper;
 
-    @Before
+    @BeforeEach
     public void setup() {
         reactiveMapper = new ReactiveAeroMapper.Builder(reactorClient).build();
         reactorClient.getAerospikeClient().truncate(null, NAMESPACE, "poker", null);

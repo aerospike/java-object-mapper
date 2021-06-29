@@ -2,14 +2,14 @@ package com.aerospike.mapper.reactive;
 
 import com.aerospike.mapper.annotations.*;
 import com.aerospike.mapper.tools.ReactiveAeroMapper;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import reactor.core.scheduler.Schedulers;
 
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class ReactiveConstructorTest extends ReactiveAeroMapperBaseTest {
 

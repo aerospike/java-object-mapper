@@ -5,8 +5,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import org.junit.Test;
-
 import com.aerospike.client.policy.Policy;
 import com.aerospike.client.policy.Replica;
 import com.aerospike.mapper.annotations.AerospikeBin;
@@ -19,6 +17,7 @@ import com.aerospike.mapper.annotations.ParamFrom;
 import com.aerospike.mapper.tools.AeroMapper;
 import com.aerospike.mapper.tools.virtuallist.ReturnType;
 import com.aerospike.mapper.tools.virtuallist.VirtualList;
+import org.junit.jupiter.api.Test;
 
 public class AdTechUseCaseExampleTest extends AeroMapperBaseTest {
 	@AerospikeRecord(namespace = "test", set = "user")

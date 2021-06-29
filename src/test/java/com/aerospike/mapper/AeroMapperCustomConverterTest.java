@@ -1,12 +1,9 @@
 package com.aerospike.mapper;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.Arrays;
 import java.util.List;
-
-import org.junit.Before;
-import org.junit.Test;
 
 import com.aerospike.client.AerospikeException;
 import com.aerospike.client.Key;
@@ -16,12 +13,14 @@ import com.aerospike.mapper.annotations.AerospikeRecord;
 import com.aerospike.mapper.annotations.FromAerospike;
 import com.aerospike.mapper.annotations.ToAerospike;
 import com.aerospike.mapper.tools.AeroMapper;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class AeroMapperCustomConverterTest extends AeroMapperBaseTest {
 
     private AeroMapper mapper;
 
-    @Before
+    @BeforeEach
     public void setup() {
         mapper = new AeroMapper.Builder(client).build();
         client.truncate(null, NAMESPACE, "poker", null);

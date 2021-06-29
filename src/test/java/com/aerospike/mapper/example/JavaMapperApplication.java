@@ -1,9 +1,5 @@
 package com.aerospike.mapper.example;
 
-import static org.junit.Assert.assertEquals;
-
-import org.junit.Test;
-
 import com.aerospike.client.AerospikeClient;
 import com.aerospike.client.IAerospikeClient;
 import com.aerospike.mapper.example.model.Customer;
@@ -11,6 +7,9 @@ import com.aerospike.mapper.tools.AeroMapper;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class JavaMapperApplication extends ApplicationBase {
 	@Test
