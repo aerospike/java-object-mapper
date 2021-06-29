@@ -300,13 +300,9 @@ public class ReactiveVirtualList<E> extends BaseVirtualList<E> implements IReact
      */
     @SuppressWarnings("unchecked")
     public Mono<E> get(Policy policy, int index) {
-        if (policy == null) {
-            policy = new Policy(owningEntry.getReadPolicy());
-        }
-
         Interactor interactor = virtualListInteractors.getIndexInteractor(index);
         return reactiveAeroMapper.getReactorClient()
-                .operate(null, key, interactor.getOperation())
+                .operate(getWritePolicy(policy), key, interactor.getOperation())
                 .map(keyRecord -> (E)interactor.getResult(keyRecord.record.getList(binName)));
     }
 
@@ -316,12 +312,9 @@ public class ReactiveVirtualList<E> extends BaseVirtualList<E> implements IReact
      * @return The size of the list.
      */
     public Mono<Long> size(Policy policy) {
-        if (policy == null) {
-            policy = new Policy(owningEntry.getReadPolicy());
-        }
         Interactor interactor = virtualListInteractors.getSizeInteractor();
         return reactiveAeroMapper.getReactorClient()
-                .operate(null, key, interactor.getOperation())
+                .operate(getWritePolicy(policy), key, interactor.getOperation())
                 .map(keyRecord -> keyRecord.record.getLong(binName));
     }
 

@@ -295,12 +295,8 @@ public class VirtualList<E> extends BaseVirtualList<E> implements IVirtualList<E
 	 */
 	@SuppressWarnings("unchecked")
 	public E get(Policy policy, int index) {
-    	if (policy == null) {
-    		policy = new Policy(owningEntry.getReadPolicy());
-    	}
-
     	Interactor interactor = virtualListInteractors.getIndexInteractor(index);
-		Record record = this.mapper.getClient().operate(null, key, interactor.getOperation());
+		Record record = this.mapper.getClient().operate(getWritePolicy(policy), key, interactor.getOperation());
 		return (E)interactor.getResult(record.getList(binName));
 	}
 
@@ -310,11 +306,8 @@ public class VirtualList<E> extends BaseVirtualList<E> implements IVirtualList<E
 	 * @return The size of the list.
 	 */
 	public long size(Policy policy) {
-    	if (policy == null) {
-    		policy = new Policy(owningEntry.getReadPolicy());
-    	}
     	Interactor interactor = virtualListInteractors.getSizeInteractor();
-		Record record = this.mapper.getClient().operate(null, key, interactor.getOperation());
+		Record record = this.mapper.getClient().operate(getWritePolicy(policy), key, interactor.getOperation());
 		return record.getLong(binName);
 	}
 

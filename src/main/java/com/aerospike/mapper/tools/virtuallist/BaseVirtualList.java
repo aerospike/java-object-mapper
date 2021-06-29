@@ -3,6 +3,8 @@ package com.aerospike.mapper.tools.virtuallist;
 import com.aerospike.client.AerospikeException;
 import com.aerospike.client.Key;
 import com.aerospike.client.Value;
+import com.aerospike.client.policy.Policy;
+import com.aerospike.client.policy.WritePolicy;
 import com.aerospike.mapper.annotations.AerospikeEmbed;
 import com.aerospike.mapper.tools.ClassCache;
 import com.aerospike.mapper.tools.ClassCacheEntry;
@@ -81,5 +83,12 @@ public abstract class BaseVirtualList<E> {
             return null;
         }
         return set;
+    }
+
+    protected WritePolicy getWritePolicy(Policy policy) {
+        if (policy == null) {
+            return new WritePolicy(owningEntry.getWritePolicy());
+        }
+        return new WritePolicy(policy);
     }
 }
