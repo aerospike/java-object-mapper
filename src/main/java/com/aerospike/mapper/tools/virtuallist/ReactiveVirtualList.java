@@ -45,7 +45,8 @@ public class ReactiveVirtualList<E> extends BaseVirtualList<E> implements IReact
     }
 
     /**
-     * Get items from the list matching the specified value. If the list is mapped to a MAP in Aerospike, the start value and end value will dictate the range of values to get,
+     * Get items from the list matching the specified value. If the list is mapped to a MAP in Aerospike,
+     * the start value and end value will dictate the range of values to get,
      * inclusive of the start, exclusive of the end.
      * <p/>
      * If the list is mapped to a LIST in Aerospike however, the start and end range represent values to get from the list.
@@ -60,7 +61,8 @@ public class ReactiveVirtualList<E> extends BaseVirtualList<E> implements IReact
     }
 
     /**
-     * Get items from the list matching the specified value. If the list is mapped to a MAP in Aerospike, the start value and end value will dictate the range of values to get,
+     * Get items from the list matching the specified value. If the list is mapped to a MAP in Aerospike,
+     * the start value and end value will dictate the range of values to get,
      * inclusive of the start, exclusive of the end.
      * <p/>
      * If the list is mapped to a LIST in Aerospike however, the start and end range represent values to get from the list.
@@ -71,6 +73,7 @@ public class ReactiveVirtualList<E> extends BaseVirtualList<E> implements IReact
      * @param returnResultsOfType Type to return.
      * @return A list of the records which match the given value range.
      */
+    @SuppressWarnings("unchecked")
     public Mono<E> getByValueRange(WritePolicy writePolicy, Object startValue, Object endValue, ReturnType returnResultsOfType) {
         if (writePolicy == null) {
             writePolicy = new WritePolicy(owningEntry.getWritePolicy());
@@ -85,7 +88,8 @@ public class ReactiveVirtualList<E> extends BaseVirtualList<E> implements IReact
     }
 
     /**
-     * Get items from the list matching the specified key range. If the list is mapped to a MAP in Aerospike, the start key and end key will dictate the range of keys to get,
+     * Get items from the list matching the specified key range. If the list is mapped to a MAP in Aerospike,
+     * the start key and end key will dictate the range of keys to get,
      * inclusive of the start, exclusive of the end.
      * <p/>
      * If the list is mapped to a LIST in Aerospike however, the start and end range represent values to get from the list.
@@ -100,7 +104,8 @@ public class ReactiveVirtualList<E> extends BaseVirtualList<E> implements IReact
     }
 
     /**
-     * Get items from the list matching the specified key range. If the list is mapped to a MAP in Aerospike, the start key and end key will dictate the range of keys to get,
+     * Get items from the list matching the specified key range. If the list is mapped to a MAP in Aerospike,
+     * the start key and end key will dictate the range of keys to get,
      * inclusive of the start, exclusive of the end.
      * <p/>
      * If the list is mapped to a LIST in Aerospike however, the start and end range represent values to get from the list.
@@ -111,6 +116,7 @@ public class ReactiveVirtualList<E> extends BaseVirtualList<E> implements IReact
      * @param returnResultsOfType Type to return.
      * @return A list of the records which match the given key range.
      */
+    @SuppressWarnings("unchecked")
     public Mono<E> getByKeyRange(WritePolicy writePolicy, Object startKey, Object endKey, ReturnType returnResultsOfType) {
         if (writePolicy == null) {
             writePolicy = new WritePolicy(owningEntry.getWritePolicy());
@@ -125,7 +131,8 @@ public class ReactiveVirtualList<E> extends BaseVirtualList<E> implements IReact
     }
 
     /**
-     * Remove items from the list matching the specified key. If the list is mapped to a MAP in Aerospike, the key will dictate the map key to be removed.
+     * Remove items from the list matching the specified key. If the list is mapped to a MAP in Aerospike,
+     * the key will dictate the map key to be removed.
      * <p/>
      * If the list is mapped to a LIST in Aerospike however, the given key will use as the value to remove from the list.
      * <p/>
@@ -138,7 +145,8 @@ public class ReactiveVirtualList<E> extends BaseVirtualList<E> implements IReact
     }
 
     /**
-     * Remove items from the list matching the specified key. If the list is mapped to a MAP in Aerospike, the key will dictate the map key to be removed.
+     * Remove items from the list matching the specified key. If the list is mapped to a MAP in Aerospike,
+     * the key will dictate the map key to be removed.
      * <p/>
      * If the list is mapped to a LIST in Aerospike however, the given key will use as the value to remove from the list.
      * <p/>
@@ -147,6 +155,7 @@ public class ReactiveVirtualList<E> extends BaseVirtualList<E> implements IReact
      * @param returnResultsOfType Type to return.
      * @return A list of the records which have been removed from the database if returnResults is true, null otherwise.
      */
+    @SuppressWarnings("unchecked")
     public Mono<E> removeByKey(WritePolicy writePolicy, Object key, ReturnType returnResultsOfType) {
         if (writePolicy == null) {
             writePolicy = new WritePolicy(owningEntry.getWritePolicy());
@@ -161,7 +170,8 @@ public class ReactiveVirtualList<E> extends BaseVirtualList<E> implements IReact
     }
 
     /**
-     * Remove items from the list matching the specified value. If the list is mapped to a MAP in Aerospike, the start value and end value will dictate the range of values to be removed,
+     * Remove items from the list matching the specified value. If the list is mapped to a MAP in Aerospike,
+     * the start value and end value will dictate the range of values to be removed,
      * inclusive of the start, exclusive of the end.
      * <p/>
      * If the list is mapped to a LIST in Aerospike however, the start and end range represent values to removed from the list.
@@ -176,7 +186,8 @@ public class ReactiveVirtualList<E> extends BaseVirtualList<E> implements IReact
     }
 
     /**
-     * Remove items from the list matching the specified value. If the list is mapped to a MAP in Aerospike, the start value and end value will dictate the range of values to be removed,
+     * Remove items from the list matching the specified value. If the list is mapped to a MAP in Aerospike,
+     * the start value and end value will dictate the range of values to be removed,
      * inclusive of the start, exclusive of the end.
      * <p/>
      * If the list is mapped to a LIST in Aerospike however, the start and end range represent values to be removed from the list.
@@ -187,6 +198,7 @@ public class ReactiveVirtualList<E> extends BaseVirtualList<E> implements IReact
      * @param returnResultsOfType Type to return.
      * @return A list of the records which have been removed from the database if returnResults is true, null otherwise.
      */
+    @SuppressWarnings("unchecked")
     public Mono<E> removeByValueRange(WritePolicy writePolicy, Object startValue, Object endValue, ReturnType returnResultsOfType) {
         if (writePolicy == null) {
             writePolicy = new WritePolicy(owningEntry.getWritePolicy());
@@ -201,7 +213,8 @@ public class ReactiveVirtualList<E> extends BaseVirtualList<E> implements IReact
     }
 
     /**
-     * Remove items from the list matching the specified key. If the list is mapped to a MAP in Aerospike, the start key and end key will dictate the range of keys to be removed,
+     * Remove items from the list matching the specified key. If the list is mapped to a MAP in Aerospike,
+     * the start key and end key will dictate the range of keys to be removed,
      * inclusive of the start, exclusive of the end.
      * <p/>
      * If the list is mapped to a LIST in Aerospike however, the start and end range represent values to be removed from the list.
@@ -209,14 +222,16 @@ public class ReactiveVirtualList<E> extends BaseVirtualList<E> implements IReact
      * @param startKey Start key of the range to remove.
      * @param endKey End key of the range to remove.
      * @param returnResultsOfType Type to return.
-     * @return The result of the method is a list of the records which have been removed from the database if returnResults is true, null otherwise.
+     * @return The result of the method is a list of the records which have been removed from the database if
+     * returnResults is true, null otherwise.
      */
     public Mono<E> removeByKeyRange(Object startKey, Object endKey, ReturnType returnResultsOfType) {
         return this.removeByKeyRange(null, startKey, endKey, returnResultsOfType);
     }
 
     /**
-     * Remove items from the list matching the specified key. If the list is mapped to a MAP in Aerospike, the start key and end key will dictate the range of keys to be removed,
+     * Remove items from the list matching the specified key. If the list is mapped to a MAP in Aerospike,
+     * the start key and end key will dictate the range of keys to be removed,
      * inclusive of the start, exclusive of the end.
      * <p/>
      * If the list is mapped to a LIST in Aerospike however, the start and end range represent values to be removed from the list.
@@ -225,8 +240,10 @@ public class ReactiveVirtualList<E> extends BaseVirtualList<E> implements IReact
      * @param startKey Start key of the range to remove.
      * @param endKey End key of the range to remove.
      * @param returnResultsOfType Type to return.
-     * @return The result of the method is a list of the records which have been removed from the database if returnResults is true, null otherwise.
+     * @return The result of the method is a list of the records which have been removed from the database if
+     * returnResults is true, null otherwise.
      */
+    @SuppressWarnings("unchecked")
     public Mono<E> removeByKeyRange(WritePolicy writePolicy, Object startKey, Object endKey, ReturnType returnResultsOfType) {
         if (writePolicy == null) {
             writePolicy = new WritePolicy(owningEntry.getWritePolicy());
@@ -281,6 +298,7 @@ public class ReactiveVirtualList<E> extends BaseVirtualList<E> implements IReact
      * @param index The index to get the item from.
      * @return The element to get from the virtual list.
      */
+    @SuppressWarnings("unchecked")
     public Mono<E> get(Policy policy, int index) {
         if (policy == null) {
             policy = new Policy(owningEntry.getReadPolicy());
