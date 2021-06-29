@@ -1,91 +1,33 @@
 package com.aerospike.mapper.tools.virtuallist;
 
-import com.aerospike.client.AerospikeException;
 import com.aerospike.client.Key;
 import com.aerospike.client.Value;
 import com.aerospike.client.policy.Policy;
 import com.aerospike.client.policy.RecordExistsAction;
 import com.aerospike.client.policy.WritePolicy;
-import com.aerospike.mapper.annotations.AerospikeEmbed;
-import com.aerospike.mapper.tools.*;
-import com.aerospike.mapper.tools.mappers.ListMapper;
-import com.aerospike.mapper.tools.utils.TypeUtils;
+import com.aerospike.mapper.tools.IReactiveAeroMapper;
 import reactor.core.publisher.Mono;
 
 import javax.validation.constraints.NotNull;
-import java.util.List;
-import java.util.Map;
-import java.util.function.Function;
 
-public class ReactiveVirtualList<E> implements IReactiveVirtualList<E> {
+public class ReactiveVirtualList<E> extends BaseVirtualList<E> implements IReactiveVirtualList<E> {
+
     private final IReactiveAeroMapper reactiveAeroMapper;
-    private final ClassCacheEntry<?> owningEntry;
-    private final String binName;
-    private final ListMapper listMapper;
-    private Key key;
-    private final VirtualListInteractors virtualListInteractors;
 
-    public ReactiveVirtualList(@NotNull IReactiveAeroMapper reactiveAeroMapper, @NotNull Class<?> owningClazz, @NotNull Object key, @NotNull String binName, @NotNull Class<E> clazz) {
-        this(reactiveAeroMapper, null, owningClazz, key, binName, clazz);
-    }
-
-    public ReactiveVirtualList(@NotNull IReactiveAeroMapper reactiveAeroMapper, @NotNull Object object, @NotNull String binName, @NotNull Class<E> clazz) {
-        this(reactiveAeroMapper, object, null, null, binName, clazz);
-    }
-
-    private ReactiveVirtualList(@NotNull IReactiveAeroMapper reactiveAeroMapper, Object object, Class<?> owningClazz, Object key, @NotNull String binName, @NotNull Class<E> clazz) {
-        if (object != null) {
-            owningClazz = object.getClass();
-        }
-        this.owningEntry = ClassCache.getInstance().loadClass(owningClazz, reactiveAeroMapper);
-        Object aerospikeKey;
-        if (key == null) {
-            aerospikeKey = owningEntry.getKey(object);
-        } else {
-            aerospikeKey = owningEntry.translateKeyToAerospikeKey(key);
-        }
-        ClassCacheEntry<?> elementEntry = ClassCache.getInstance().loadClass(clazz, reactiveAeroMapper);
+    public ReactiveVirtualList(@NotNull IReactiveAeroMapper reactiveAeroMapper, @NotNull Class<?> owningClazz,
+                               @NotNull Object key, @NotNull String binName, @NotNull Class<E> clazz) {
+        super(reactiveAeroMapper, null, owningClazz, key, binName, clazz);
         this.reactiveAeroMapper = reactiveAeroMapper;
-        this.binName = binName;
-        ValueType value = owningEntry.getValueFromBinName(binName);
-        if (value == null) {
-            throw new AerospikeException(String.format("Class %s has no bin called %s", clazz.getSimpleName(), binName));
-        }
-        String set = owningEntry.getSetName();
-        if ("".equals(set)) {
-            // Use the null set
-            set = null;
-        }
-        this.key = new Key(owningEntry.getNamespace(), set, Value.get(aerospikeKey));
+    }
 
-        TypeUtils.AnnotatedType annotatedType = value.getAnnotatedType();
-        AerospikeEmbed embed = annotatedType.getAnnotation(AerospikeEmbed.class);
-        if (embed == null) {
-            throw new AerospikeException(String.format("Bin %s on class %s is not specified as a embedded", binName, clazz.getSimpleName()));
-        }
-        AerospikeEmbed.EmbedType listType = embed.type() == AerospikeEmbed.EmbedType.DEFAULT ? AerospikeEmbed.EmbedType.LIST : embed.type();
-        AerospikeEmbed.EmbedType elementType = embed.elementType() == AerospikeEmbed.EmbedType.DEFAULT ? AerospikeEmbed.EmbedType.MAP : embed.elementType();
-        Class<?> binClazz = value.getType();
-        if (!(binClazz.isArray() || (Map.class.isAssignableFrom(binClazz)) || List.class.isAssignableFrom(binClazz))) {
-            throw new AerospikeException(String.format("Bin %s on class %s is not a collection class", binName, clazz.getSimpleName()));
-        }
-
-        TypeMapper typeMapper = value.getTypeMapper();
-        if (typeMapper instanceof ListMapper) {
-            listMapper = ((ListMapper) typeMapper);
-        } else {
-            throw new AerospikeException(String.format("Bin %s on class %s is not mapped via a listMapper. This is unexpected", binName, clazz.getSimpleName()));
-        }
-        Function<Object, Object> instanceMapper = listMapper::fromAerospikeInstanceFormat;
-        this.virtualListInteractors = new VirtualListInteractors(binName, listType, elementEntry, instanceMapper, reactiveAeroMapper);
+    public ReactiveVirtualList(@NotNull IReactiveAeroMapper reactiveAeroMapper, @NotNull Object object,
+                               @NotNull String binName, @NotNull Class<E> clazz) {
+        super(reactiveAeroMapper, object, null, null, binName, clazz);
+        this.reactiveAeroMapper = reactiveAeroMapper;
     }
 
     public ReactiveVirtualList<E> changeKey(Object newKey) {
-        String set = owningEntry.getSetName();
-        if ("".equals(set)) {
-            // Use the null set
-            set = null;
-        }
+        String set = alignedSet();
         this.key = new Key(owningEntry.getNamespace(), set, Value.get(owningEntry.translateKeyToAerospikeKey(key)));
         return this;
     }
