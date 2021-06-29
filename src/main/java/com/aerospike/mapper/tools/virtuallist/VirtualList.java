@@ -1,94 +1,34 @@
 package com.aerospike.mapper.tools.virtuallist;
 
-import com.aerospike.client.AerospikeException;
 import com.aerospike.client.Key;
 import com.aerospike.client.Record;
 import com.aerospike.client.Value;
 import com.aerospike.client.policy.Policy;
 import com.aerospike.client.policy.RecordExistsAction;
 import com.aerospike.client.policy.WritePolicy;
-import com.aerospike.mapper.annotations.AerospikeEmbed;
-import com.aerospike.mapper.annotations.AerospikeEmbed.EmbedType;
-import com.aerospike.mapper.tools.*;
-import com.aerospike.mapper.tools.utils.TypeUtils.AnnotatedType;
-import com.aerospike.mapper.tools.mappers.ListMapper;
+import com.aerospike.mapper.tools.IAeroMapper;
 
 import javax.validation.constraints.NotNull;
 import java.util.List;
-import java.util.Map;
-import java.util.function.Function;
 
-public class VirtualList<E> implements IVirtualList<E> {
+public class VirtualList<E> extends BaseVirtualList<E> implements IVirtualList<E> {
+
 	private final IAeroMapper mapper;
-	private final ClassCacheEntry<?> owningEntry;
-	private final String binName;
-	private final ListMapper listMapper;
-	private Key key;
-	private final VirtualListInteractors virtualListInteractors;
 
-	public VirtualList(@NotNull IAeroMapper mapper, @NotNull Class<?> owningClazz, @NotNull Object key, @NotNull String binName, @NotNull Class<E> clazz) {
-		this(mapper, null, owningClazz, key, binName, clazz);
+	public VirtualList(@NotNull IAeroMapper mapper, @NotNull Class<?> owningClazz, @NotNull Object key,
+					   @NotNull String binName, @NotNull Class<E> clazz) {
+		super(mapper, null, owningClazz, key, binName, clazz);
+		this.mapper = mapper;
 	}
 
-	public VirtualList(@NotNull IAeroMapper mapper, @NotNull Object object, @NotNull String binName, @NotNull Class<E> clazz) {
-		this(mapper, object, null, null, binName, clazz);
-	}
-
-	private VirtualList(@NotNull IAeroMapper mapper, Object object, Class<?> owningClazz, Object key, @NotNull String binName, @NotNull Class<E> clazz) {
-		if (object != null) {
-			owningClazz = object.getClass();
-		}
-        this.owningEntry = ClassCache.getInstance().loadClass(owningClazz, mapper);
-        Object aerospikeKey;
-        if (key == null) {
-        	aerospikeKey = owningEntry.getKey(object);
-        }
-        else {
-        	aerospikeKey = owningEntry.translateKeyToAerospikeKey(key);
-        }
-		ClassCacheEntry<?> elementEntry = ClassCache.getInstance().loadClass(clazz, mapper);
-        this.mapper = mapper;
-        this.binName = binName;
-		ValueType value = owningEntry.getValueFromBinName(binName);
-        if (value == null) {
-        	throw new AerospikeException(String.format("Class %s has no bin called %s", clazz.getSimpleName(), binName));
-        }
-        String set = owningEntry.getSetName();
-        if ("".equals(set)) {
-        	// Use the null set
-        	set = null;
-        }
-        this.key = new Key(owningEntry.getNamespace(), set, Value.get(aerospikeKey));
-
-        AnnotatedType annotatedType = value.getAnnotatedType();
-        AerospikeEmbed embed = annotatedType.getAnnotation(AerospikeEmbed.class);
-        if (embed == null) {
-        	throw new AerospikeException(String.format("Bin %s on class %s is not specified as a embedded", binName, clazz.getSimpleName()));
-        }
-		EmbedType listType = embed.type() == EmbedType.DEFAULT ? EmbedType.LIST : embed.type();
-		EmbedType elementType = embed.elementType() == EmbedType.DEFAULT ? EmbedType.MAP : embed.elementType();
-        Class<?> binClazz = value.getType();
-        if (!(binClazz.isArray() || (Map.class.isAssignableFrom(binClazz)) || List.class.isAssignableFrom(binClazz))) {
-        	throw new AerospikeException(String.format("Bin %s on class %s is not a collection class", binName, clazz.getSimpleName()));
-        }
-        
-        TypeMapper typeMapper = value.getTypeMapper();
-        if (typeMapper instanceof ListMapper) {
-        	listMapper = ((ListMapper)typeMapper);
-        }
-        else {
-        	throw new AerospikeException(String.format("Bin %s on class %s is not mapped via a listMapper. This is unexpected", binName, clazz.getSimpleName()));
-        }
-		Function<Object, Object> instanceMapper = listMapper::fromAerospikeInstanceFormat;
-		this.virtualListInteractors = new VirtualListInteractors(binName, listType, elementEntry, instanceMapper, mapper);
+	public VirtualList(@NotNull IAeroMapper mapper, @NotNull Object object, @NotNull String binName,
+					   @NotNull Class<E> clazz) {
+		super(mapper, object, null, null, binName, clazz);
+		this.mapper = mapper;
 	}
 	
 	public VirtualList<E> changeKey(Object newKey) {
-        String set = owningEntry.getSetName();
-        if ("".equals(set)) {
-        	// Use the null set
-        	set = null;
-        }
+        String set = alignedSet();
         this.key = new Key(owningEntry.getNamespace(), set, Value.get(owningEntry.translateKeyToAerospikeKey(key)));
         return this;
 	}
@@ -106,7 +46,8 @@ public class VirtualList<E> implements IVirtualList<E> {
 	}
 
 	/**
-	 * Get items from the list matching the specified value. If the list is mapped to a MAP in Aerospike, the start value and end value will dictate the range of values to get,
+	 * Get items from the list matching the specified value. If the list is mapped to a MAP in Aerospike,
+	 * the start value and end value will dictate the range of values to get,
 	 * inclusive of the start, exclusive of the end.
 	 * <p/>
 	 * If the list is mapped to a LIST in Aerospike however, the start and end range represent values to get from the list.
@@ -121,7 +62,8 @@ public class VirtualList<E> implements IVirtualList<E> {
 	}
 
 	/**
-	 * Get items from the list matching the specified value. If the list is mapped to a MAP in Aerospike, the start value and end value will dictate the range of values to get,
+	 * Get items from the list matching the specified value. If the list is mapped to a MAP in Aerospike,
+	 * the start value and end value will dictate the range of values to get,
 	 * inclusive of the start, exclusive of the end.
 	 * <p/>
 	 * If the list is mapped to a LIST in Aerospike however, the start and end range represent values to get from the list.
@@ -132,6 +74,7 @@ public class VirtualList<E> implements IVirtualList<E> {
 	 * @param returnResultsOfType Type to return.
 	 * @return A list of the records which match the given value range.
 	 */
+	@SuppressWarnings("unchecked")
 	public List<E> getByValueRange(WritePolicy writePolicy, Object startValue, Object endValue, ReturnType returnResultsOfType) {
     	if (writePolicy == null) {
         	writePolicy = new WritePolicy(owningEntry.getWritePolicy());
@@ -145,7 +88,8 @@ public class VirtualList<E> implements IVirtualList<E> {
 	}
 
 	/**
-	 * Get items from the list matching the specified key range. If the list is mapped to a MAP in Aerospike, the start key and end key will dictate the range of keys to get,
+	 * Get items from the list matching the specified key range. If the list is mapped to a MAP in Aerospike,
+	 * the start key and end key will dictate the range of keys to get,
 	 * inclusive of the start, exclusive of the end.
 	 * <p/>
 	 * If the list is mapped to a LIST in Aerospike however, the start and end range represent values to get from the list.
@@ -160,7 +104,8 @@ public class VirtualList<E> implements IVirtualList<E> {
 	}
 
 	/**
-	 * Get items from the list matching the specified key range. If the list is mapped to a MAP in Aerospike, the start key and end key will dictate the range of keys to get,
+	 * Get items from the list matching the specified key range. If the list is mapped to a MAP in Aerospike,
+	 * the start key and end key will dictate the range of keys to get,
 	 * inclusive of the start, exclusive of the end.
 	 * <p/>
 	 * If the list is mapped to a LIST in Aerospike however, the start and end range represent values to get from the list.
@@ -171,6 +116,7 @@ public class VirtualList<E> implements IVirtualList<E> {
 	 * @param returnResultsOfType Type to return.
 	 * @return A list of the records which match the given key range.
 	 */
+	@SuppressWarnings("unchecked")
 	public List<E> getByKeyRange(WritePolicy writePolicy, Object startKey, Object endKey, ReturnType returnResultsOfType) {
 		if (writePolicy == null) {
 			writePolicy = new WritePolicy(owningEntry.getWritePolicy());
@@ -184,7 +130,8 @@ public class VirtualList<E> implements IVirtualList<E> {
 	}
 
 	/**
-	 * Remove items from the list matching the specified key. If the list is mapped to a MAP in Aerospike, the key will dictate the map key to be removed.
+	 * Remove items from the list matching the specified key. If the list is mapped to a MAP in Aerospike,
+	 * the key will dictate the map key to be removed.
 	 * <p/>
 	 * If the list is mapped to a LIST in Aerospike however, the given key will use as the value to remove from the list.
 	 * <p/>
@@ -197,7 +144,8 @@ public class VirtualList<E> implements IVirtualList<E> {
 	}
 
 	/**
-	 * Remove items from the list matching the specified key. If the list is mapped to a MAP in Aerospike, the key will dictate the map key to be removed.
+	 * Remove items from the list matching the specified key. If the list is mapped to a MAP in Aerospike,
+	 * the key will dictate the map key to be removed.
 	 * <p/>
 	 * If the list is mapped to a LIST in Aerospike however, the given key will use as the value to remove from the list.
 	 * <p/>
@@ -206,6 +154,7 @@ public class VirtualList<E> implements IVirtualList<E> {
 	 * @param returnResultsOfType Type to return.
 	 * @return A list of the records which have been removed from the database if returnResults is true, null otherwise.
 	 */
+	@SuppressWarnings("unchecked")
 	public List<E> removeByKey(WritePolicy writePolicy, Object key, ReturnType returnResultsOfType) {
 		if (writePolicy == null) {
 			writePolicy = new WritePolicy(owningEntry.getWritePolicy());
@@ -219,7 +168,8 @@ public class VirtualList<E> implements IVirtualList<E> {
 	}
 
 	/**
-	 * Remove items from the list matching the specified value. If the list is mapped to a MAP in Aerospike, the start value and end value will dictate the range of values to be removed,
+	 * Remove items from the list matching the specified value. If the list is mapped to a MAP in Aerospike,
+	 * the start value and end value will dictate the range of values to be removed,
 	 * inclusive of the start, exclusive of the end.
 	 * <p/>
 	 * If the list is mapped to a LIST in Aerospike however, the start and end range represent values to removed from the list.
@@ -234,7 +184,8 @@ public class VirtualList<E> implements IVirtualList<E> {
 	}
 
 	/**
-	 * Remove items from the list matching the specified value. If the list is mapped to a MAP in Aerospike, the start value and end value will dictate the range of values to be removed,
+	 * Remove items from the list matching the specified value. If the list is mapped to a MAP in Aerospike,
+	 * the start value and end value will dictate the range of values to be removed,
 	 * inclusive of the start, exclusive of the end.
 	 * <p/>
 	 * If the list is mapped to a LIST in Aerospike however, the start and end range represent values to be removed from the list.
@@ -245,6 +196,7 @@ public class VirtualList<E> implements IVirtualList<E> {
 	 * @param returnResultsOfType Type to return.
 	 * @return A list of the records which have been removed from the database if returnResults is true, null otherwise.
 	 */
+	@SuppressWarnings("unchecked")
 	public List<E> removeByValueRange(WritePolicy writePolicy, Object startValue, Object endValue, ReturnType returnResultsOfType) {
     	if (writePolicy == null) {
         	writePolicy = new WritePolicy(owningEntry.getWritePolicy());
@@ -258,7 +210,8 @@ public class VirtualList<E> implements IVirtualList<E> {
 	}
 	
 	/**
-	 * Remove items from the list matching the specified key. If the list is mapped to a MAP in Aerospike, the start key and end key will dictate the range of keys to be removed,
+	 * Remove items from the list matching the specified key. If the list is mapped to a MAP in Aerospike,
+	 * the start key and end key will dictate the range of keys to be removed,
 	 * inclusive of the start, exclusive of the end.
 	 * <p/>
 	 * If the list is mapped to a LIST in Aerospike however, the start and end range represent values to be removed from the list.
@@ -266,14 +219,16 @@ public class VirtualList<E> implements IVirtualList<E> {
 	 * @param startKey Start key of the range to remove.
 	 * @param endKey End key of the range to remove.
 	 * @param returnResultsOfType Type to return.
-	 * @return The result of the method is a list of the records which have been removed from the database if returnResults is true, null otherwise.
+	 * @return The result of the method is a list of the records which have been removed from the database if
+	 * returnResults is true, null otherwise.
 	 */
 	public List<E> removeByKeyRange(Object startKey, Object endKey, ReturnType returnResultsOfType) {
 		return this.removeByKeyRange(null, startKey, endKey, returnResultsOfType);
 	}
 
 	/**
-	 * Remove items from the list matching the specified key. If the list is mapped to a MAP in Aerospike, the start key and end key will dictate the range of keys to be removed,
+	 * Remove items from the list matching the specified key. If the list is mapped to a MAP in Aerospike,
+	 * the start key and end key will dictate the range of keys to be removed,
 	 * inclusive of the start, exclusive of the end.
 	 * <p/>
 	 * If the list is mapped to a LIST in Aerospike however, the start and end range represent values to be removed from the list.
@@ -282,8 +237,10 @@ public class VirtualList<E> implements IVirtualList<E> {
 	 * @param startKey Start key of the range to remove.
 	 * @param endKey End key of the range to remove.
 	 * @param returnResultsOfType Type to return.
-	 * @return The result of the method is a list of the records which have been removed from the database if returnResults is true, null otherwise.
+	 * @return The result of the method is a list of the records which have been removed from the database if
+	 * returnResults is true, null otherwise.
 	 */
+	@SuppressWarnings("unchecked")
 	public List<E> removeByKeyRange(WritePolicy writePolicy, Object startKey, Object endKey, ReturnType returnResultsOfType) {
     	if (writePolicy == null) {
         	writePolicy = new WritePolicy(owningEntry.getWritePolicy());
@@ -336,13 +293,10 @@ public class VirtualList<E> implements IVirtualList<E> {
 	 * @param index The index to get the item from.
 	 * @return The element to get from the virtual list.
 	 */
+	@SuppressWarnings("unchecked")
 	public E get(Policy policy, int index) {
-    	if (policy == null) {
-    		policy = new Policy(owningEntry.getReadPolicy());
-    	}
-
     	Interactor interactor = virtualListInteractors.getIndexInteractor(index);
-		Record record = this.mapper.getClient().operate(null, key, interactor.getOperation());
+		Record record = this.mapper.getClient().operate(getWritePolicy(policy), key, interactor.getOperation());
 		return (E)interactor.getResult(record.getList(binName));
 	}
 
@@ -352,11 +306,8 @@ public class VirtualList<E> implements IVirtualList<E> {
 	 * @return The size of the list.
 	 */
 	public long size(Policy policy) {
-    	if (policy == null) {
-    		policy = new Policy(owningEntry.getReadPolicy());
-    	}
     	Interactor interactor = virtualListInteractors.getSizeInteractor();
-		Record record = this.mapper.getClient().operate(null, key, interactor.getOperation());
+		Record record = this.mapper.getClient().operate(getWritePolicy(policy), key, interactor.getOperation());
 		return record.getLong(binName);
 	}
 
