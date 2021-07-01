@@ -1,24 +1,46 @@
 package com.aerospike.mapper.tools;
 
-import com.aerospike.client.AerospikeException;
-import com.aerospike.client.Bin;
-import com.aerospike.client.Record;
-import com.aerospike.client.cdt.MapOrder;
-import com.aerospike.client.policy.*;
-import com.aerospike.mapper.annotations.*;
-import com.aerospike.mapper.tools.TypeUtils.AnnotatedType;
-import com.aerospike.mapper.tools.configuration.BinConfig;
-import com.aerospike.mapper.tools.configuration.ClassConfig;
-import com.aerospike.mapper.tools.configuration.KeyConfig;
-import org.apache.commons.lang3.StringUtils;
-
-import javax.validation.constraints.NotNull;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
+
+import javax.validation.constraints.NotNull;
+
+import org.apache.commons.lang3.StringUtils;
+
+import com.aerospike.client.AerospikeException;
+import com.aerospike.client.Bin;
+import com.aerospike.client.Record;
+import com.aerospike.client.cdt.MapOrder;
+import com.aerospike.client.policy.BatchPolicy;
+import com.aerospike.client.policy.Policy;
+import com.aerospike.client.policy.QueryPolicy;
+import com.aerospike.client.policy.ScanPolicy;
+import com.aerospike.client.policy.WritePolicy;
+import com.aerospike.mapper.annotations.AerospikeBin;
+import com.aerospike.mapper.annotations.AerospikeConstructor;
+import com.aerospike.mapper.annotations.AerospikeExclude;
+import com.aerospike.mapper.annotations.AerospikeGetter;
+import com.aerospike.mapper.annotations.AerospikeKey;
+import com.aerospike.mapper.annotations.AerospikeOrdinal;
+import com.aerospike.mapper.annotations.AerospikeRecord;
+import com.aerospike.mapper.annotations.AerospikeSetter;
+import com.aerospike.mapper.annotations.ParamFrom;
+import com.aerospike.mapper.tools.TypeUtils.AnnotatedType;
+import com.aerospike.mapper.tools.configuration.BinConfig;
+import com.aerospike.mapper.tools.configuration.ClassConfig;
+import com.aerospike.mapper.tools.configuration.KeyConfig;
+import com.aerospike.mapper.tools.exceptions.NotAnnotatedRecordException;
 
 public class ClassCacheEntry<T> {
 	
@@ -76,7 +98,7 @@ public class ClassCacheEntry<T> {
 
 		AerospikeRecord recordDescription = clazz.getAnnotation(AerospikeRecord.class);
 		if (recordDescription == null && config == null) {
-			throw new AerospikeException("Class " + clazz.getName() + " is not augmented by the @AerospikeRecord annotation");
+			throw new NotAnnotatedRecordException("Class " + clazz.getName() + " is not augmented by the @AerospikeRecord annotation");
 		}
 		else if (recordDescription != null) {
 			this.namespace = ParserUtils.getInstance().get(recordDescription.namespace());
@@ -476,7 +498,7 @@ public class ClassCacheEntry<T> {
 			boolean isKey = false;
 			BinConfig thisBin = getBinFromField(thisField);
 			if (thisField.isAnnotationPresent(AerospikeKey.class) || (!StringUtils.isBlank(keyField) && keyField.equals(thisField.getName()))) {
-				if (thisField.isAnnotationPresent(AerospikeExclude.class) || (thisBin != null && thisBin.isExclude())) {
+				if (thisField.isAnnotationPresent(AerospikeExclude.class) || (thisBin != null && thisBin.isExclude() != null && thisBin.isExclude())) {
 					throw new AerospikeException("Class " + clazz.getName() + " cannot have a field which is both a key and excluded.");
 				}
 				if (key != null) {
