@@ -6,6 +6,7 @@ import java.lang.reflect.Method;
 import com.aerospike.client.AerospikeException;
 import com.aerospike.mapper.annotations.FromAerospike;
 import com.aerospike.mapper.annotations.ToAerospike;
+import com.aerospike.mapper.tools.utils.TypeUtils;
 
 public class GenericTypeMapper extends TypeMapper {
 	private Class<?> mappedClass;

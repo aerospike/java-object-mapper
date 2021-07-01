@@ -1,4 +1,4 @@
-package com.aerospike.mapper.tools;
+package com.aerospike.mapper.tools.utils;
 
 import com.aerospike.client.AerospikeException;
 import com.aerospike.client.cdt.ListReturnType;
@@ -9,11 +9,15 @@ import com.aerospike.mapper.annotations.AerospikeEnum;
 import com.aerospike.mapper.annotations.AerospikeRecord;
 import com.aerospike.mapper.annotations.AerospikeReference;
 import com.aerospike.mapper.annotations.AerospikeReference.ReferenceType;
+import com.aerospike.mapper.tools.ClassCache;
+import com.aerospike.mapper.tools.IBaseAeroMapper;
+import com.aerospike.mapper.tools.TypeMapper;
 import com.aerospike.mapper.tools.configuration.BinConfig;
 import com.aerospike.mapper.tools.configuration.ClassConfig;
 import com.aerospike.mapper.tools.configuration.EmbedConfig;
 import com.aerospike.mapper.tools.configuration.ReferenceConfig;
 import com.aerospike.mapper.tools.mappers.*;
+import com.aerospike.mapper.tools.virtuallist.ReturnType;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
@@ -84,8 +88,7 @@ public class TypeUtils {
 			return null;
 		}
 	}
-	
-	// package visibility
+
 	/**
 	 * This method adds a new type mapper into the system. This type mapper will replace any other mappers
 	 * registered for the same class. If there was another mapper for the same type already registered,
@@ -94,7 +97,7 @@ public class TypeUtils {
 	 * @param mapper The new type mapper to create.
 	 * @return Return existing mapper registered for the requested class, null in case there isn't one.
 	 */
-	static TypeMapper addTypeMapper(Class<?> clazz, TypeMapper mapper) {
+	public static TypeMapper addTypeMapper(Class<?> clazz, TypeMapper mapper) {
 		TypeMapper returnValue = mappers.get(clazz);
 		mappers.put(clazz, mapper);
 		return returnValue;

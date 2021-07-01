@@ -2,7 +2,7 @@ package com.aerospike.mapper.reactive;
 
 import com.aerospike.mapper.annotations.*;
 import com.aerospike.mapper.tools.ReactiveAeroMapper;
-import com.aerospike.mapper.tools.ReactiveVirtualList;
+import com.aerospike.mapper.tools.virtuallist.ReactiveVirtualList;
 import org.junit.jupiter.api.Test;
 import reactor.core.scheduler.Schedulers;
 

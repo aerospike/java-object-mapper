@@ -4,7 +4,7 @@ import com.aerospike.client.policy.BatchPolicy;
 import com.aerospike.client.policy.Policy;
 import com.aerospike.client.policy.WritePolicy;
 import com.aerospike.client.reactor.IAerospikeReactorClient;
-import com.aerospike.mapper.tools.converters.MappingConverter;
+import com.aerospike.mapper.tools.virtuallist.ReactiveVirtualList;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -56,6 +56,4 @@ public interface IReactiveAeroMapper extends IBaseAeroMapper {
     <T> Mono<Void> find(@NotNull Class<T> clazz, Function<T, Boolean> function);
 
     IAerospikeReactorClient getReactorClient();
-
-    MappingConverter getMappingConverter();
 }
