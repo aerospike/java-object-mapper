@@ -5,6 +5,7 @@ import com.aerospike.client.cdt.ListReturnType;
 import com.aerospike.client.cdt.MapReturnType;
 import com.aerospike.mapper.annotations.AerospikeEmbed;
 import com.aerospike.mapper.annotations.AerospikeEmbed.EmbedType;
+import com.aerospike.mapper.annotations.AerospikeEnum;
 import com.aerospike.mapper.annotations.AerospikeRecord;
 import com.aerospike.mapper.annotations.AerospikeReference;
 import com.aerospike.mapper.annotations.AerospikeReference.ReferenceType;
@@ -135,7 +136,15 @@ public class TypeUtils {
 				typeMapper = new FloatMapper();
 			}
 			else if (clazz.isEnum()) {
-				typeMapper = new EnumMapper((Class<? extends Enum<?>>) clazz);
+				String aeroEnumField = "";
+				if (type != null && type.getAnnotations() != null) {
+					AerospikeEnum aeroEnum = type.getAnnotation(AerospikeEnum.class);
+					if (aeroEnum != null) {
+						aeroEnumField = aeroEnum.enumField();
+					}
+				}
+				typeMapper = new EnumMapper((Class<? extends Enum<?>>) clazz, aeroEnumField);
+				addToMap = false;
 			}
 			else if (clazz.isArray()) {
 				Class<?> elementType = clazz.getComponentType();
