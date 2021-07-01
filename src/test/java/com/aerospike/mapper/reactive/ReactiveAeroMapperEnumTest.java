@@ -1,13 +1,15 @@
 package com.aerospike.mapper.reactive;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+import org.junit.jupiter.api.Test;
+
 import com.aerospike.mapper.annotations.AerospikeEnum;
 import com.aerospike.mapper.annotations.AerospikeKey;
 import com.aerospike.mapper.annotations.AerospikeRecord;
 import com.aerospike.mapper.tools.ReactiveAeroMapper;
-import org.junit.Test;
-import reactor.core.scheduler.Schedulers;
 
-import static org.junit.Assert.assertEquals;
+import reactor.core.scheduler.Schedulers;
 
 public class ReactiveAeroMapperEnumTest extends ReactiveAeroMapperBaseTest {
 

@@ -1,12 +1,13 @@
 package com.aerospike.mapper;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+import org.junit.jupiter.api.Test;
+
 import com.aerospike.mapper.annotations.AerospikeEnum;
 import com.aerospike.mapper.annotations.AerospikeKey;
 import com.aerospike.mapper.annotations.AerospikeRecord;
 import com.aerospike.mapper.tools.AeroMapper;
-import org.junit.Test;
-
-import static org.junit.Assert.assertEquals;
 
 public class AeroMapperEnumTest extends AeroMapperBaseTest {
 
