@@ -26,7 +26,7 @@ public class BinConfig {
 	public String getSetter() {
 		return setter;
 	}
-	public Boolean isExcluded() {
+	public Boolean isExclude() {
 		return exclude;
 	}
 	public Integer getOrdinal() {

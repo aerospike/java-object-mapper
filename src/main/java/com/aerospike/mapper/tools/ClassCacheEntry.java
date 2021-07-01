@@ -476,7 +476,7 @@ public class ClassCacheEntry<T> {
 			boolean isKey = false;
 			BinConfig thisBin = getBinFromField(thisField);
 			if (thisField.isAnnotationPresent(AerospikeKey.class) || (!StringUtils.isBlank(keyField) && keyField.equals(thisField.getName()))) {
-				if (thisField.isAnnotationPresent(AerospikeExclude.class) || (thisBin != null && thisBin.isExcluded())) {
+				if (thisField.isAnnotationPresent(AerospikeExclude.class) || (thisBin != null && thisBin.isExclude())) {
 					throw new AerospikeException("Class " + clazz.getName() + " cannot have a field which is both a key and excluded.");
 				}
 				if (key != null) {
@@ -488,7 +488,7 @@ public class ClassCacheEntry<T> {
 				isKey = true;
 			}
 
-			if (thisField.isAnnotationPresent(AerospikeExclude.class) || (thisBin != null && thisBin.isExcluded() != null && thisBin.isExcluded())) {
+			if (thisField.isAnnotationPresent(AerospikeExclude.class) || (thisBin != null && thisBin.isExclude() != null && thisBin.isExclude())) {
 				// This field should be excluded from being stored in the database. Even keys must be stored
 				continue;
 			}
