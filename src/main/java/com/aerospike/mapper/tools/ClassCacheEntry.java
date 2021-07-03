@@ -36,7 +36,6 @@ import com.aerospike.mapper.annotations.AerospikeOrdinal;
 import com.aerospike.mapper.annotations.AerospikeRecord;
 import com.aerospike.mapper.annotations.AerospikeSetter;
 import com.aerospike.mapper.annotations.ParamFrom;
-import com.aerospike.mapper.tools.TypeUtils.AnnotatedType;
 import com.aerospike.mapper.tools.utils.ParserUtils;
 import com.aerospike.mapper.tools.utils.TypeUtils;
 import com.aerospike.mapper.tools.utils.TypeUtils.AnnotatedType;
