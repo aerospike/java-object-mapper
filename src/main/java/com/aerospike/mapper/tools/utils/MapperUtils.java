@@ -1,6 +1,9 @@
-package com.aerospike.mapper.tools;
+package com.aerospike.mapper.tools.utils;
 
 import com.aerospike.client.AerospikeException;
+import com.aerospike.mapper.tools.ClassCache;
+import com.aerospike.mapper.tools.ClassCacheEntry;
+import com.aerospike.mapper.tools.IBaseAeroMapper;
 import org.apache.commons.lang3.StringUtils;
 
 public class MapperUtils {

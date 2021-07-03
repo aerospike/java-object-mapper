@@ -15,8 +15,8 @@ import com.aerospike.mapper.annotations.AerospikeOrdinal;
 import com.aerospike.mapper.annotations.AerospikeRecord;
 import com.aerospike.mapper.annotations.ParamFrom;
 import com.aerospike.mapper.tools.AeroMapper;
-import com.aerospike.mapper.tools.ReturnType;
-import com.aerospike.mapper.tools.VirtualList;
+import com.aerospike.mapper.tools.virtuallist.ReturnType;
+import com.aerospike.mapper.tools.virtuallist.VirtualList;
 import org.junit.jupiter.api.Test;
 
 public class AdTechUseCaseExampleTest extends AeroMapperBaseTest {
