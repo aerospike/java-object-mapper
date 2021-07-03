@@ -35,13 +35,13 @@ public abstract class ValueType {
 	public int getMaximumVersion() {return maximumVersion;}
 	protected void setVersion(AerospikeVersion version) {
 		if (version.min() <= 0) {
-			throw new AerospikeException("Minimum version must be greater than or equal to 1, not " +version.min());
+			throw new AerospikeException("Minimum version must be greater than or equal to 1, not " + version.min());
 		}
 		if (version.max() <= 0) {
-			throw new AerospikeException("Maximum version must be greater than or equal to 1, not " +version.max());
+			throw new AerospikeException("Maximum version must be greater than or equal to 1, not " + version.max());
 		}
 		if (version.min() > version.max()) {
-			throw new AerospikeException("Maximum version must be greater than or equal to the minumum version, not " +version.max());
+			throw new AerospikeException("Maximum version must be greater than or equal to the minumum version, not " + version.max());
 		}
 		this.maximumVersion = version.max();
 		this.minimumVersion = version.min();
