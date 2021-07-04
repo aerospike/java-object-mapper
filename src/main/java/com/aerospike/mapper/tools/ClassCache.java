@@ -13,6 +13,7 @@ import com.aerospike.client.policy.QueryPolicy;
 import com.aerospike.client.policy.ScanPolicy;
 import com.aerospike.client.policy.WritePolicy;
 import com.aerospike.client.reactor.IAerospikeReactorClient;
+import com.aerospike.mapper.annotations.AerospikeKey;
 import com.aerospike.mapper.tools.configuration.ClassConfig;
 import com.aerospike.mapper.tools.configuration.Configuration;
 import com.aerospike.mapper.tools.utils.TypeUtils;
@@ -52,6 +53,14 @@ public class ClassCache {
 		}
 		ClassCacheEntry<T> entry = cacheMap.get(clazz);
 		if (entry == null) {
+			
+			// Construct a class cache entry. This must be done in 2 steps, one creating the entry and the other finalizing construction of 
+			// it. This is to cater for classes  which recursively refer to themselves, such as
+			// 	public static class A {
+			//      @AerospikeKey
+			//      public int id;
+			//      public A a;
+			//  }
 			try {
 				entry = new ClassCacheEntry<>(clazz, mapper, getClassConfig(clazz),
 						determinePolicy(clazz, PolicyType.READ),
@@ -64,6 +73,14 @@ public class ClassCache {
 				return null;
 			}
 			cacheMap.put(clazz, entry);
+			try {
+				entry.construct();
+			}
+			catch (IllegalArgumentException iae) {
+				cacheMap.remove(clazz);
+				return null;
+			}
+			
 		}
 		return entry;
 	}
