@@ -21,6 +21,10 @@ public class ThreadLocalKeySaver {
 	}
 	
 	public static Key get() {
-		return threadLocalKeys.get().getLast();
+		Deque<Key> keys = threadLocalKeys.get();
+		if (keys.isEmpty()) {
+			return null;
+		}
+		return keys.getLast();
 	}
 }

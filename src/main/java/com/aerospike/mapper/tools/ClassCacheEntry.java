@@ -40,8 +40,8 @@ public class ClassCacheEntry<T> {
 	private ValueType key;
 	private String keyName = null;
 	private final TreeMap<String, ValueType> values = new TreeMap<>();
-	private final ClassCacheEntry<?> superClazz;
-	private final int binCount;
+	private ClassCacheEntry<?> superClazz;
+	private int binCount;
 	private final IBaseAeroMapper mapper;
 	private Map<Integer, String> ordinals = null;
 	private Set<String> fieldsWithOrdinals = null;
@@ -54,6 +54,8 @@ public class ClassCacheEntry<T> {
 	private String[] constructorParamBins;
 	private Object[] constructorParamDefaults;
 	private Constructor<T> constructor;
+	private final ClassConfig config;
+	
 	/** 
 	 * When there are subclasses, we need to store the type information to be able to re-create an instance of the same type. As the
 	 * class name can be verbose, we provide the ability to set a string representing the class name. This string must be unique for all classes.
@@ -90,7 +92,10 @@ public class ClassCacheEntry<T> {
 			this.durableDelete = recordDescription.durableDelete();
 			this.shortenedClassName = recordDescription.shortName();
 		}
-		
+		this.config = config;
+	}
+	
+	public ClassCacheEntry construct() {			
 		if (config != null) {
 			config.validate();
 			this.overrideSettings(config);
@@ -111,6 +116,7 @@ public class ClassCacheEntry<T> {
 		ClassCache.getInstance().setStoredName(this, this.shortenedClassName);
 		
 		this.checkRecordSettingsAgainstSuperClasses();
+		return this;
 	}
 	public Policy getReadPolicy() {
 		return readPolicy;
@@ -832,6 +838,10 @@ public class ClassCacheEntry<T> {
 			javaValuesMap.remove(constructorParamBins[i]);
 		}
 		result = constructor.newInstance(args);
+		// Once the object has been created, we need to store it against the current key so that
+		// recursive objects resolve correctly
+		LoadedObjectResolver.setObjectForCurrentKey(result);
+
 		for (String field : javaValuesMap.keySet()) {
 			ValueType value = this.values.get(field);
 			Object object = javaValuesMap.get(field);
