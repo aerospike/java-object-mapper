@@ -1,15 +1,5 @@
 package com.aerospike.mapper.tools.converters;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-
-import javax.validation.constraints.NotNull;
-
 import com.aerospike.client.AerospikeException;
 import com.aerospike.client.IAerospikeClient;
 import com.aerospike.client.Key;
@@ -19,13 +9,15 @@ import com.aerospike.client.policy.BatchPolicy;
 import com.aerospike.mapper.tools.ClassCache;
 import com.aerospike.mapper.tools.ClassCacheEntry;
 import com.aerospike.mapper.tools.DeferredObjectLoader;
-import com.aerospike.mapper.tools.DeferredObjectLoader.DeferredObjectSetter;
 import com.aerospike.mapper.tools.IBaseAeroMapper;
-import com.aerospike.mapper.tools.LoadedObjectResolver;
 import com.aerospike.mapper.tools.ThreadLocalKeySaver;
 import com.aerospike.mapper.tools.TypeMapper;
 import com.aerospike.mapper.tools.utils.MapperUtils;
 import com.aerospike.mapper.tools.utils.TypeUtils;
+
+import javax.validation.constraints.NotNull;
+import java.util.List;
+import java.util.Map;
 
 public class MappingConverter {
 
@@ -203,64 +195,48 @@ public class MappingConverter {
         BatchPolicy batchPolicyClone = new BatchPolicy(batchPolicy);
 
         while (!deferredObjects.isEmpty()) {
-        	List<Key> keyList = new ArrayList<>();
-        	List<ClassCacheEntry> classCacheEntryList = new ArrayList<>();
-        	
-        	// Resolve any objects which have been seen before
-        	for (Iterator<DeferredObjectSetter> iterator = deferredObjects.iterator(); iterator.hasNext();) {
-        		DeferredObjectSetter thisObjectSetter = iterator.next();
+            int size = deferredObjects.size();
+
+            ClassCacheEntry<?>[] classCaches = new ClassCacheEntry<?>[size];
+            Key[] keys = new Key[size];
+
+            for (int i = 0; i < size; i++) {
+                DeferredObjectLoader.DeferredObjectSetter thisObjectSetter = deferredObjects.get(i);
                 DeferredObjectLoader.DeferredObject deferredObject = thisObjectSetter.getObject();
                 Class<?> clazz = deferredObject.getType();
                 ClassCacheEntry<?> entry = MapperUtils.getEntryAndValidateNamespace(clazz, mapper);
+                classCaches[i] = entry;
 
-                Key aKey;
                 if (deferredObject.isDigest()) {
-                    aKey = new Key(entry.getNamespace(), (byte[])deferredObject.getKey(), entry.getSetName(), null);
+                    keys[i] = new Key(entry.getNamespace(), (byte[])deferredObject.getKey(), entry.getSetName(), null);
                 }
                 else {
-                    aKey = new Key(entry.getNamespace(), entry.getSetName(), Value.get(entry.translateKeyToAerospikeKey(deferredObject.getKey())));
+                    keys[i] = new Key(entry.getNamespace(), entry.getSetName(), Value.get(entry.translateKeyToAerospikeKey(deferredObject.getKey())));
                 }
-                
-                Object result = LoadedObjectResolver.get(aKey);
-                if (result != null) {
-                    thisObjectSetter.getSetter().setValue(result);
-                    iterator.remove();
-                }
-                else {
-                	keyList.add(aKey);
-                	classCacheEntryList.add(entry);
-                }
-        	}
+            }
 
-        	int size = keyList.size();
-        	if (size > 0) {
-	
-	            Key[] keys = keyList.toArray(new Key[0]);
-	
-	
-	            // Load the data
-	            if (keys.length <= 2) {
-	                // Just single-thread these keys for speed
-	                batchPolicyClone.maxConcurrentThreads = 1;
-	            }
-	            else {
-	                batchPolicyClone.maxConcurrentThreads = batchPolicy.maxConcurrentThreads;
-	            }
-	            Record[] records = aerospikeClient.get(batchPolicyClone, keys);
-	
-	            for (int i = 0; i < size; i++) {
-	                DeferredObjectLoader.DeferredObjectSetter thisObjectSetter = deferredObjects.get(i);
-	                try {
-	                    ThreadLocalKeySaver.save(keys[i]);
-	                    Object result = records[i] == null ? null : convertToObject((Class) thisObjectSetter.getObject().getType(), records[i], classCacheEntryList.get(i), false);
-	                    thisObjectSetter.getSetter().setValue(result);
-	                } catch (ReflectiveOperationException e) {
-	                    throw new AerospikeException(e);
-	                } finally {
-	                    ThreadLocalKeySaver.clear();
-	                }
-	            }
-        	}
+            // Load the data
+            if (keys.length <= 2) {
+                // Just single-thread these keys for speed
+                batchPolicyClone.maxConcurrentThreads = 1;
+            }
+            else {
+                batchPolicyClone.maxConcurrentThreads = batchPolicy.maxConcurrentThreads;
+            }
+            Record[] records = aerospikeClient.get(batchPolicyClone, keys);
+
+            for (int i = 0; i < size; i++) {
+                DeferredObjectLoader.DeferredObjectSetter thisObjectSetter = deferredObjects.get(i);
+                try {
+                    ThreadLocalKeySaver.save(keys[i]);
+                    Object result = records[i] == null ? null : convertToObject((Class) thisObjectSetter.getObject().getType(), records[i], classCaches[i], false);
+                    thisObjectSetter.getSetter().setValue(result);
+                } catch (ReflectiveOperationException e) {
+                    throw new AerospikeException(e);
+                } finally {
+                    ThreadLocalKeySaver.clear();
+                }
+            }
             deferredObjects = DeferredObjectLoader.getAndClear();
         }
     }
