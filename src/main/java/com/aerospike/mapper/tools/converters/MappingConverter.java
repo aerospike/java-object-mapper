@@ -148,14 +148,15 @@ public class MappingConverter {
      * @throws AerospikeException an AerospikeException will be thrown in case of an encountering a ReflectiveOperationException.
      */
     public <T> T convertToObject(Class<T> clazz, Map<String, Object> record) {
-        try {
+//        try {
             ClassCacheEntry<T> entry = ClassCache.getInstance().loadClass(clazz, mapper);
-            T result = clazz.getConstructor().newInstance();
-            entry.hydrateFromMap(record, result);
+//            T result = clazz.getConstructor().newInstance();
+            T result = entry.constructAndHydrate(record);
+//            entry.hydrateFromMap(record, result);
             return result;
-        } catch (ReflectiveOperationException e) {
-            throw new AerospikeException(e);
-        }
+//        } catch (ReflectiveOperationException e) {
+//            throw new AerospikeException(e);
+//        }
     }
 
     /**

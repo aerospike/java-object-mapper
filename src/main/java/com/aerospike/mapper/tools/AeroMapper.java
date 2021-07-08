@@ -1,5 +1,17 @@
 package com.aerospike.mapper.tools;
 
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.lang.reflect.Array;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Function;
+
+import javax.validation.constraints.NotNull;
+
+import org.apache.commons.lang3.StringUtils;
+
 import com.aerospike.client.AerospikeException;
 import com.aerospike.client.Bin;
 import com.aerospike.client.IAerospikeClient;
@@ -24,15 +36,6 @@ import com.aerospike.mapper.tools.virtuallist.VirtualList;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import org.apache.commons.lang3.StringUtils;
-
-import javax.validation.constraints.NotNull;
-import java.io.File;
-import java.io.IOException;
-import java.lang.reflect.Array;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.function.Function;
 
 public class AeroMapper implements IAeroMapper {
 

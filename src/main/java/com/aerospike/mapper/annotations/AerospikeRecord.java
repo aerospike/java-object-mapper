@@ -20,4 +20,8 @@ public @interface AerospikeRecord {
 	int version() default 1;
 	boolean sendKey() default false;
 	boolean durableDelete() default false;
+	
+	String factoryClass() default "";
+	String factoryMethod() default "";
+
 }

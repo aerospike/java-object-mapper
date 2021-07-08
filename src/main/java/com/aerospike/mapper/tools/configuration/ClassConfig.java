@@ -19,6 +19,8 @@ public class ClassConfig {
 	private Boolean durableDelete;
 	private KeyConfig key;
 	private String shortName;
+	private String factoryClass;
+	private String factoryMethod;
 	private final List<BinConfig> bins;
 	
 	public ClassConfig() {
@@ -66,6 +68,19 @@ public class ClassConfig {
 	}
 	public List<BinConfig> getBins() {
 		return bins;
+	}
+	
+	public String getFactoryMethod() {
+		return factoryMethod;
+	}
+	public void setFactoryMethod(String facotryMethod) {
+		this.factoryMethod = facotryMethod;
+	}
+	public String getFactoryClass() {
+		return factoryClass;
+	}
+	public void setFactoryClass(String factoryClass) {
+		this.factoryClass = factoryClass;
 	}
 	
 	public BinConfig getBinByName(@NotNull String name) {

@@ -89,9 +89,9 @@ public class PropertyDefinition {
 			if (this.setter == null) {
 				throw new AerospikeException(String.format("Property %s on class %s must have a setter", this.name, className));
 			}
-			if (!TypeUtils.isVoidType(setter.getReturnType())) {
-				throw new AerospikeException(String.format("Setter for property %s on class %s must return void", this.name, className));
-			}
+//			if (!TypeUtils.isVoidType(setter.getReturnType())) {
+//				throw new AerospikeException(String.format("Setter for property %s on class %s must return void", this.name, className));
+//			}
 			if (setter.getParameterCount() == 2) {
 				Parameter param = setter.getParameters()[1];
 				if (param.getType().isAssignableFrom(Key.class)) {
