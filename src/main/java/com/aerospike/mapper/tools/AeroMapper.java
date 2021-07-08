@@ -82,6 +82,17 @@ public class AeroMapper implements IAeroMapper {
         	return this;
         }
 
+        public Builder withConfigurationFile(InputStream ios) throws IOException {
+        	return this.withConfigurationFile(ios, false);
+        }
+
+        public Builder withConfigurationFile(InputStream ios, boolean allowsInvalid) throws IOException {
+        	ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory());
+        	Configuration configuration = objectMapper.readValue(ios, Configuration.class);
+        	this.loadConfiguration(configuration, allowsInvalid);
+        	return this;
+        }
+
         public Builder withConfiguration(String configurationYaml) throws JsonProcessingException {
         	return this.withConfiguration(configurationYaml, false);
         }
