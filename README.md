@@ -614,7 +614,7 @@ Here are how standard Java types are mapped to Aerospike types:
 | Map<?,?> | Map |
 | Object Reference (@AerospikeRecord) | List or Map |
 
-These types are built into the converter. However, if you wish to change them, you can use a (Custom Object Converter)[custom-object-converter]. For example, if you want Dates stored in the database as a string, you could do:
+These types are built into the converter. However, if you wish to change them, you can use a [Custom Object Converter](#Custom-Object-Converters). For example, if you want Dates stored in the database as a string, you could do:
 
 ```java
 public static class DateConverter {

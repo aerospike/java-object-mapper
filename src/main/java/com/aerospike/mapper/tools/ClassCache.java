@@ -16,6 +16,7 @@ import com.aerospike.client.reactor.IAerospikeReactorClient;
 import com.aerospike.mapper.tools.configuration.ClassConfig;
 import com.aerospike.mapper.tools.configuration.Configuration;
 import com.aerospike.mapper.tools.utils.TypeUtils;
+import com.aerospike.mapper.tools.exceptions.NotAnnotatedRecordException;
 
 public class ClassCache {
 	private static final ClassCache instance = new ClassCache();
@@ -61,6 +62,9 @@ public class ClassCache {
 						(ScanPolicy) determinePolicy(clazz, PolicyType.SCAN));
 			}
 			catch (IllegalArgumentException iae) {
+				return null;
+			}
+			catch (NotAnnotatedRecordException nare) {
 				return null;
 			}
 			cacheMap.put(clazz, entry);
