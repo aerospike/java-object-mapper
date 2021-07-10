@@ -388,6 +388,7 @@ public class AeroMapper implements IAeroMapper {
     	return readBatch(batchPolicy, clazz, keys, entry);
     }
 
+    @SuppressWarnings("unchecked")
     private <T> T read(Policy readPolicy, @NotNull Class<T> clazz, @NotNull Key key, @NotNull ClassCacheEntry<T> entry, boolean resolveDependencies) {
     	Object objectForKey = LoadedObjectResolver.get(key);
     	if (objectForKey != null) {

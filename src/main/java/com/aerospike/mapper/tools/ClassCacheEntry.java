@@ -95,7 +95,7 @@ public class ClassCacheEntry<T> {
 		this.config = config;
 	}
 	
-	public ClassCacheEntry construct() {			
+	public ClassCacheEntry<T> construct() {
 		if (config != null) {
 			config.validate();
 			this.overrideSettings(config);
