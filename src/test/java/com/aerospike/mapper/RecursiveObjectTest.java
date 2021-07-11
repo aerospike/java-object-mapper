@@ -17,12 +17,13 @@ public class RecursiveObjectTest extends AeroMapperBaseTest {
 		public int id;
 //		@AerospikeReference(batchLoad = false)
 		public A a;
-		
+
 		A() {}
 
 		public A(String name, int age, int id) {
 			super();
 			this.name = name;
+			this.age = age;
 			this.id = id;
 		}
 	}
@@ -30,7 +31,7 @@ public class RecursiveObjectTest extends AeroMapperBaseTest {
 	@AerospikeRecord(namespace = "test", set = "B")
 	public static class B {
 		@AerospikeKey
-		public int id ;
+		public int id;
 		public A a;
 	}
 	
