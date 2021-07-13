@@ -23,6 +23,7 @@ public class RecursiveObjectTest extends AeroMapperBaseTest {
 		public A(String name, int age, int id) {
 			super();
 			this.name = name;
+			this.age = age;
 			this.id = id;
 		}
 	}
@@ -64,5 +65,20 @@ public class RecursiveObjectTest extends AeroMapperBaseTest {
 		assertEquals(b.a.age, b2.a.age);
 		assertEquals(b.a.name, b2.a.name);
 		assertEquals(b.a.id, b2.a.id);
+	}
+	
+	@Test
+	public void runTest2() {
+		A a1 = new A("a", 10, 1);
+		a1.a = new A("a2", 11, 11);
+
+		AeroMapper mapper = new AeroMapper.Builder(client).build();
+		mapper.save(a1, a1.a);
+		
+		A a2 = mapper.read(A.class, a1.id);
+		assertEquals(a1.age, a2.age);
+		assertEquals(a1.name, a2.name);
+		assertEquals(a1.id, a2.id);
+		assertEquals(a1.a.id, a2.a.id);
 	}
 }
