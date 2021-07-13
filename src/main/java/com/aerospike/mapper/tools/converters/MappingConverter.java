@@ -179,6 +179,13 @@ public class MappingConverter {
         return entry.getMap(instance, false);
     }
 
+    private Key createKey(ClassCacheEntry<?> entry, DeferredObjectLoader.DeferredObject deferredObject) {
+        if (deferredObject.isDigest()) {
+            return new Key(entry.getNamespace(), (byte[])deferredObject.getKey(), entry.getSetName(), null);
+        } else {
+            return new Key(entry.getNamespace(), entry.getSetName(), Value.get(entry.translateKeyToAerospikeKey(deferredObject.getKey())));
+        }
+    }
     /**
      * If an object refers to other objects (eg A has a list of B via references), then reading the object will populate the
      * ids. If configured to do so, these objects can be loaded via a batch load and populated back into the references which
@@ -210,14 +217,7 @@ public class MappingConverter {
                 Class<?> clazz = deferredObject.getType();
                 ClassCacheEntry<?> entry = MapperUtils.getEntryAndValidateNamespace(clazz, mapper);
 
-                Key aKey;
-
-                if (deferredObject.isDigest()) {
-                    aKey = new Key(entry.getNamespace(), (byte[])deferredObject.getKey(), entry.getSetName(), null);
-                } else {
-                    aKey = new Key(entry.getNamespace(), entry.getSetName(), Value.get(entry.translateKeyToAerospikeKey(deferredObject.getKey())));
-                }
-                
+                Key aKey = createKey(entry, deferredObject);
                 Object result = LoadedObjectResolver.get(aKey);
                 if (result != null) {
                     thisObjectSetter.getSetter().setValue(result);
