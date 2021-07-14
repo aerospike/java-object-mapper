@@ -388,7 +388,12 @@ public class AeroMapper implements IAeroMapper {
     	return readBatch(batchPolicy, clazz, keys, entry);
     }
 
+    @SuppressWarnings("unchecked")
     private <T> T read(Policy readPolicy, @NotNull Class<T> clazz, @NotNull Key key, @NotNull ClassCacheEntry<T> entry, boolean resolveDependencies) {
+    	Object objectForKey = LoadedObjectResolver.get(key);
+    	if (objectForKey != null) {
+    		return (T)objectForKey;
+    	}
         if (readPolicy == null) {
             readPolicy = entry.getReadPolicy();
         }
@@ -399,11 +404,13 @@ public class AeroMapper implements IAeroMapper {
         } else {
             try {
                 ThreadLocalKeySaver.save(key);
+                LoadedObjectResolver.begin();
                 return mappingConverter.convertToObject(clazz, record, entry, resolveDependencies);
             } catch (ReflectiveOperationException e) {
                 throw new AerospikeException(e);
             }
             finally {
+                LoadedObjectResolver.end();
                 ThreadLocalKeySaver.clear();
             }
         }

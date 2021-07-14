@@ -54,6 +54,13 @@ public class ClassCache {
 		ClassCacheEntry<T> entry = cacheMap.get(clazz);
 		if (entry == null) {
 			try {
+				// Construct a class cache entry. This must be done in 2 steps, one creating the entry and the other finalizing construction of 
+				// it. This is to cater for classes  which recursively refer to themselves, such as
+				// 	public static class A {
+				//      @AerospikeKey
+				//      public int id;
+				//      public A a;
+				//  }
 				entry = new ClassCacheEntry<>(clazz, mapper, getClassConfig(clazz),
 						determinePolicy(clazz, PolicyType.READ),
 						(WritePolicy) determinePolicy(clazz, PolicyType.WRITE),
@@ -68,6 +75,13 @@ public class ClassCache {
 				return null;
 			}
 			cacheMap.put(clazz, entry);
+			try {
+				entry.construct();
+			}
+			catch (IllegalArgumentException iae) {
+				cacheMap.remove(clazz);
+				return null;
+			}
 		}
 		return entry;
 	}
