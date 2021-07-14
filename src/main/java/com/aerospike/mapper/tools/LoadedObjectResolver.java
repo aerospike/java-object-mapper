@@ -34,9 +34,6 @@ public class LoadedObjectResolver {
 			map.objectMap.put(currentKey, object);
 		}
 	}
-//	public static void add(Object key, Object object) {
-//		threadLocalObjects.get().objectMap.put(key, object);
-//	}
 	
 	public static Object get(Key key) {
 		LoadedObjectMap map = threadLocalObjects.get();

@@ -180,6 +180,13 @@ public class MappingConverter {
         return entry.getMap(instance, false);
     }
 
+    private Key createKey(ClassCacheEntry<?> entry, DeferredObjectLoader.DeferredObject deferredObject) {
+        if (deferredObject.isDigest()) {
+            return new Key(entry.getNamespace(), (byte[])deferredObject.getKey(), entry.getSetName(), null);
+        } else {
+            return new Key(entry.getNamespace(), entry.getSetName(), Value.get(entry.translateKeyToAerospikeKey(deferredObject.getKey())));
+        }
+    }
     /**
      * If an object refers to other objects (eg A has a list of B via references), then reading the object will populate the
      * ids. If configured to do so, these objects can be loaded via a batch load and populated back into the references which
@@ -202,7 +209,7 @@ public class MappingConverter {
 
         while (!deferredObjects.isEmpty()) {
         	List<Key> keyList = new ArrayList<>();
-        	List<ClassCacheEntry> classCacheEntryList = new ArrayList<>();
+        	List<ClassCacheEntry<?>> classCacheEntryList = new ArrayList<>();
         	
         	// Resolve any objects which have been seen before
         	for (Iterator<DeferredObjectSetter> iterator = deferredObjects.iterator(); iterator.hasNext();) {
@@ -211,21 +218,12 @@ public class MappingConverter {
                 Class<?> clazz = deferredObject.getType();
                 ClassCacheEntry<?> entry = MapperUtils.getEntryAndValidateNamespace(clazz, mapper);
 
-                Key aKey;
-
-                if (deferredObject.isDigest()) {
-                    aKey = new Key(entry.getNamespace(), (byte[])deferredObject.getKey(), entry.getSetName(), null);
-                }
-                else {
-                    aKey = new Key(entry.getNamespace(), entry.getSetName(), Value.get(entry.translateKeyToAerospikeKey(deferredObject.getKey())));
-                }
-                
+                Key aKey = createKey(entry, deferredObject);
                 Object result = LoadedObjectResolver.get(aKey);
                 if (result != null) {
                     thisObjectSetter.getSetter().setValue(result);
                     iterator.remove();
-                }
-                else {
+                } else {
                 	keyList.add(aKey);
                 	classCacheEntryList.add(entry);
                 }
@@ -233,16 +231,13 @@ public class MappingConverter {
 
         	int size = keyList.size();
         	if (size > 0) {
-	
 	            Key[] keys = keyList.toArray(new Key[0]);
-	
-	
+
 	            // Load the data
 	            if (keys.length <= 2) {
 	                // Just single-thread these keys for speed
 	                batchPolicyClone.maxConcurrentThreads = 1;
-	            }
-	            else {
+	            } else {
 	                batchPolicyClone.maxConcurrentThreads = batchPolicy.maxConcurrentThreads;
 	            }
 	            Record[] records = aerospikeClient.get(batchPolicyClone, keys);

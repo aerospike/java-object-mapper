@@ -131,7 +131,7 @@ public class ClassCacheEntry<T> {
 		this.config = config;
 	}
 	
-	public ClassCacheEntry construct() {			
+	public ClassCacheEntry<T> construct() {
 		if (config != null) {
 			config.validate();
 			this.overrideSettings(config);
@@ -580,7 +580,6 @@ public class ClassCacheEntry<T> {
 			if (thisMethod.isAnnotationPresent(AerospikeSetter.class) || setterConfig != null) {
 				String setterName = (setterConfig != null) ? setterConfig.getName() : thisMethod.getAnnotation(AerospikeSetter.class).name();
 				String name = ParserUtils.getInstance().get(ParserUtils.getInstance().get(setterName));
-				//String propertyName = 
 				PropertyDefinition thisProperty = getOrCreateProperty(name, properties);
 				thisProperty.setSetter(thisMethod);
 			}
@@ -615,7 +614,7 @@ public class ClassCacheEntry<T> {
 			boolean isKey = false;
 			BinConfig thisBin = getBinFromField(thisField);
 			if (thisField.isAnnotationPresent(AerospikeKey.class) || (!StringUtils.isBlank(keyField) && keyField.equals(thisField.getName()))) {
-				if (thisField.isAnnotationPresent(AerospikeExclude.class) || (thisBin != null && thisBin.isExcluded())) {
+				if (thisField.isAnnotationPresent(AerospikeExclude.class) || (thisBin != null && thisBin.isExclude() != null && thisBin.isExclude())) {
 					throw new AerospikeException("Class " + clazz.getName() + " cannot have a field which is both a key and excluded.");
 				}
 				if (key != null) {
@@ -627,7 +626,7 @@ public class ClassCacheEntry<T> {
 				isKey = true;
 			}
 
-			if (thisField.isAnnotationPresent(AerospikeExclude.class) || (thisBin != null && thisBin.isExcluded() != null && thisBin.isExcluded())) {
+			if (thisField.isAnnotationPresent(AerospikeExclude.class) || (thisBin != null && thisBin.isExclude() != null && thisBin.isExclude())) {
 				// This field should be excluded from being stored in the database. Even keys must be stored
 				continue;
 			}
