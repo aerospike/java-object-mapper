@@ -359,7 +359,7 @@ public class ClassCacheEntry<T> {
 	}
 	
 	private boolean validateFactoryMethod(Method method) {
-		if (this.factoryMethod.equals(method.getName())) {
+		if ((method.getModifiers() & Modifier.STATIC) == Modifier.STATIC && this.factoryMethod.equals(method.getName())) {
 			Parameter[] params = method.getParameters();
 			if (params.length == 0) {
 				return true;
@@ -370,7 +370,7 @@ public class ClassCacheEntry<T> {
 			if (params.length == 1 && Map.class.isAssignableFrom(params[0].getType())) {
 				return true;
 			}
-			if (params.length == 2 && Class.class.isAssignableFrom(params[0].getType()) && Map.class.isAssignableFrom(params[0].getType())) {
+			if (params.length == 2 && Class.class.isAssignableFrom(params[0].getType()) && Map.class.isAssignableFrom(params[1].getType())) {
 				return true;
 			}
 		}
@@ -392,14 +392,12 @@ public class ClassCacheEntry<T> {
 				Class<?> factoryClazzType = Class.forName(this.factoryClass);
 				Method foundMethod = null;
 				for (Method method : factoryClazzType.getDeclaredMethods()) {
-					if ((method.getModifiers() & Modifier.STATIC) == Modifier.STATIC) {
-						if (validateFactoryMethod(method)) {
-							if (foundMethod != null) {
-								throw new AerospikeException(String.format("Factory Class %s defines at least 2 valid factory methods (%s, %s) as a facotry for class %s",
-										this.factoryClass, foundMethod, method, this.clazz.getSimpleName()));
-							}
-							foundMethod = method;
+					if (validateFactoryMethod(method)) {
+						if (foundMethod != null) {
+							throw new AerospikeException(String.format("Factory Class %s defines at least 2 valid factory methods (%s, %s) as a facotry for class %s",
+									this.factoryClass, foundMethod, method, this.clazz.getSimpleName()));
 						}
+						foundMethod = method;
 					}
 				}
 				if (foundMethod == null) {
