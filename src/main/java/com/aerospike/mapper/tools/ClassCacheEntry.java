@@ -86,7 +86,7 @@ public class ClassCacheEntry<T> {
 		CLASS,
 		MAP,
 		CLASS_MAP
-	};
+	}
 	private Method factoryConstructorMethod;
 	private FactoryMethodType factoryConstructorType;
 	
@@ -376,8 +376,7 @@ public class ClassCacheEntry<T> {
 		}
 		return false;
 	}
-	
-	
+
 	private Method findConstructorFactoryMethod() {
 		if (!StringUtils.isBlank(this.factoryClass) || !StringUtils.isBlank(this.factoryMethod)) {
 			// Both must be specified
@@ -394,16 +393,16 @@ public class ClassCacheEntry<T> {
 				for (Method method : factoryClazzType.getDeclaredMethods()) {
 					if (validateFactoryMethod(method)) {
 						if (foundMethod != null) {
-							throw new AerospikeException(String.format("Factory Class %s defines at least 2 valid factory methods (%s, %s) as a facotry for class %s",
+							throw new AerospikeException(String.format("Factory Class %s defines at least 2 valid factory methods (%s, %s) as a factory for class %s",
 									this.factoryClass, foundMethod, method, this.clazz.getSimpleName()));
 						}
 						foundMethod = method;
 					}
 				}
 				if (foundMethod == null) {
-					throw new AerospikeException(String.format("Class %s specificied a factory class of %s and a factory method of %s, but no valid method with that "
+					throw new AerospikeException(String.format("Class %s specified a factory class of %s and a factory method of %s, but no valid method with that "
 							+ "name exists on the class. A valid method must be static, can take no parameters, a single Class parameter, a single Map parameter, or a Class and a Map parameter"
-							+ ", and must return an object which is either an ancestor, descedant or equal to %s", 
+							+ ", and must return an object which is either an ancestor, descendant or equal to %s",
 							clazz.getSimpleName(), this.factoryClass, this.factoryMethod, clazz.getSimpleName()));
 				}
 				return foundMethod;
@@ -416,8 +415,8 @@ public class ClassCacheEntry<T> {
 	}
 	
 	/**
-	 * Set up the details of the constructor factory method. The method much be returned from the <code>findConstructorFactoryMethod</code> above to ensure it is valid.
-	 * @param method
+	 * Set up the details of the constructor factory method. The method must be returned from the <code>findConstructorFactoryMethod</code> above to ensure it is valid.
+	 * @param method The factory method to set.
 	 */
 	private void setConstructorFactoryMethod(Method method) {
 		this.factoryConstructorMethod = method;
@@ -851,6 +850,7 @@ public class ClassCacheEntry<T> {
 	public T constructAndHydrate(Map<String, Object> map) {
 		return constructAndHydrate(null, map);
 	}
+
 	public T constructAndHydrate(Record record) {
 		return constructAndHydrate(record, null);
 	}
@@ -1112,5 +1112,4 @@ public class ClassCacheEntry<T> {
 	public String toString() {
 		return String.format("ClassCacheEntry<%s> (ns=%s,set=%s,subclass=%b,shortName=%s)", this.getUnderlyingClass().getSimpleName(), this.namespace, this.setName, this.isChildClass, this.shortenedClassName);
 	}
-
 }

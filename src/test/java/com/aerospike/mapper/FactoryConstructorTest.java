@@ -13,7 +13,7 @@ import com.aerospike.mapper.tools.AeroMapper;
 
 public class FactoryConstructorTest extends AeroMapperBaseTest {
 	public static class Factory {
-		public static final String NO_ARG_FACTORY = "created from factory";
+		public static final String NO_ARG_FACTORY = "Created from factory";
 		public static final String MAP_ARG_FACTORY = "Map arg factory";
 		public static final String CLASS_ARG_FACTORY = "Class arg factory";
 		public static final String CLASS_MAP_ARG_FACTORY = "Class and map arg factory";
@@ -24,18 +24,21 @@ public class FactoryConstructorTest extends AeroMapperBaseTest {
 			newA.factoryDetails = "";
 			return newA;
 		}
+
 		public static A createA1(Map<String, Object> data) {
 			A newA = new A();
 			newA.factory = MAP_ARG_FACTORY;
 			newA.factoryDetails = "" + data.size();
 			return newA;
 		}
+
 		public static A createA2(Class<?> desiredType) {
 			A newA = new A();
 			newA.factory = CLASS_ARG_FACTORY;
 			newA.factoryDetails = desiredType.getSimpleName();
 			return newA;
 		}
+
 		public static A createA3(Class<?> desiredType, Map<String, Object> data) {
 			A newA = new A();
 			newA.factory = CLASS_MAP_ARG_FACTORY;
@@ -43,8 +46,7 @@ public class FactoryConstructorTest extends AeroMapperBaseTest {
 			return newA;
 		}
 	}
-	
-	
+
 	@AerospikeRecord(namespace = "test", set = "A", factoryMethod = "createA", factoryClass = "com.aerospike.mapper.FactoryConstructorTest$Factory")
 	public static class A {
 		public String name;

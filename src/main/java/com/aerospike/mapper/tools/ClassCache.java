@@ -67,15 +67,13 @@ public class ClassCache {
 						(BatchPolicy) determinePolicy(clazz, PolicyType.BATCH),
 						(QueryPolicy) determinePolicy(clazz, PolicyType.QUERY),
 						(ScanPolicy) determinePolicy(clazz, PolicyType.SCAN));
-			}
-			catch (NotAnnotatedClass nae) {
+			} catch (NotAnnotatedClass nae) {
 				return null;
 			}
 			cacheMap.put(clazz, entry);
 			try {
 				entry.construct();
-			}
-			catch (IllegalArgumentException iae) {
+			} catch (IllegalArgumentException iae) {
 				cacheMap.remove(clazz);
 				return null;
 			}
