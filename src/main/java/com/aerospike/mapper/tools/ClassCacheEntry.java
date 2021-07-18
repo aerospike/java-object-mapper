@@ -4,6 +4,7 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.lang.reflect.Parameter;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -36,13 +37,13 @@ import com.aerospike.mapper.annotations.AerospikeOrdinal;
 import com.aerospike.mapper.annotations.AerospikeRecord;
 import com.aerospike.mapper.annotations.AerospikeSetter;
 import com.aerospike.mapper.annotations.ParamFrom;
-import com.aerospike.mapper.tools.utils.ParserUtils;
-import com.aerospike.mapper.tools.utils.TypeUtils;
-import com.aerospike.mapper.tools.utils.TypeUtils.AnnotatedType;
+import com.aerospike.mapper.exceptions.NotAnnotatedClass;
 import com.aerospike.mapper.tools.configuration.BinConfig;
 import com.aerospike.mapper.tools.configuration.ClassConfig;
 import com.aerospike.mapper.tools.configuration.KeyConfig;
-import com.aerospike.mapper.tools.exceptions.NotAnnotatedRecordException;
+import com.aerospike.mapper.tools.utils.ParserUtils;
+import com.aerospike.mapper.tools.utils.TypeUtils;
+import com.aerospike.mapper.tools.utils.TypeUtils.AnnotatedType;
 
 public class ClassCacheEntry<T> {
 	
@@ -78,6 +79,17 @@ public class ClassCacheEntry<T> {
 	private Constructor<T> constructor;
 	private final ClassConfig config;
 	
+	private String factoryMethod;
+	private String factoryClass;
+	private enum FactoryMethodType {
+		NO_PARAMS,
+		CLASS,
+		MAP,
+		CLASS_MAP
+	}
+	private Method factoryConstructorMethod;
+	private FactoryMethodType factoryConstructorType;
+	
 	/** 
 	 * When there are subclasses, we need to store the type information to be able to re-create an instance of the same type. As the
 	 * class name can be verbose, we provide the ability to set a string representing the class name. This string must be unique for all classes.
@@ -102,7 +114,7 @@ public class ClassCacheEntry<T> {
 
 		AerospikeRecord recordDescription = clazz.getAnnotation(AerospikeRecord.class);
 		if (recordDescription == null && config == null) {
-			throw new NotAnnotatedRecordException("Class " + clazz.getName() + " is not augmented by the @AerospikeRecord annotation");
+			throw new NotAnnotatedClass("Class " + clazz.getName() + " is not augmented by the @AerospikeRecord annotation");
 		}
 		else if (recordDescription != null) {
 			this.namespace = ParserUtils.getInstance().get(recordDescription.namespace());
@@ -113,6 +125,8 @@ public class ClassCacheEntry<T> {
 			this.sendKey = recordDescription.sendKey();
 			this.durableDelete = recordDescription.durableDelete();
 			this.shortenedClassName = recordDescription.shortName();
+			this.factoryClass = recordDescription.factoryClass();
+			this.factoryMethod = recordDescription.factoryMethod();
 		}
 		this.config = config;
 	}
@@ -131,7 +145,13 @@ public class ClassCacheEntry<T> {
 			throw new AerospikeException("Class " + clazz.getSimpleName() + " has no values defined to be stored in the database");
 		}
 		this.formOrdinalsFromValues();
-		this.findConstructor();
+		Method factoryConstructorMethod = findConstructorFactoryMethod();
+		if (factoryConstructorMethod == null) {
+			this.findConstructor();
+		}
+		else {
+			this.setConstructorFactoryMethod(factoryConstructorMethod);
+		}
 		if (StringUtils.isBlank(this.shortenedClassName)) {
 			this.shortenedClassName = clazz.getSimpleName();
 		}
@@ -140,6 +160,7 @@ public class ClassCacheEntry<T> {
 		this.checkRecordSettingsAgainstSuperClasses();
 		return this;
 	}
+
 	public Policy getReadPolicy() {
 		return readPolicy;
 	}
@@ -192,6 +213,12 @@ public class ClassCacheEntry<T> {
 		}
 		if (config.getShortName() != null) {
 			this.shortenedClassName = config.getShortName();
+		}
+		if (config.getFactoryMethod() != null) {
+			this.factoryMethod = config.getFactoryMethod();
+		}
+		if (config.getFactoryClass() != null) {
+			this.factoryClass = config.getFactoryClass();
 		}
 	}
 	
@@ -314,7 +341,8 @@ public class ClassCacheEntry<T> {
 					fieldsWithOrdinals = new HashSet<>();
 				}
 				if (ordinals.containsKey(ordinal)) {
-					throw new AerospikeException(String.format("Class %s has multiple values with the ordinal of %d", clazz.getSimpleName(), ordinal));
+					throw new AerospikeException(String.format("Class %s has multiple values with the ordinal of %d",
+							clazz.getSimpleName(), ordinal));
 				}
 				ordinals.put(ordinal, thisValueName);
 				fieldsWithOrdinals.add(thisValueName);
@@ -325,17 +353,98 @@ public class ClassCacheEntry<T> {
 			// The ordinals need to be valued from 1..<numOrdinals>
 			for (int i = 1; i <= ordinals.size(); i++) {
 				if (!ordinals.containsKey(i)) {
-					throw new AerospikeException(String.format("Class %s has %d values specifying ordinals. These should be 1..%d, but %d is missing",
+					throw new AerospikeException(String.format("Class %s has %d values specifying ordinals." +
+									" These should be 1..%d, but %d is missing",
 							clazz.getSimpleName(), ordinals.size(), ordinals.size(), i));
 				}
 			}
 		}
 	}
 	
+	private boolean validateFactoryMethod(Method method) {
+		if ((method.getModifiers() & Modifier.STATIC) == Modifier.STATIC && this.factoryMethod.equals(method.getName())) {
+			Parameter[] params = method.getParameters();
+			if (params.length == 0) {
+				return true;
+			}
+			if (params.length == 1 && ((Class.class.isAssignableFrom(params[0].getType())) || Map.class.isAssignableFrom(params[0].getType()))) {
+				return true;
+			}
+			if (params.length == 2 && Class.class.isAssignableFrom(params[0].getType()) && Map.class.isAssignableFrom(params[1].getType())) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	private Method findConstructorFactoryMethod() {
+		if (!StringUtils.isBlank(this.factoryClass) || !StringUtils.isBlank(this.factoryMethod)) {
+			// Both must be specified
+			if (StringUtils.isBlank(this.factoryClass)) {
+				throw new AerospikeException("Missing factoryClass definition when factoryMethod is specified on class " +
+						clazz.getSimpleName());
+			}
+			if (StringUtils.isBlank(this.factoryClass)) {
+				throw new AerospikeException("Missing factoryMethod definition when factoryClass is specified on class " +
+						clazz.getSimpleName());
+			}
+			// Load the class and check for the method
+			try {
+				Class<?> factoryClazzType = Class.forName(this.factoryClass);
+				Method foundMethod = null;
+				for (Method method : factoryClazzType.getDeclaredMethods()) {
+					if (validateFactoryMethod(method)) {
+						if (foundMethod != null) {
+							throw new AerospikeException(String.format("Factory Class %s defines at least 2 valid " +
+											"factory methods (%s, %s) as a factory for class %s",
+									this.factoryClass, foundMethod, method, this.clazz.getSimpleName()));
+						}
+						foundMethod = method;
+					}
+				}
+				if (foundMethod == null) {
+					throw new AerospikeException(String.format("Class %s specified a factory class of %s and a factory" +
+									" method of %s, but no valid method with that name exists on the class. A valid" +
+									" method must be static, can take no parameters, a single Class parameter, a single" +
+									" Map parameter, or a Class and a Map parameter, and must return an object which is" +
+									" either an ancestor, descendant or equal to %s",
+							clazz.getSimpleName(), this.factoryClass, this.factoryMethod, clazz.getSimpleName()));
+				}
+				return foundMethod;
+			} catch (ClassNotFoundException cnfe) {
+				throw new AerospikeException(String.format("Factory class %s for class %s cannot be loaded",
+						this.factoryClass, clazz.getSimpleName()));
+			}
+		}
+		return null;
+	}
+	
+	/**
+	 * Set up the details of the constructor factory method. The method must be returned from the
+	 * <code>findConstructorFactoryMethod</code> above to ensure it is valid.
+	 * @param method The factory method to set.
+	 */
+	private void setConstructorFactoryMethod(Method method) {
+		this.factoryConstructorMethod = method;
+		this.factoryConstructorMethod.setAccessible(true);
+
+		if (method.getParameterCount() == 0) {
+			this.factoryConstructorType = FactoryMethodType.NO_PARAMS;
+		} else if (method.getParameterCount() == 2) {
+			this.factoryConstructorType = FactoryMethodType.CLASS_MAP;
+		} else if (Class.class.isAssignableFrom(method.getParameters()[0].getType())) {
+			this.factoryConstructorType = FactoryMethodType.CLASS;
+		} else {
+			this.factoryConstructorType = FactoryMethodType.MAP;
+		}
+	}
+
+	@SuppressWarnings("unchecked")
 	private void findConstructor() {
 		Constructor<?>[] constructors = clazz.getDeclaredConstructors();
 		if (constructors.length == 0) {
-			throw new AerospikeException("Class " + clazz.getSimpleName() + " has no constructors and hence cannot be mapped to Aerospike");
+			throw new AerospikeException("Class " + clazz.getSimpleName() +
+					" has no constructors and hence cannot be mapped to Aerospike");
 		}
 		Constructor<?> desiredConstructor = null;
 		Constructor<?> noArgConstructor = null;
@@ -350,7 +459,9 @@ public class ClassCacheEntry<T> {
 				AerospikeConstructor aerospikeConstructor = thisConstructor.getAnnotation(AerospikeConstructor.class);
 				if (aerospikeConstructor != null) {
 					if (desiredConstructor != null) {
-						throw new AerospikeException("Class " + clazz.getSimpleName() + " has multiple constructors annotated with @AerospikeConstructor. Only one constructor can be so annotated.");
+						throw new AerospikeException("Class " + clazz.getSimpleName() +
+								" has multiple constructors annotated with @AerospikeConstructor. " +
+								"Only one constructor can be so annotated.");
 					}
 					else {
 						desiredConstructor = thisConstructor;
@@ -364,7 +475,8 @@ public class ClassCacheEntry<T> {
 		}
 		
 		if (desiredConstructor == null) {
-			throw new AerospikeException("Class " + clazz.getSimpleName() + " has neither a no-arg constructor, nor a constructor annotated with @AerospikeConstructor so cannot be mapped to Aerospike.");
+			throw new AerospikeException("Class " + clazz.getSimpleName() + " has neither a no-arg constructor, " +
+					"nor a constructor annotated with @AerospikeConstructor so cannot be mapped to Aerospike.");
 		}
 		
 		Parameter[] params = desiredConstructor.getParameters();
@@ -379,7 +491,8 @@ public class ClassCacheEntry<T> {
 		}
 		int count = 0;
 		
-		// Parameters can be either specified by their name (which requires the use of the javac -parameters flag), or through an @ParamFrom annotation.  
+		// Parameters can be either specified by their name (which requires the use of the javac -parameters flag),
+		// or through an @ParamFrom annotation.
 		for (Parameter thisParam : params) {
 			count++;
 			boolean isFromAnnotation = false;
@@ -394,8 +507,9 @@ public class ClassCacheEntry<T> {
 			// Validate that we have such a value
 			if (!allValues.containsKey(binName)) {
 				String valueList = String.join(",", values.keySet());
-				String message = String.format("Class %s has a preferred constructor of %s. However, parameter %d is mapped to bin \"%s\" %s which is not one of the values on the class, which are: %s%s", 
-						clazz.getSimpleName(), desiredConstructor.toString(), count, binName,
+				String message = String.format("Class %s has a preferred constructor of %s. However, parameter %d is " +
+								"mapped to bin \"%s\" %s which is not one of the values on the class, which are: %s%s",
+						clazz.getSimpleName(), desiredConstructor, count, binName,
 						isFromAnnotation ? "via the @ParamFrom annotation" : "via the argument name",
 						valueList,
 						(!isFromAnnotation && binName.startsWith("arg")) ? ". Did you forget to specify '-parameters' to javac when building?" : "");
@@ -403,8 +517,10 @@ public class ClassCacheEntry<T> {
 			}
 			Class<?> type = thisParam.getType();
 			if (!type.isAssignableFrom(allValues.get(binName).getType())) {
-				throw new AerospikeException("Class " + clazz.getSimpleName() + " has a preferred constructor of " + desiredConstructor.toString()+ ". However, parameter " + count + 
-						" is of type " + type + " but assigned from bin \"" + binName + "\" of type " +values.get(binName).getType()+ ". These types are incompatible.");
+				throw new AerospikeException("Class " + clazz.getSimpleName() + " has a preferred constructor of " +
+						desiredConstructor + ". However, parameter " + count +
+						" is of type " + type + " but assigned from bin \"" + binName + "\" of type " +
+						values.get(binName).getType()+ ". These types are incompatible.");
 			}
 			constructorParamBins[count-1] = binName;
 			constructorParamDefaults[count-1] = PrimitiveDefaults.getDefaultValue(thisParam.getType());
@@ -460,7 +576,7 @@ public class ClassCacheEntry<T> {
 			}
 			
 			if (thisMethod.isAnnotationPresent(AerospikeGetter.class) || getterConfig != null) {
-				String getterName = (getterConfig != null) ? getterConfig.getGetter() : thisMethod.getAnnotation(AerospikeGetter.class).name();
+				String getterName = (getterConfig != null) ? getterConfig.getName() : thisMethod.getAnnotation(AerospikeGetter.class).name();
 
 				String name = ParserUtils.getInstance().get(ParserUtils.getInstance().get(getterName));
 				PropertyDefinition thisProperty = getOrCreateProperty(name, properties);
@@ -471,8 +587,9 @@ public class ClassCacheEntry<T> {
 			}
 			
 			if (thisMethod.isAnnotationPresent(AerospikeSetter.class) || setterConfig != null) {
-				String setterName = (setterConfig != null) ? setterConfig.getSetter() : thisMethod.getAnnotation(AerospikeSetter.class).name();
-				PropertyDefinition thisProperty = getOrCreateProperty(ParserUtils.getInstance().get(ParserUtils.getInstance().get(setterName)), properties);
+				String setterName = (setterConfig != null) ? setterConfig.getName() : thisMethod.getAnnotation(AerospikeSetter.class).name();
+				String name = ParserUtils.getInstance().get(ParserUtils.getInstance().get(setterName));
+				PropertyDefinition thisProperty = getOrCreateProperty(name, properties);
 				thisProperty.setSetter(thisMethod);
 			}
 		}
@@ -490,7 +607,8 @@ public class ClassCacheEntry<T> {
 			PropertyDefinition thisProperty = properties.get(thisPropertyName);
 			thisProperty.validate(clazz.getName(), config, false);
 			if (this.values.get(thisPropertyName) != null) {
-				throw new AerospikeException("Class " + clazz.getName() + " cannot define the mapped name " + thisPropertyName + " more than once");
+				throw new AerospikeException("Class " + clazz.getName() + " cannot define the mapped name " +
+						thisPropertyName + " more than once");
 			}
 			AnnotatedType annotatedType = new AnnotatedType(config, thisProperty.getGetter());
 			TypeMapper typeMapper = TypeUtils.getMapper(thisProperty.getType(), annotatedType, this.mapper);
@@ -571,7 +689,8 @@ public class ClassCacheEntry<T> {
 		try {
 			Object key = this._getKey(object);
 			if (key == null) {
-	    		throw new AerospikeException("Null key from annotated object of class " + this.clazz.getSimpleName() + ". Did you forget an @AerospikeKey annotation?");
+	    		throw new AerospikeException("Null key from annotated object of class " + this.clazz.getSimpleName() +
+						". Did you forget an @AerospikeKey annotation?");
 			}
 			return key;
 		}
@@ -692,7 +811,8 @@ public class ClassCacheEntry<T> {
 		}
 	}
 	
-	private void addDataFromValueName(String name, Object instance, ClassCacheEntry<?> thisClass, List<Object> results) throws ReflectiveOperationException {
+	private void addDataFromValueName(String name, Object instance, ClassCacheEntry<?> thisClass, List<Object> results)
+			throws ReflectiveOperationException {
 		ValueType value = thisClass.values.get(name);
 		if (value.getMinimumVersion() <= thisClass.version && thisClass.version <= value.getMaximumVersion()) {
 			Object javaValue = value.get(instance);
@@ -745,10 +865,12 @@ public class ClassCacheEntry<T> {
 	public T constructAndHydrate(Map<String, Object> map) {
 		return constructAndHydrate(null, map);
 	}
+
 	public T constructAndHydrate(Record record) {
 		return constructAndHydrate(record, null);
 	}
-	
+
+	@SuppressWarnings("unchecked")
 	private T constructAndHydrate(Record record, Map<String, Object> map) {
 		Map<String, Object> valueMap = new HashMap<>();
 		try {
@@ -817,10 +939,12 @@ public class ClassCacheEntry<T> {
 		}
 	}
 	
-	private int setValueByField(String name, int objectVersion, int recordVersion, Object instance, int index, List<Object> list, Map<String, Object> map) throws ReflectiveOperationException {
+	private int setValueByField(String name, int objectVersion, int recordVersion, Object instance, int index,
+								List<Object> list, Map<String, Object> map) throws ReflectiveOperationException {
 		ValueType value = this.values.get(name);
 		TypeMapper typeMapper = value.getTypeMapper();
-		// If the version of this value does not exist on this object, simply skip it. For example, V1 contains {a,b,c} but V2 contains {a,c}, skip field B
+		// If the version of this value does not exist on this object, simply skip it. For example,
+		// V1 contains {a,b,c} but V2 contains {a,c}, skip field B
 		if (!(value.getMinimumVersion() <= objectVersion && objectVersion <= value.getMaximumVersion())) {
 			// If the version of this record in the database also contained this value, skip over the value as well as the field
 			if (value.getMinimumVersion() <= recordVersion && recordVersion <= value.getMaximumVersion()) {
@@ -845,21 +969,41 @@ public class ClassCacheEntry<T> {
 	public void hydrateFromList(List<Object> list, Object instance) {
 		this.hydrateFromList(list, instance, false);
 	}
-	
+
+	@SuppressWarnings("unchecked")
 	private T constructAndHydrateFromJavaMap(Map<String, Object> javaValuesMap) throws ReflectiveOperationException {
 		// Now form the values which satisfy the constructor
 		T result;
-		Object[] args = new Object[constructorParamBins.length];
-		for (int i = 0; i < constructorParamBins.length; i++) {
-			if (javaValuesMap.containsKey(constructorParamBins[i])) {
-				args[i] = javaValuesMap.get(constructorParamBins[i]);
+		if (factoryConstructorMethod != null) {
+			Object[] args;
+			switch (factoryConstructorType) {
+			case CLASS:
+				args = new Object[] {this.clazz};
+				break;
+			case MAP: 
+				args = new Object[] {javaValuesMap};
+				break;
+			case CLASS_MAP:
+				args = new Object[] {this.clazz, javaValuesMap};
+				break;
+			default: 
+				args = null;
 			}
-			else {
-				args[i] = constructorParamDefaults[i];
-			}
-			javaValuesMap.remove(constructorParamBins[i]);
+			result = (T) factoryConstructorMethod.invoke(null, args);
 		}
-		result = constructor.newInstance(args);
+		else {
+			Object[] args = new Object[constructorParamBins.length];
+			for (int i = 0; i < constructorParamBins.length; i++) {
+				if (javaValuesMap.containsKey(constructorParamBins[i])) {
+					args[i] = javaValuesMap.get(constructorParamBins[i]);
+				}
+				else {
+					args[i] = constructorParamDefaults[i];
+				}
+				javaValuesMap.remove(constructorParamBins[i]);
+			}
+			result = constructor.newInstance(args);
+		}
 		// Once the object has been created, we need to store it against the current key so that
 		// recursive objects resolve correctly
 		LoadedObjectResolver.setObjectForCurrentKey(result);
@@ -874,7 +1018,8 @@ public class ClassCacheEntry<T> {
 		}
 		return result;
 	}
-	
+
+	@SuppressWarnings("unchecked")
 	public T constructAndHydrate(List<Object> list, boolean skipKey) {
 		Map<String, Object> valueMap = new HashMap<>();
 		try {
@@ -882,7 +1027,8 @@ public class ClassCacheEntry<T> {
 			int index = 0;
 			int endIndex = list.size();
 			if (!list.isEmpty()) {
-				// If the object saved in the list was a subclass of the declared type, it must have the type name as the last element of the list.
+				// If the object saved in the list was a subclass of the declared type,
+				// it must have the type name as the last element of the list.
 				// Note that there is a performance implication of using subclasses.
 				Object obj = list.get(endIndex-1);
 				if ((obj instanceof String) && ((String) obj).startsWith(TYPE_PREFIX)) {
@@ -985,7 +1131,7 @@ public class ClassCacheEntry<T> {
 	
 	@Override
 	public String toString() {
-		return String.format("ClassCacheEntry<%s> (ns=%s,set=%s,subclass=%b,shortName=%s)", this.getUnderlyingClass().getSimpleName(), this.namespace, this.setName, this.isChildClass, this.shortenedClassName);
+		return String.format("ClassCacheEntry<%s> (ns=%s,set=%s,subclass=%b,shortName=%s)",
+				this.getUnderlyingClass().getSimpleName(), this.namespace, this.setName, this.isChildClass, this.shortenedClassName);
 	}
-
 }

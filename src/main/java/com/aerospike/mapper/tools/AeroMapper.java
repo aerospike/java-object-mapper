@@ -1,5 +1,17 @@
 package com.aerospike.mapper.tools;
 
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.lang.reflect.Array;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Function;
+
+import javax.validation.constraints.NotNull;
+
+import org.apache.commons.lang3.StringUtils;
+
 import com.aerospike.client.AerospikeException;
 import com.aerospike.client.Bin;
 import com.aerospike.client.IAerospikeClient;
@@ -24,15 +36,6 @@ import com.aerospike.mapper.tools.virtuallist.VirtualList;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import org.apache.commons.lang3.StringUtils;
-
-import javax.validation.constraints.NotNull;
-import java.io.File;
-import java.io.IOException;
-import java.lang.reflect.Array;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.function.Function;
 
 public class AeroMapper implements IAeroMapper {
 
@@ -75,6 +78,17 @@ public class AeroMapper implements IAeroMapper {
         public Builder withConfigurationFile(File file, boolean allowsInvalid) throws IOException {
         	ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory());
         	Configuration configuration = objectMapper.readValue(file, Configuration.class);
+        	this.loadConfiguration(configuration, allowsInvalid);
+        	return this;
+        }
+
+        public Builder withConfigurationFile(InputStream ios) throws IOException {
+        	return this.withConfigurationFile(ios, false);
+        }
+
+        public Builder withConfigurationFile(InputStream ios, boolean allowsInvalid) throws IOException {
+        	ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory());
+        	Configuration configuration = objectMapper.readValue(ios, Configuration.class);
         	this.loadConfiguration(configuration, allowsInvalid);
         	return this;
         }
