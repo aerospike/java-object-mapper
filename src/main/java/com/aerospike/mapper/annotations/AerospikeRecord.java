@@ -23,5 +23,4 @@ public @interface AerospikeRecord {
 	
 	String factoryClass() default "";
 	String factoryMethod() default "";
-
 }
