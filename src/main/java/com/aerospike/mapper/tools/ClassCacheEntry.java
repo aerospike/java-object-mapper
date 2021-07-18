@@ -364,10 +364,7 @@ public class ClassCacheEntry<T> {
 			if (params.length == 0) {
 				return true;
 			}
-			if (params.length == 1 && Class.class.isAssignableFrom(params[0].getType())) {
-				return true;
-			}
-			if (params.length == 1 && Map.class.isAssignableFrom(params[0].getType())) {
+			if (params.length == 1 && ((Class.class.isAssignableFrom(params[0].getType())) || Map.class.isAssignableFrom(params[0].getType()))) {
 				return true;
 			}
 			if (params.length == 2 && Class.class.isAssignableFrom(params[0].getType()) && Map.class.isAssignableFrom(params[1].getType())) {
@@ -406,8 +403,7 @@ public class ClassCacheEntry<T> {
 							clazz.getSimpleName(), this.factoryClass, this.factoryMethod, clazz.getSimpleName()));
 				}
 				return foundMethod;
-			}
-			catch (ClassNotFoundException cnfe) {
+			} catch (ClassNotFoundException cnfe) {
 				throw new AerospikeException(String.format("Factory class %s for class %s cannot be loaded", this.factoryClass, clazz.getSimpleName()));
 			}
 		}
@@ -424,14 +420,11 @@ public class ClassCacheEntry<T> {
 
 		if (method.getParameterCount() == 0) {
 			this.factoryConstructorType = FactoryMethodType.NO_PARAMS;
-		}
-		else if (method.getParameterCount() == 2) {
+		} else if (method.getParameterCount() == 2) {
 			this.factoryConstructorType = FactoryMethodType.CLASS_MAP;
-		}
-		else if (Class.class.isAssignableFrom(method.getParameters()[0].getType())) {
+		} else if (Class.class.isAssignableFrom(method.getParameters()[0].getType())) {
 			this.factoryConstructorType = FactoryMethodType.CLASS;
-		}
-		else {
+		} else {
 			this.factoryConstructorType = FactoryMethodType.MAP;
 		}
 	}
