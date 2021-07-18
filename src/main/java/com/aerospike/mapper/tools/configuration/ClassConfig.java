@@ -66,21 +66,25 @@ public class ClassConfig {
 	public KeyConfig getKey() {
 		return key;
 	}
+
 	public List<BinConfig> getBins() {
 		return bins;
 	}
-	
-	public String getFactoryMethod() {
-		return factoryMethod;
-	}
-	public void setFactoryMethod(String facotryMethod) {
-		this.factoryMethod = facotryMethod;
-	}
+
 	public String getFactoryClass() {
 		return factoryClass;
 	}
+
 	public void setFactoryClass(String factoryClass) {
 		this.factoryClass = factoryClass;
+	}
+
+	public String getFactoryMethod() {
+		return factoryMethod;
+	}
+
+	public void setFactoryMethod(String factoryMethod) {
+		this.factoryMethod = factoryMethod;
 	}
 	
 	public BinConfig getBinByName(@NotNull String name) {
@@ -109,6 +113,7 @@ public class ClassConfig {
 		}
 		return null;
 	}
+
 	public void validate() {
 		for (BinConfig thisBin : bins) {
 			thisBin.validate(this.className);
