@@ -1,4 +1,4 @@
-package com.aerospike.mapper.example.model;
+package com.aerospike.mapper.examples.model;
 
 import java.util.Date;
 

@@ -1,4 +1,4 @@
-package com.aerospike.mapper.example.model.accounts;
+package com.aerospike.mapper.examples.model.accounts;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -8,7 +8,7 @@ import java.util.Map;
 import com.aerospike.mapper.annotations.AerospikeBin;
 import com.aerospike.mapper.annotations.AerospikeRecord;
 import com.aerospike.mapper.annotations.ParamFrom;
-import com.aerospike.mapper.example.model.Property;
+import com.aerospike.mapper.examples.model.Property;
 
 @AerospikeRecord(namespace = "test", set = "portfolio")
 public class PortfolioAccount extends Account {

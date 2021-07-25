@@ -1,4 +1,4 @@
-package com.aerospike.mapper.example.model;
+package com.aerospike.mapper.examples.model;
 
 import com.aerospike.mapper.annotations.AerospikeBin;
 import com.aerospike.mapper.annotations.AerospikeEmbed;

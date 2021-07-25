@@ -1,4 +1,4 @@
-package com.aerospike.mapper.example.model.accounts;
+package com.aerospike.mapper.examples.model.accounts;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -11,8 +11,8 @@ import com.aerospike.mapper.annotations.AerospikeEmbed;
 import com.aerospike.mapper.annotations.AerospikeKey;
 import com.aerospike.mapper.annotations.AerospikeRecord;
 import com.aerospike.mapper.annotations.ParamFrom;
-import com.aerospike.mapper.example.model.Address;
-import com.aerospike.mapper.example.model.Checkbook;
+import com.aerospike.mapper.examples.model.Address;
+import com.aerospike.mapper.examples.model.Checkbook;
 
 @AerospikeRecord(namespace = "test", set = "account")
 public class Account {

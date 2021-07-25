@@ -1,18 +1,17 @@
-package com.aerospike.mapper.example;
+package com.aerospike.mapper.examples;
 
 import com.aerospike.client.AerospikeClient;
 import com.aerospike.client.IAerospikeClient;
-import com.aerospike.mapper.example.model.Customer;
+import com.aerospike.mapper.examples.model.Customer;
 import com.aerospike.mapper.tools.AeroMapper;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
-import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class JavaMapperApplication extends ApplicationBase {
-	@Test
+
 	public void run() throws JsonProcessingException {
 		IAerospikeClient client = new AerospikeClient(null, "127.0.0.1", 3000);
 		

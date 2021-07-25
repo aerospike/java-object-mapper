@@ -1,12 +1,11 @@
-package com.aerospike.mapper;
+package com.aerospike.mapper.examples;
 
 import com.aerospike.client.AerospikeException;
+import com.aerospike.mapper.AeroMapperBaseTest;
 import com.aerospike.mapper.annotations.*;
 import com.aerospike.mapper.annotations.AerospikeEmbed.EmbedType;
 import com.aerospike.mapper.annotations.AerospikeReference.ReferenceType;
 import com.aerospike.mapper.tools.AeroMapper;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -34,7 +33,6 @@ public class AeroMapperDocExamples extends AeroMapperBaseTest {
         public Product product;
     }
 
-    @Test
     public void runEmbed() {
         Product product = new Product();
         product.createdDate = new Date();
@@ -77,14 +75,13 @@ public class AeroMapperDocExamples extends AeroMapperBaseTest {
 
     private AeroMapper mapper;
 
-    @BeforeEach
+    //@BeforeEach
     public void setup() {
         mapper = new AeroMapper.Builder(client).build();
         client.truncate(null, NAMESPACE, "people", null);
         client.truncate(null, NAMESPACE, "account", null);
     }
 
-    @Test
     public void run() {
         Account account = new Account();
         account.id = 103;
@@ -154,8 +151,7 @@ public class AeroMapperDocExamples extends AeroMapperBaseTest {
     	@AerospikeEmbed(type = EmbedType.LIST)
     	public IntContainerV2 container;
     }
-    
-    @Test
+
     public void testListOrdering() {
     	IntContainer container = new IntContainer();
     	container.a = 1;
@@ -224,8 +220,7 @@ public class AeroMapperDocExamples extends AeroMapperBaseTest {
 			this.merchant = merchant;
 		}
     }
-    
-    @Test
+
     public void testAccounts() {
     	Accounts account = new Accounts(1, "Savings Account", AccountType.SAVINGS);
     	Transactions txn1 = new Transactions("Txn1", Instant.now(), 100.0, "Bob's store");
@@ -304,8 +299,7 @@ public class AeroMapperDocExamples extends AeroMapperBaseTest {
 			this.date = date;
 		}
     }
-    
-    @Test
+
     public void showParentWithChildren() {
     	Child child = new Child(1, "child", new Date());
     	Parent parent = new Parent(10, "parent", child);

@@ -1,17 +1,12 @@
-package com.aerospike.mapper.example;
+package com.aerospike.mapper.examples;
 
-import java.util.Date;
-
-import com.aerospike.client.AerospikeClient;
-import com.aerospike.client.Bin;
-import com.aerospike.client.IAerospikeClient;
-import com.aerospike.client.Key;
-import com.aerospike.client.Record;
-import com.aerospike.mapper.example.model.Customer;
+import com.aerospike.client.*;
+import com.aerospike.mapper.examples.model.Customer;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
-import org.junit.jupiter.api.Test;
+
+import java.util.Date;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -50,8 +45,7 @@ public class NonJavaMapperApplication extends ApplicationBase {
 		
 		return result;
 	}
-	
-	@Test
+
 	public void run() throws JsonProcessingException {
 		IAerospikeClient client = new AerospikeClient(null, "127.0.0.1", 3000);
 		

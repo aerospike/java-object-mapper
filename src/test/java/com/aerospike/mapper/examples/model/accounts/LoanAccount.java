@@ -1,12 +1,12 @@
-package com.aerospike.mapper.example.model.accounts;
+package com.aerospike.mapper.examples.model.accounts;
 
 import java.util.Date;
 
 import com.aerospike.mapper.annotations.AerospikeBin;
 import com.aerospike.mapper.annotations.AerospikeRecord;
 import com.aerospike.mapper.annotations.ParamFrom;
-import com.aerospike.mapper.example.model.InterestType;
-import com.aerospike.mapper.example.model.Property;
+import com.aerospike.mapper.examples.model.InterestType;
+import com.aerospike.mapper.examples.model.Property;
 
 // Loan account rolls up under the Account
 @AerospikeRecord

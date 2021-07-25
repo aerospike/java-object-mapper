@@ -1,19 +1,19 @@
-package com.aerospike.mapper.example;
+package com.aerospike.mapper.examples;
 
 import java.util.Date;
 import java.util.concurrent.TimeUnit;
 
-import com.aerospike.mapper.example.model.Address;
-import com.aerospike.mapper.example.model.Branch;
-import com.aerospike.mapper.example.model.Checkbook;
-import com.aerospike.mapper.example.model.Customer;
-import com.aerospike.mapper.example.model.InterestType;
-import com.aerospike.mapper.example.model.Property;
-import com.aerospike.mapper.example.model.Valuation;
-import com.aerospike.mapper.example.model.accounts.Account;
-import com.aerospike.mapper.example.model.accounts.AccountType;
-import com.aerospike.mapper.example.model.accounts.LoanAccount;
-import com.aerospike.mapper.example.model.accounts.PortfolioAccount;
+import com.aerospike.mapper.examples.model.Address;
+import com.aerospike.mapper.examples.model.Branch;
+import com.aerospike.mapper.examples.model.Checkbook;
+import com.aerospike.mapper.examples.model.Customer;
+import com.aerospike.mapper.examples.model.InterestType;
+import com.aerospike.mapper.examples.model.Property;
+import com.aerospike.mapper.examples.model.Valuation;
+import com.aerospike.mapper.examples.model.accounts.Account;
+import com.aerospike.mapper.examples.model.accounts.AccountType;
+import com.aerospike.mapper.examples.model.accounts.LoanAccount;
+import com.aerospike.mapper.examples.model.accounts.PortfolioAccount;
 
 public class ApplicationBase {
 	protected Customer createAndPopulateCustomer() {
