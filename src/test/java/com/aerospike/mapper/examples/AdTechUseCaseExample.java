@@ -6,8 +6,8 @@ import com.aerospike.mapper.AeroMapperBaseTest;
 import com.aerospike.mapper.annotations.*;
 import com.aerospike.mapper.annotations.AerospikeEmbed.EmbedType;
 import com.aerospike.mapper.tools.AeroMapper;
-import com.aerospike.mapper.tools.ReturnType;
-import com.aerospike.mapper.tools.VirtualList;
+import com.aerospike.mapper.tools.virtuallist.ReturnType;
+import com.aerospike.mapper.tools.virtuallist.VirtualList;
 
 import java.util.ArrayList;
 import java.util.Date;
