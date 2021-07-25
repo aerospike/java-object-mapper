@@ -1,30 +1,23 @@
-package com.aerospike.mapper.example;
+package com.aerospike.mapper.examples;
 
 import com.aerospike.client.AerospikeClient;
 import com.aerospike.client.IAerospikeClient;
 import com.aerospike.client.policy.Policy;
 import com.aerospike.client.policy.Replica;
 import com.aerospike.client.policy.WritePolicy;
-import com.aerospike.mapper.example.model.Address;
-import com.aerospike.mapper.example.model.Branch;
-import com.aerospike.mapper.example.model.Checkbook;
-import com.aerospike.mapper.example.model.Customer;
-import com.aerospike.mapper.example.model.Property;
-import com.aerospike.mapper.example.model.Transaction;
-import com.aerospike.mapper.example.model.accounts.Account;
-import com.aerospike.mapper.example.model.accounts.LoanAccount;
-import com.aerospike.mapper.example.model.accounts.PortfolioAccount;
+import com.aerospike.mapper.examples.model.*;
+import com.aerospike.mapper.examples.model.accounts.Account;
+import com.aerospike.mapper.examples.model.accounts.LoanAccount;
+import com.aerospike.mapper.examples.model.accounts.PortfolioAccount;
 import com.aerospike.mapper.tools.AeroMapper;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
-import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class Application extends ApplicationBase {
 
-	@Test
 	public void run() throws JsonProcessingException {
 		Policy readPolicy = new Policy();
 		readPolicy.maxRetries = 4;

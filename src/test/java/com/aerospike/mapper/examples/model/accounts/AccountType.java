@@ -1,4 +1,4 @@
-package com.aerospike.mapper.example.model.accounts;
+package com.aerospike.mapper.examples.model.accounts;
 
 public enum AccountType {
 	SAVINGS,

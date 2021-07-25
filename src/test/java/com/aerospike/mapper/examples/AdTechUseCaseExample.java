@@ -1,25 +1,20 @@
-package com.aerospike.mapper;
+package com.aerospike.mapper.examples;
+
+import com.aerospike.client.policy.Policy;
+import com.aerospike.client.policy.Replica;
+import com.aerospike.mapper.AeroMapperBaseTest;
+import com.aerospike.mapper.annotations.*;
+import com.aerospike.mapper.annotations.AerospikeEmbed.EmbedType;
+import com.aerospike.mapper.tools.AeroMapper;
+import com.aerospike.mapper.tools.ReturnType;
+import com.aerospike.mapper.tools.VirtualList;
 
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import com.aerospike.client.policy.Policy;
-import com.aerospike.client.policy.Replica;
-import com.aerospike.mapper.annotations.AerospikeBin;
-import com.aerospike.mapper.annotations.AerospikeEmbed;
-import com.aerospike.mapper.annotations.AerospikeEmbed.EmbedType;
-import com.aerospike.mapper.annotations.AerospikeKey;
-import com.aerospike.mapper.annotations.AerospikeOrdinal;
-import com.aerospike.mapper.annotations.AerospikeRecord;
-import com.aerospike.mapper.annotations.ParamFrom;
-import com.aerospike.mapper.tools.AeroMapper;
-import com.aerospike.mapper.tools.ReturnType;
-import com.aerospike.mapper.tools.VirtualList;
-import org.junit.jupiter.api.Test;
-
-public class AdTechUseCaseExampleTest extends AeroMapperBaseTest {
+public class AdTechUseCaseExample extends AeroMapperBaseTest {
 	@AerospikeRecord(namespace = "test", set = "user")
 	public static class User {
 		@AerospikeKey
@@ -92,8 +87,7 @@ public class AdTechUseCaseExampleTest extends AeroMapperBaseTest {
 			return String.format("{name=%s, lastSeen=%s, partnerId=%d, flags=%d}\n", name, lastSeen.toString(), partnerId, flags);
 		}
 	}
-	
-	@Test
+
 	public void adTechUseCase() {
 		Policy readPolicy = new Policy();
 		readPolicy.socketTimeout = 30;

@@ -1,11 +1,6 @@
-package com.aerospike.mapper;
+package com.aerospike.mapper.examples;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-
-import org.junit.jupiter.api.Test;
-
+import com.aerospike.mapper.AeroMapperBaseTest;
 import com.aerospike.mapper.annotations.AerospikeEmbed;
 import com.aerospike.mapper.annotations.AerospikeEmbed.EmbedType;
 import com.aerospike.mapper.annotations.AerospikeKey;
@@ -13,6 +8,10 @@ import com.aerospike.mapper.annotations.AerospikeRecord;
 import com.aerospike.mapper.tools.AeroMapper;
 import com.aerospike.mapper.tools.ReturnType;
 import com.aerospike.mapper.tools.VirtualList;
+
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
 
 public class VirtualListExample extends AeroMapperBaseTest {
 	
@@ -45,8 +44,7 @@ public class VirtualListExample extends AeroMapperBaseTest {
 			this.items = new ArrayList<>();
 		}
 	}
-	
-	@Test
+
 	public void testListOfReferences() {
 		Container container = new Container();
 		container.id = 1;

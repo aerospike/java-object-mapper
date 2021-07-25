@@ -1,4 +1,4 @@
-package com.aerospike.mapper.example.model;
+package com.aerospike.mapper.examples.model;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -9,7 +9,7 @@ import com.aerospike.mapper.annotations.AerospikeEmbed;
 import com.aerospike.mapper.annotations.AerospikeKey;
 import com.aerospike.mapper.annotations.AerospikeRecord;
 import com.aerospike.mapper.annotations.ParamFrom;
-import com.aerospike.mapper.example.model.accounts.Account;
+import com.aerospike.mapper.examples.model.accounts.Account;
 
 @AerospikeRecord(namespace = "test", set = "customer")
 public class Customer {

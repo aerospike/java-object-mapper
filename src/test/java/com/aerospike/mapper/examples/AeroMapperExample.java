@@ -1,4 +1,4 @@
-package com.aerospike.mapper;
+package com.aerospike.mapper.examples;
 
 import com.aerospike.client.AerospikeClient;
 import com.aerospike.client.IAerospikeClient;
