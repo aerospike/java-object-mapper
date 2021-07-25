@@ -15,7 +15,7 @@ import com.aerospike.mapper.annotations.AerospikeKey;
 import com.aerospike.mapper.annotations.AerospikeRecord;
 import com.aerospike.mapper.annotations.ParamFrom;
 import com.aerospike.mapper.tools.AeroMapper;
-import com.aerospike.mapper.tools.VirtualList;
+import com.aerospike.mapper.tools.virtuallist.VirtualList;
 
 public class VirtualListTest extends AeroMapperBaseTest {
 	

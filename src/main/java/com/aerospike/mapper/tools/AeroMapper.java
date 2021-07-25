@@ -1,25 +1,41 @@
 package com.aerospike.mapper.tools;
 
-import com.aerospike.client.*;
-import com.aerospike.client.policy.*;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.lang.reflect.Array;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Function;
+
+import javax.validation.constraints.NotNull;
+
+import org.apache.commons.lang3.StringUtils;
+
+import com.aerospike.client.AerospikeException;
+import com.aerospike.client.Bin;
+import com.aerospike.client.IAerospikeClient;
+import com.aerospike.client.Key;
+import com.aerospike.client.Record;
+import com.aerospike.client.Value;
+import com.aerospike.client.policy.BatchPolicy;
+import com.aerospike.client.policy.Policy;
+import com.aerospike.client.policy.QueryPolicy;
+import com.aerospike.client.policy.RecordExistsAction;
+import com.aerospike.client.policy.ScanPolicy;
+import com.aerospike.client.policy.WritePolicy;
 import com.aerospike.client.query.RecordSet;
 import com.aerospike.client.query.Statement;
 import com.aerospike.mapper.tools.ClassCache.PolicyType;
 import com.aerospike.mapper.tools.configuration.ClassConfig;
 import com.aerospike.mapper.tools.configuration.Configuration;
 import com.aerospike.mapper.tools.converters.MappingConverter;
+import com.aerospike.mapper.tools.utils.MapperUtils;
+import com.aerospike.mapper.tools.utils.TypeUtils;
+import com.aerospike.mapper.tools.virtuallist.VirtualList;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import org.apache.commons.lang3.StringUtils;
-
-import javax.validation.constraints.NotNull;
-import java.io.File;
-import java.io.IOException;
-import java.lang.reflect.Array;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.function.Function;
 
 public class AeroMapper implements IAeroMapper {
 
@@ -62,6 +78,17 @@ public class AeroMapper implements IAeroMapper {
         public Builder withConfigurationFile(File file, boolean allowsInvalid) throws IOException {
         	ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory());
         	Configuration configuration = objectMapper.readValue(file, Configuration.class);
+        	this.loadConfiguration(configuration, allowsInvalid);
+        	return this;
+        }
+
+        public Builder withConfigurationFile(InputStream ios) throws IOException {
+        	return this.withConfigurationFile(ios, false);
+        }
+
+        public Builder withConfigurationFile(InputStream ios, boolean allowsInvalid) throws IOException {
+        	ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory());
+        	Configuration configuration = objectMapper.readValue(ios, Configuration.class);
         	this.loadConfiguration(configuration, allowsInvalid);
         	return this;
         }
@@ -375,7 +402,12 @@ public class AeroMapper implements IAeroMapper {
     	return readBatch(batchPolicy, clazz, keys, entry);
     }
 
+    @SuppressWarnings("unchecked")
     private <T> T read(Policy readPolicy, @NotNull Class<T> clazz, @NotNull Key key, @NotNull ClassCacheEntry<T> entry, boolean resolveDependencies) {
+    	Object objectForKey = LoadedObjectResolver.get(key);
+    	if (objectForKey != null) {
+    		return (T)objectForKey;
+    	}
         if (readPolicy == null) {
             readPolicy = entry.getReadPolicy();
         }
@@ -386,11 +418,13 @@ public class AeroMapper implements IAeroMapper {
         } else {
             try {
                 ThreadLocalKeySaver.save(key);
+                LoadedObjectResolver.begin();
                 return mappingConverter.convertToObject(clazz, record, entry, resolveDependencies);
             } catch (ReflectiveOperationException e) {
                 throw new AerospikeException(e);
             }
             finally {
+                LoadedObjectResolver.end();
                 ThreadLocalKeySaver.clear();
             }
         }

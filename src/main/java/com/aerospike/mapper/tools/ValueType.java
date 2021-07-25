@@ -6,7 +6,7 @@ import com.aerospike.mapper.annotations.AerospikeVersion;
 import com.aerospike.mapper.tools.DeferredObjectLoader.DeferredObject;
 import com.aerospike.mapper.tools.DeferredObjectLoader.DeferredObjectSetter;
 import com.aerospike.mapper.tools.DeferredObjectLoader.DeferredSetter;
-import com.aerospike.mapper.tools.TypeUtils.AnnotatedType;
+import com.aerospike.mapper.tools.utils.TypeUtils.AnnotatedType;
 
 import javax.validation.constraints.NotNull;
 import java.lang.annotation.Annotation;
@@ -35,10 +35,13 @@ public abstract class ValueType {
 	public int getMaximumVersion() {return maximumVersion;}
 	protected void setVersion(AerospikeVersion version) {
 		if (version.min() <= 0) {
-			throw new IllegalArgumentException("Minimum version must be greater than or equal to 1, not " +version.min());
+			throw new AerospikeException("Minimum version must be greater than or equal to 1, not " + version.min());
 		}
 		if (version.max() <= 0) {
-			throw new IllegalArgumentException("Maximum version must be greater than or equal to 1, not " +version.max());
+			throw new AerospikeException("Maximum version must be greater than or equal to 1, not " + version.max());
+		}
+		if (version.min() > version.max()) {
+			throw new AerospikeException("Maximum version must be greater than or equal to the minumum version, not " + version.max());
 		}
 		this.maximumVersion = version.max();
 		this.minimumVersion = version.min();

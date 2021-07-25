@@ -8,7 +8,8 @@ import java.lang.reflect.Type;
 import com.aerospike.client.AerospikeException;
 import com.aerospike.client.Key;
 import com.aerospike.client.Value;
-import com.aerospike.mapper.tools.TypeUtils.AnnotatedType;
+import com.aerospike.mapper.tools.utils.TypeUtils;
+import com.aerospike.mapper.tools.utils.TypeUtils.AnnotatedType;
 import com.aerospike.mapper.tools.configuration.ClassConfig;
 
 public class PropertyDefinition {
@@ -88,9 +89,9 @@ public class PropertyDefinition {
 			if (this.setter == null) {
 				throw new AerospikeException(String.format("Property %s on class %s must have a setter", this.name, className));
 			}
-			if (!TypeUtils.isVoidType(setter.getReturnType())) {
-				throw new AerospikeException(String.format("Setter for property %s on class %s must return void", this.name, className));
-			}
+//			if (!TypeUtils.isVoidType(setter.getReturnType())) {
+//				throw new AerospikeException(String.format("Setter for property %s on class %s must return void", this.name, className));
+//			}
 			if (setter.getParameterCount() == 2) {
 				Parameter param = setter.getParameters()[1];
 				if (param.getType().isAssignableFrom(Key.class)) {

@@ -13,8 +13,10 @@ import com.aerospike.client.policy.QueryPolicy;
 import com.aerospike.client.policy.ScanPolicy;
 import com.aerospike.client.policy.WritePolicy;
 import com.aerospike.client.reactor.IAerospikeReactorClient;
+import com.aerospike.mapper.exceptions.NotAnnotatedClass;
 import com.aerospike.mapper.tools.configuration.ClassConfig;
 import com.aerospike.mapper.tools.configuration.Configuration;
+import com.aerospike.mapper.tools.utils.TypeUtils;
 
 public class ClassCache {
 	private static final ClassCache instance = new ClassCache();
@@ -52,17 +54,29 @@ public class ClassCache {
 		ClassCacheEntry<T> entry = cacheMap.get(clazz);
 		if (entry == null) {
 			try {
+				// Construct a class cache entry. This must be done in 2 steps, one creating the entry and the other finalizing construction of 
+				// it. This is to cater for classes  which recursively refer to themselves, such as
+				// 	public static class A {
+				//      @AerospikeKey
+				//      public int id;
+				//      public A a;
+				//  }
 				entry = new ClassCacheEntry<>(clazz, mapper, getClassConfig(clazz),
 						determinePolicy(clazz, PolicyType.READ),
 						(WritePolicy) determinePolicy(clazz, PolicyType.WRITE),
 						(BatchPolicy) determinePolicy(clazz, PolicyType.BATCH),
 						(QueryPolicy) determinePolicy(clazz, PolicyType.QUERY),
 						(ScanPolicy) determinePolicy(clazz, PolicyType.SCAN));
-			}
-			catch (IllegalArgumentException iae) {
+			} catch (NotAnnotatedClass nae) {
 				return null;
 			}
 			cacheMap.put(clazz, entry);
+			try {
+				entry.construct();
+			} catch (IllegalArgumentException iae) {
+				cacheMap.remove(clazz);
+				return null;
+			}
 		}
 		return entry;
 	}
@@ -85,11 +99,13 @@ public class ClassCache {
 	}
 	
 	void setDefaultPolicies(IAerospikeClient client) {
-		this.defaultPolicies.put(PolicyType.READ, client.getReadPolicyDefault());
-		this.defaultPolicies.put(PolicyType.WRITE, client.getWritePolicyDefault());
-		this.defaultPolicies.put(PolicyType.BATCH, client.getBatchPolicyDefault());
-		this.defaultPolicies.put(PolicyType.QUERY, client.getQueryPolicyDefault());
-		this.defaultPolicies.put(PolicyType.SCAN, client.getScanPolicyDefault());
+		if (client != null) {
+			this.defaultPolicies.put(PolicyType.READ, client.getReadPolicyDefault());
+			this.defaultPolicies.put(PolicyType.WRITE, client.getWritePolicyDefault());
+			this.defaultPolicies.put(PolicyType.BATCH, client.getBatchPolicyDefault());
+			this.defaultPolicies.put(PolicyType.QUERY, client.getQueryPolicyDefault());
+			this.defaultPolicies.put(PolicyType.SCAN, client.getScanPolicyDefault());
+		}
 	}
 
 	void setReactiveDefaultPolicies(IAerospikeReactorClient reactorClient) {

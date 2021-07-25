@@ -1,4 +1,4 @@
-package com.aerospike.mapper.tools;
+package com.aerospike.mapper.tools.virtuallist;
 
 import javax.validation.constraints.NotNull;
 
@@ -8,7 +8,7 @@ public class Interactor {
 	private Operation operation;
 	private DeferredOperation deferredOperation;
 	private final OperationParameters deferredParameters;
-	private ResultsUnpacker []resultsUnpackers;
+	private ResultsUnpacker[]resultsUnpackers;
 
 	public Interactor(@NotNull Operation operation, @NotNull ResultsUnpacker... resultsUnpackers) {
 		super();
