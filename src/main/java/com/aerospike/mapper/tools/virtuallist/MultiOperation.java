@@ -55,13 +55,108 @@ public class MultiOperation<E> {
         return this;
     }
 
+    public MultiOperation<E> removeByValue(Object value) {
+        this.interactions.add(virtualListInteractors.getRemoveByValueInteractor(value));
+        return this;
+    }
+
+    public MultiOperation<E> removeByValueList(List<Object> values) {
+        this.interactions.add(virtualListInteractors.getRemoveByValueListInteractor(values));
+        return this;
+    }
+
     public MultiOperation<E> removeByValueRange(Object startValue, Object endValue) {
-        this.interactions.add(virtualListInteractors.getRemoveValueRangeInteractor(startValue, endValue));
+        this.interactions.add(virtualListInteractors.getRemoveByValueRangeInteractor(startValue, endValue));
+        return this;
+    }
+
+    public MultiOperation<E> removeByValueRelativeRankRange(Object value, int rank) {
+        this.interactions.add(virtualListInteractors.getRemoveByValueRelativeRankRangeInteractor(value, rank));
+        return this;
+    }
+
+    public MultiOperation<E> removeByValueRelativeRankRange(Object value, int rank, int count) {
+        this.interactions.add(virtualListInteractors.getRemoveByValueRelativeRankRangeInteractor(value, rank, count));
+        return this;
+    }
+
+    public MultiOperation<E> removeByIndex(int index) {
+        this.interactions.add(virtualListInteractors.getRemoveByIndexInteractor(index));
+        return this;
+    }
+
+    public MultiOperation<E> removeByIndexRange(int index) {
+        this.interactions.add(virtualListInteractors.getRemoveByIndexRangeInteractor(index));
+        return this;
+    }
+
+    public MultiOperation<E> removeByIndexRange(int index, int count) {
+        this.interactions.add(virtualListInteractors.getRemoveByIndexRangeInteractor(index, count));
+        return this;
+    }
+
+    public MultiOperation<E> removeByRank(int rank) {
+        this.interactions.add(virtualListInteractors.getRemoveByRankInteractor(rank));
+        return this;
+    }
+
+    public MultiOperation<E> removeByRankRange(int rank) {
+        this.interactions.add(virtualListInteractors.getRemoveByRankRangeInteractor(rank));
+        return this;
+    }
+
+    public MultiOperation<E> removeByRankRange(int rank, int count) {
+        this.interactions.add(virtualListInteractors.getRemoveByRankRangeInteractor(rank, count));
+        return this;
+    }
+
+    public MultiOperation<E> getByValue(Object value) {
+        this.interactions.add(virtualListInteractors.getGetByValueInteractor(value));
         return this;
     }
 
     public MultiOperation<E> getByValueRange(Object startValue, Object endValue) {
         this.interactions.add(virtualListInteractors.getGetByValueRangeInteractor(startValue, endValue));
+        return this;
+    }
+
+    public MultiOperation<E> getByValueList(List<Object> values) {
+        this.interactions.add(virtualListInteractors.getGetByValueListInteractor(values));
+        return this;
+    }
+
+    public MultiOperation<E> getByValueRelativeRankRange(Object value, int rank) {
+        this.interactions.add(virtualListInteractors.getGetByValueRelativeRankRangeInteractor(value, rank));
+        return this;
+    }
+
+    public MultiOperation<E> getByValueRelativeRankRange(Object value, int rank, int count) {
+        this.interactions.add(virtualListInteractors.getGetByValueRelativeRankRangeInteractor(value, rank, count));
+        return this;
+    }
+
+    public MultiOperation<E> getByIndexRange(int index) {
+        this.interactions.add(virtualListInteractors.getGetByIndexRangeInteractor(index));
+        return this;
+    }
+
+    public MultiOperation<E> getByIndexRange(int index, int count) {
+        this.interactions.add(virtualListInteractors.getGetByIndexRangeInteractor(index, count));
+        return this;
+    }
+
+    public MultiOperation<E> getByRank(int rank) {
+        this.interactions.add(virtualListInteractors.getGetByRankInteractor(rank));
+        return this;
+    }
+
+    public MultiOperation<E> getByRankRange(int rank) {
+        this.interactions.add(virtualListInteractors.getGetByRankRangeInteractor(rank));
+        return this;
+    }
+
+    public MultiOperation<E> getByRankRange(int rank, int count) {
+        this.interactions.add(virtualListInteractors.getGetByRankRangeInteractor(rank, count));
         return this;
     }
 
@@ -71,7 +166,7 @@ public class MultiOperation<E> {
     }
 
     public MultiOperation<E> get(int index) {
-        this.interactions.add(virtualListInteractors.getIndexInteractor(index));
+        this.interactions.add(virtualListInteractors.getByIndexInteractor(index));
         return this;
     }
 

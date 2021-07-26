@@ -45,6 +45,23 @@ public class VirtualList<E> extends BaseVirtualList<E> implements IVirtualList<E
 		return new MultiOperation<>(writePolicy, binName, listMapper, key, virtualListInteractors, mapper);
 	}
 
+	public List<E> getByValue(Object value, ReturnType returnResultsOfType) {
+		return this.getByValue(null, value, returnResultsOfType);
+	}
+
+	@SuppressWarnings("unchecked")
+	public List<E> getByValue(WritePolicy writePolicy, Object value, ReturnType returnResultsOfType) {
+		if (writePolicy == null) {
+			writePolicy = new WritePolicy(owningEntry.getWritePolicy());
+			writePolicy.recordExistsAction = RecordExistsAction.UPDATE;
+		}
+		Interactor interactor = virtualListInteractors.getGetByValueInteractor(value);
+		interactor.setNeedsResultOfType(returnResultsOfType);
+		Record record = this.mapper.getClient().operate(writePolicy, key, interactor.getOperation());
+
+		return (List<E>)interactor.getResult(record.getList(binName));
+	}
+
 	/**
 	 * Get items from the list matching the specified value. If the list is mapped to a MAP in Aerospike,
 	 * the start value and end value will dictate the range of values to get,
@@ -81,6 +98,142 @@ public class VirtualList<E> extends BaseVirtualList<E> implements IVirtualList<E
     		writePolicy.recordExistsAction = RecordExistsAction.UPDATE;
     	}
 		Interactor interactor = virtualListInteractors.getGetByValueRangeInteractor(startValue, endValue);
+		interactor.setNeedsResultOfType(returnResultsOfType);
+		Record record = this.mapper.getClient().operate(writePolicy, key, interactor.getOperation());
+
+		return (List<E>)interactor.getResult(record.getList(binName));
+	}
+
+	public List<E> getByValueList(List<Object> values, ReturnType returnResultsOfType) {
+		return this.getByValueList(null, values, returnResultsOfType);
+	}
+
+	@SuppressWarnings("unchecked")
+	public List<E> getByValueList(WritePolicy writePolicy, List<Object> values, ReturnType returnResultsOfType) {
+		if (writePolicy == null) {
+			writePolicy = new WritePolicy(owningEntry.getWritePolicy());
+			writePolicy.recordExistsAction = RecordExistsAction.UPDATE;
+		}
+		Interactor interactor = virtualListInteractors.getGetByValueListInteractor(values);
+		interactor.setNeedsResultOfType(returnResultsOfType);
+		Record record = this.mapper.getClient().operate(writePolicy, key, interactor.getOperation());
+
+		return (List<E>)interactor.getResult(record.getList(binName));
+	}
+
+	public List<E> getByValueRelativeRankRange(Object value, int rank, ReturnType returnResultsOfType) {
+		return this.getByValueRelativeRankRange(null, value, rank, returnResultsOfType);
+	}
+
+	@SuppressWarnings("unchecked")
+	public List<E> getByValueRelativeRankRange(WritePolicy writePolicy, Object value, int rank, ReturnType returnResultsOfType) {
+		if (writePolicy == null) {
+			writePolicy = new WritePolicy(owningEntry.getWritePolicy());
+			writePolicy.recordExistsAction = RecordExistsAction.UPDATE;
+		}
+		Interactor interactor = virtualListInteractors.getGetByValueRelativeRankRangeInteractor(value, rank);
+		interactor.setNeedsResultOfType(returnResultsOfType);
+		Record record = this.mapper.getClient().operate(writePolicy, key, interactor.getOperation());
+
+		return (List<E>)interactor.getResult(record.getList(binName));
+	}
+
+	public List<E> getByValueRelativeRankRange(Object value, int rank, int count, ReturnType returnResultsOfType) {
+		return this.getByValueRelativeRankRange(null, value, rank, count, returnResultsOfType);
+	}
+
+	@SuppressWarnings("unchecked")
+	public List<E> getByValueRelativeRankRange(WritePolicy writePolicy, Object value, int rank, int count, ReturnType returnResultsOfType) {
+		if (writePolicy == null) {
+			writePolicy = new WritePolicy(owningEntry.getWritePolicy());
+			writePolicy.recordExistsAction = RecordExistsAction.UPDATE;
+		}
+		Interactor interactor = virtualListInteractors.getGetByValueRelativeRankRangeInteractor(value, rank, count);
+		interactor.setNeedsResultOfType(returnResultsOfType);
+		Record record = this.mapper.getClient().operate(writePolicy, key, interactor.getOperation());
+
+		return (List<E>)interactor.getResult(record.getList(binName));
+	}
+
+	public List<E> getByIndexRange(int index, ReturnType returnResultsOfType) {
+		return this.getByIndexRange(null, index, returnResultsOfType);
+	}
+
+	@SuppressWarnings("unchecked")
+	public List<E> getByIndexRange(WritePolicy writePolicy, int index, ReturnType returnResultsOfType) {
+		if (writePolicy == null) {
+			writePolicy = new WritePolicy(owningEntry.getWritePolicy());
+			writePolicy.recordExistsAction = RecordExistsAction.UPDATE;
+		}
+		Interactor interactor = virtualListInteractors.getGetByIndexRangeInteractor(index);
+		interactor.setNeedsResultOfType(returnResultsOfType);
+		Record record = this.mapper.getClient().operate(writePolicy, key, interactor.getOperation());
+
+		return (List<E>)interactor.getResult(record.getList(binName));
+	}
+
+	public List<E> getByIndexRange(int index, int count, ReturnType returnResultsOfType) {
+		return this.getByIndexRange(null, index, count, returnResultsOfType);
+	}
+
+	@SuppressWarnings("unchecked")
+	public List<E> getByIndexRange(WritePolicy writePolicy, int index, int count, ReturnType returnResultsOfType) {
+		if (writePolicy == null) {
+			writePolicy = new WritePolicy(owningEntry.getWritePolicy());
+			writePolicy.recordExistsAction = RecordExistsAction.UPDATE;
+		}
+		Interactor interactor = virtualListInteractors.getGetByIndexRangeInteractor(index, count);
+		interactor.setNeedsResultOfType(returnResultsOfType);
+		Record record = this.mapper.getClient().operate(writePolicy, key, interactor.getOperation());
+
+		return (List<E>)interactor.getResult(record.getList(binName));
+	}
+
+	public List<E> getByRank(int rank, ReturnType returnResultsOfType) {
+		return this.getByRank(null, rank, returnResultsOfType);
+	}
+
+	@SuppressWarnings("unchecked")
+	public List<E> getByRank(WritePolicy writePolicy, int rank, ReturnType returnResultsOfType) {
+		if (writePolicy == null) {
+			writePolicy = new WritePolicy(owningEntry.getWritePolicy());
+			writePolicy.recordExistsAction = RecordExistsAction.UPDATE;
+		}
+		Interactor interactor = virtualListInteractors.getGetByRankInteractor(rank);
+		interactor.setNeedsResultOfType(returnResultsOfType);
+		Record record = this.mapper.getClient().operate(writePolicy, key, interactor.getOperation());
+
+		return (List<E>)interactor.getResult(record.getList(binName));
+	}
+
+	public List<E> getByRankRange(int rank, ReturnType returnResultsOfType) {
+		return this.getByRankRange(null, rank, returnResultsOfType);
+	}
+
+	@SuppressWarnings("unchecked")
+	public List<E> getByRankRange(WritePolicy writePolicy, int rank, ReturnType returnResultsOfType) {
+		if (writePolicy == null) {
+			writePolicy = new WritePolicy(owningEntry.getWritePolicy());
+			writePolicy.recordExistsAction = RecordExistsAction.UPDATE;
+		}
+		Interactor interactor = virtualListInteractors.getGetByRankRangeInteractor(rank);
+		interactor.setNeedsResultOfType(returnResultsOfType);
+		Record record = this.mapper.getClient().operate(writePolicy, key, interactor.getOperation());
+
+		return (List<E>)interactor.getResult(record.getList(binName));
+	}
+
+	public List<E> getByRankRange(int rank, int count, ReturnType returnResultsOfType) {
+		return this.getByRankRange(null, rank, count, returnResultsOfType);
+	}
+
+	@SuppressWarnings("unchecked")
+	public List<E> getByRankRange(WritePolicy writePolicy, int rank, int count, ReturnType returnResultsOfType) {
+		if (writePolicy == null) {
+			writePolicy = new WritePolicy(owningEntry.getWritePolicy());
+			writePolicy.recordExistsAction = RecordExistsAction.UPDATE;
+		}
+		Interactor interactor = virtualListInteractors.getGetByRankRangeInteractor(rank, count);
 		interactor.setNeedsResultOfType(returnResultsOfType);
 		Record record = this.mapper.getClient().operate(writePolicy, key, interactor.getOperation());
 
@@ -167,6 +320,40 @@ public class VirtualList<E> extends BaseVirtualList<E> implements IVirtualList<E
 		return (List<E>)interactor.getResult(record.getList(binName));
 	}
 
+	public List<E> removeByValue(Object value, ReturnType returnResultsOfType) {
+		return this.removeByValue(null, value, returnResultsOfType);
+	}
+
+	@SuppressWarnings("unchecked")
+	public List<E> removeByValue(WritePolicy writePolicy, Object value, ReturnType returnResultsOfType) {
+		if (writePolicy == null) {
+			writePolicy = new WritePolicy(owningEntry.getWritePolicy());
+			writePolicy.recordExistsAction = RecordExistsAction.UPDATE;
+		}
+		Interactor interactor = virtualListInteractors.getRemoveByValueInteractor(value);
+		interactor.setNeedsResultOfType(returnResultsOfType);
+		Record record = this.mapper.getClient().operate(writePolicy, key, interactor.getOperation());
+
+		return (List<E>)interactor.getResult(record.getList(binName));
+	}
+
+	public List<E> removeByValueList(List<Object> values, ReturnType returnResultsOfType) {
+		return this.removeByValueList(null, values, returnResultsOfType);
+	}
+
+	@SuppressWarnings("unchecked")
+	public List<E> removeByValueList(WritePolicy writePolicy, List<Object> values, ReturnType returnResultsOfType) {
+		if (writePolicy == null) {
+			writePolicy = new WritePolicy(owningEntry.getWritePolicy());
+			writePolicy.recordExistsAction = RecordExistsAction.UPDATE;
+		}
+		Interactor interactor = virtualListInteractors.getRemoveByValueListInteractor(values);
+		interactor.setNeedsResultOfType(returnResultsOfType);
+		Record record = this.mapper.getClient().operate(writePolicy, key, interactor.getOperation());
+
+		return (List<E>)interactor.getResult(record.getList(binName));
+	}
+
 	/**
 	 * Remove items from the list matching the specified value. If the list is mapped to a MAP in Aerospike,
 	 * the start value and end value will dictate the range of values to be removed,
@@ -202,7 +389,143 @@ public class VirtualList<E> extends BaseVirtualList<E> implements IVirtualList<E
         	writePolicy = new WritePolicy(owningEntry.getWritePolicy());
     		writePolicy.recordExistsAction = RecordExistsAction.UPDATE;
     	}
-		Interactor interactor = virtualListInteractors.getRemoveValueRangeInteractor(startValue, endValue);
+		Interactor interactor = virtualListInteractors.getRemoveByValueRangeInteractor(startValue, endValue);
+		interactor.setNeedsResultOfType(returnResultsOfType);
+		Record record = this.mapper.getClient().operate(writePolicy, key, interactor.getOperation());
+
+		return (List<E>)interactor.getResult(record.getList(binName));
+	}
+
+	public List<E> removeByValueRelativeRankRange(Object value, int rank, ReturnType returnResultsOfType) {
+		return this.removeByValueRelativeRankRange(null, value, rank, returnResultsOfType);
+	}
+
+	@SuppressWarnings("unchecked")
+	public List<E> removeByValueRelativeRankRange(WritePolicy writePolicy, Object value, int rank, ReturnType returnResultsOfType) {
+		if (writePolicy == null) {
+			writePolicy = new WritePolicy(owningEntry.getWritePolicy());
+			writePolicy.recordExistsAction = RecordExistsAction.UPDATE;
+		}
+		Interactor interactor = virtualListInteractors.getRemoveByValueRelativeRankRangeInteractor(value, rank);
+		interactor.setNeedsResultOfType(returnResultsOfType);
+		Record record = this.mapper.getClient().operate(writePolicy, key, interactor.getOperation());
+
+		return (List<E>)interactor.getResult(record.getList(binName));
+	}
+
+	public List<E> removeByValueRelativeRankRange(Object value, int rank, int count, ReturnType returnResultsOfType) {
+		return this.removeByValueRelativeRankRange(null, value, rank, count, returnResultsOfType);
+	}
+
+	@SuppressWarnings("unchecked")
+	public List<E> removeByValueRelativeRankRange(WritePolicy writePolicy, Object value, int rank, int count, ReturnType returnResultsOfType) {
+		if (writePolicy == null) {
+			writePolicy = new WritePolicy(owningEntry.getWritePolicy());
+			writePolicy.recordExistsAction = RecordExistsAction.UPDATE;
+		}
+		Interactor interactor = virtualListInteractors.getRemoveByValueRelativeRankRangeInteractor(value, rank, count);
+		interactor.setNeedsResultOfType(returnResultsOfType);
+		Record record = this.mapper.getClient().operate(writePolicy, key, interactor.getOperation());
+
+		return (List<E>)interactor.getResult(record.getList(binName));
+	}
+
+	public List<E> removeByIndex(int index, ReturnType returnResultsOfType) {
+		return this.removeByIndex(null, index, returnResultsOfType);
+	}
+
+	@SuppressWarnings("unchecked")
+	public List<E> removeByIndex(WritePolicy writePolicy, int index, ReturnType returnResultsOfType) {
+		if (writePolicy == null) {
+			writePolicy = new WritePolicy(owningEntry.getWritePolicy());
+			writePolicy.recordExistsAction = RecordExistsAction.UPDATE;
+		}
+		Interactor interactor = virtualListInteractors.getRemoveByIndexInteractor(index);
+		interactor.setNeedsResultOfType(returnResultsOfType);
+		Record record = this.mapper.getClient().operate(writePolicy, key, interactor.getOperation());
+
+		return (List<E>)interactor.getResult(record.getList(binName));
+	}
+
+	public List<E> removeByIndexRange(int index, ReturnType returnResultsOfType) {
+		return this.removeByIndexRange(null, index, returnResultsOfType);
+	}
+
+	@SuppressWarnings("unchecked")
+	public List<E> removeByIndexRange(WritePolicy writePolicy, int index, ReturnType returnResultsOfType) {
+		if (writePolicy == null) {
+			writePolicy = new WritePolicy(owningEntry.getWritePolicy());
+			writePolicy.recordExistsAction = RecordExistsAction.UPDATE;
+		}
+		Interactor interactor = virtualListInteractors.getRemoveByIndexRangeInteractor(index);
+		interactor.setNeedsResultOfType(returnResultsOfType);
+		Record record = this.mapper.getClient().operate(writePolicy, key, interactor.getOperation());
+
+		return (List<E>)interactor.getResult(record.getList(binName));
+	}
+
+	public List<E> removeByIndexRange(int index, int count, ReturnType returnResultsOfType) {
+		return this.removeByIndexRange(null, index, count, returnResultsOfType);
+	}
+
+	@SuppressWarnings("unchecked")
+	public List<E> removeByIndexRange(WritePolicy writePolicy, int index, int count, ReturnType returnResultsOfType) {
+		if (writePolicy == null) {
+			writePolicy = new WritePolicy(owningEntry.getWritePolicy());
+			writePolicy.recordExistsAction = RecordExistsAction.UPDATE;
+		}
+		Interactor interactor = virtualListInteractors.getRemoveByIndexRangeInteractor(index, count);
+		interactor.setNeedsResultOfType(returnResultsOfType);
+		Record record = this.mapper.getClient().operate(writePolicy, key, interactor.getOperation());
+
+		return (List<E>)interactor.getResult(record.getList(binName));
+	}
+
+	public List<E> removeByRank(int rank, ReturnType returnResultsOfType) {
+		return this.removeByRank(null, rank, returnResultsOfType);
+	}
+
+	@SuppressWarnings("unchecked")
+	public List<E> removeByRank(WritePolicy writePolicy, int rank, ReturnType returnResultsOfType) {
+		if (writePolicy == null) {
+			writePolicy = new WritePolicy(owningEntry.getWritePolicy());
+			writePolicy.recordExistsAction = RecordExistsAction.UPDATE;
+		}
+		Interactor interactor = virtualListInteractors.getRemoveByRankInteractor(rank);
+		interactor.setNeedsResultOfType(returnResultsOfType);
+		Record record = this.mapper.getClient().operate(writePolicy, key, interactor.getOperation());
+
+		return (List<E>)interactor.getResult(record.getList(binName));
+	}
+
+	public List<E> removeByRankRange(int rank, ReturnType returnResultsOfType) {
+		return this.removeByRankRange(null, rank, returnResultsOfType);
+	}
+
+	@SuppressWarnings("unchecked")
+	public List<E> removeByRankRange(WritePolicy writePolicy, int rank, ReturnType returnResultsOfType) {
+		if (writePolicy == null) {
+			writePolicy = new WritePolicy(owningEntry.getWritePolicy());
+			writePolicy.recordExistsAction = RecordExistsAction.UPDATE;
+		}
+		Interactor interactor = virtualListInteractors.getRemoveByRankRangeInteractor(rank);
+		interactor.setNeedsResultOfType(returnResultsOfType);
+		Record record = this.mapper.getClient().operate(writePolicy, key, interactor.getOperation());
+
+		return (List<E>)interactor.getResult(record.getList(binName));
+	}
+
+	public List<E> removeByRankRange(int rank, int count, ReturnType returnResultsOfType) {
+		return this.removeByRankRange(null, rank, count, returnResultsOfType);
+	}
+
+	@SuppressWarnings("unchecked")
+	public List<E> removeByRankRange(WritePolicy writePolicy, int rank, int count, ReturnType returnResultsOfType) {
+		if (writePolicy == null) {
+			writePolicy = new WritePolicy(owningEntry.getWritePolicy());
+			writePolicy.recordExistsAction = RecordExistsAction.UPDATE;
+		}
+		Interactor interactor = virtualListInteractors.getRemoveByRankRangeInteractor(rank, count);
 		interactor.setNeedsResultOfType(returnResultsOfType);
 		Record record = this.mapper.getClient().operate(writePolicy, key, interactor.getOperation());
 
@@ -295,7 +618,7 @@ public class VirtualList<E> extends BaseVirtualList<E> implements IVirtualList<E
 	 */
 	@SuppressWarnings("unchecked")
 	public E get(Policy policy, int index) {
-    	Interactor interactor = virtualListInteractors.getIndexInteractor(index);
+    	Interactor interactor = virtualListInteractors.getByIndexInteractor(index);
 		Record record = this.mapper.getClient().operate(getWritePolicy(policy), key, interactor.getOperation());
 		return (E)interactor.getResult(record.getList(binName));
 	}
