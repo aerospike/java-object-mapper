@@ -45,10 +45,23 @@ public class VirtualList<E> extends BaseVirtualList<E> implements IVirtualList<E
 		return new MultiOperation<>(writePolicy, binName, listMapper, key, virtualListInteractors, mapper);
 	}
 
+	/**
+	 * Get items from the list matching the specified value.
+	 * @param value The value to get.
+	 * @param returnResultsOfType Type to return.
+	 * @return A list of the records which match the given value.
+	 */
 	public List<E> getByValue(Object value, ReturnType returnResultsOfType) {
 		return this.getByValue(null, value, returnResultsOfType);
 	}
 
+	/**
+	 * Get items from the list matching the specified value.
+	 * @param writePolicy An Aerospike write policy to use for the operate() operation.
+	 * @param value The value to get.
+	 * @param returnResultsOfType Type to return.
+	 * @return A list of the records which match the given value.
+	 */
 	@SuppressWarnings("unchecked")
 	public List<E> getByValue(WritePolicy writePolicy, Object value, ReturnType returnResultsOfType) {
 		if (writePolicy == null) {
@@ -104,10 +117,23 @@ public class VirtualList<E> extends BaseVirtualList<E> implements IVirtualList<E
 		return (List<E>)interactor.getResult(record.getList(binName));
 	}
 
+	/**
+	 * Get items from the list matching the specified list of values.
+	 * @param values The list of values to get.
+	 * @param returnResultsOfType Type to return.
+	 * @return A list of the records which match the given list of values.
+	 */
 	public List<E> getByValueList(List<Object> values, ReturnType returnResultsOfType) {
 		return this.getByValueList(null, values, returnResultsOfType);
 	}
 
+	/**
+	 * Get items from the list matching the specified list of values.
+	 * @param writePolicy An Aerospike write policy to use for the operate() operation.
+	 * @param values The list of values to get.
+	 * @param returnResultsOfType Type to return.
+	 * @return A list of the records which match the given list of values.
+	 */
 	@SuppressWarnings("unchecked")
 	public List<E> getByValueList(WritePolicy writePolicy, List<Object> values, ReturnType returnResultsOfType) {
 		if (writePolicy == null) {
@@ -121,10 +147,25 @@ public class VirtualList<E> extends BaseVirtualList<E> implements IVirtualList<E
 		return (List<E>)interactor.getResult(record.getList(binName));
 	}
 
+	/**
+	 * Get items nearest to value and greater by relative rank.
+	 * @param value The value to base the relative rank range calculation on.
+	 * @param rank The relative rank.
+	 * @param returnResultsOfType Type to return.
+	 * @return A list of records that matches the given value and rank.
+	 */
 	public List<E> getByValueRelativeRankRange(Object value, int rank, ReturnType returnResultsOfType) {
 		return this.getByValueRelativeRankRange(null, value, rank, returnResultsOfType);
 	}
 
+	/**
+	 * Get items nearest to value and greater by relative rank.
+	 * @param writePolicy An Aerospike write policy to use for the operate() operation.
+	 * @param value The value to base the relative rank range calculation on.
+	 * @param rank The relative rank.
+	 * @param returnResultsOfType Type to return.
+	 * @return A list of records that matches the given value and rank.
+	 */
 	@SuppressWarnings("unchecked")
 	public List<E> getByValueRelativeRankRange(WritePolicy writePolicy, Object value, int rank, ReturnType returnResultsOfType) {
 		if (writePolicy == null) {
@@ -138,10 +179,27 @@ public class VirtualList<E> extends BaseVirtualList<E> implements IVirtualList<E
 		return (List<E>)interactor.getResult(record.getList(binName));
 	}
 
+	/**
+	 * Get items nearest to value and greater by relative rank with a count limit.
+	 * @param value The value to base the relative rank range calculation on.
+	 * @param rank The relative rank.
+	 * @param count The count limit.
+	 * @param returnResultsOfType Type to return.
+	 * @return A list of records that matches the given value, rank and count.
+	 */
 	public List<E> getByValueRelativeRankRange(Object value, int rank, int count, ReturnType returnResultsOfType) {
 		return this.getByValueRelativeRankRange(null, value, rank, count, returnResultsOfType);
 	}
 
+	/**
+	 * Get items nearest to value and greater by relative rank with a count limit.
+	 * @param writePolicy An Aerospike write policy to use for the operate() operation.
+	 * @param value The value to base the relative rank range calculation on.
+	 * @param rank The relative rank.
+	 * @param count The count limit.
+	 * @param returnResultsOfType Type to return.
+	 * @return A list of records that matches the given value, rank and count.
+	 */
 	@SuppressWarnings("unchecked")
 	public List<E> getByValueRelativeRankRange(WritePolicy writePolicy, Object value, int rank, int count, ReturnType returnResultsOfType) {
 		if (writePolicy == null) {
@@ -155,10 +213,23 @@ public class VirtualList<E> extends BaseVirtualList<E> implements IVirtualList<E
 		return (List<E>)interactor.getResult(record.getList(binName));
 	}
 
+	/**
+	 * Get items starting at specified index to the end of virtual list.
+	 * @param index The start index to get items from to the end of the virtual list.
+	 * @param returnResultsOfType Type to return.
+	 * @return A list of the records which match the given index.
+	 */
 	public List<E> getByIndexRange(int index, ReturnType returnResultsOfType) {
 		return this.getByIndexRange(null, index, returnResultsOfType);
 	}
 
+	/**
+	 * Get items starting at specified index to the end of virtual list.
+	 * @param writePolicy An Aerospike write policy to use for the operate() operation.
+	 * @param index The start index to get items from to the end of the virtual list.
+	 * @param returnResultsOfType Type to return.
+	 * @return A list of the records which match the given index.
+	 */
 	@SuppressWarnings("unchecked")
 	public List<E> getByIndexRange(WritePolicy writePolicy, int index, ReturnType returnResultsOfType) {
 		if (writePolicy == null) {
@@ -172,10 +243,23 @@ public class VirtualList<E> extends BaseVirtualList<E> implements IVirtualList<E
 		return (List<E>)interactor.getResult(record.getList(binName));
 	}
 
+	/**
+	 * Get "count" items starting at specified index.
+	 * @param index The start index to get the "count" items from.
+	 * @param returnResultsOfType Type to return.
+	 * @return A list of the records which match the given index and count.
+	 */
 	public List<E> getByIndexRange(int index, int count, ReturnType returnResultsOfType) {
 		return this.getByIndexRange(null, index, count, returnResultsOfType);
 	}
 
+	/**
+	 * Get "count" items starting at specified index.
+	 * @param writePolicy An Aerospike write policy to use for the operate() operation.
+	 * @param index The start index to get the "count" items from.
+	 * @param returnResultsOfType Type to return.
+	 * @return A list of the records which match the given index and count.
+	 */
 	@SuppressWarnings("unchecked")
 	public List<E> getByIndexRange(WritePolicy writePolicy, int index, int count, ReturnType returnResultsOfType) {
 		if (writePolicy == null) {
@@ -189,10 +273,23 @@ public class VirtualList<E> extends BaseVirtualList<E> implements IVirtualList<E
 		return (List<E>)interactor.getResult(record.getList(binName));
 	}
 
+	/**
+	 * Get items identified by rank.
+	 * @param rank The rank.
+	 * @param returnResultsOfType Type to return.
+	 * @return A list of the records which match the given rank.
+	 */
 	public List<E> getByRank(int rank, ReturnType returnResultsOfType) {
 		return this.getByRank(null, rank, returnResultsOfType);
 	}
 
+	/**
+	 * Get items identified by rank.
+	 * @param writePolicy An Aerospike write policy to use for the operate() operation.
+	 * @param rank The rank.
+	 * @param returnResultsOfType Type to return.
+	 * @return A list of the records which match the given rank.
+	 */
 	@SuppressWarnings("unchecked")
 	public List<E> getByRank(WritePolicy writePolicy, int rank, ReturnType returnResultsOfType) {
 		if (writePolicy == null) {
@@ -206,10 +303,23 @@ public class VirtualList<E> extends BaseVirtualList<E> implements IVirtualList<E
 		return (List<E>)interactor.getResult(record.getList(binName));
 	}
 
+	/**
+	 * Get items starting at specified rank to the last ranked item.
+	 * @param rank The starting rank.
+	 * @param returnResultsOfType Type to return.
+	 * @return A list of the records which match the given rank.
+	 */
 	public List<E> getByRankRange(int rank, ReturnType returnResultsOfType) {
 		return this.getByRankRange(null, rank, returnResultsOfType);
 	}
 
+	/**
+	 * Get items starting at specified rank to the last ranked item.
+	 * @param writePolicy An Aerospike write policy to use for the operate() operation.
+	 * @param rank The starting rank.
+	 * @param returnResultsOfType Type to return.
+	 * @return A list of the records which match the given rank.
+	 */
 	@SuppressWarnings("unchecked")
 	public List<E> getByRankRange(WritePolicy writePolicy, int rank, ReturnType returnResultsOfType) {
 		if (writePolicy == null) {
@@ -223,10 +333,23 @@ public class VirtualList<E> extends BaseVirtualList<E> implements IVirtualList<E
 		return (List<E>)interactor.getResult(record.getList(binName));
 	}
 
+	/**
+	 * Get "count" items starting at specified rank to the last ranked item.
+	 * @param rank The starting rank.
+	 * @param returnResultsOfType Type to return.
+	 * @return A list of the records which match the given rank and count.
+	 */
 	public List<E> getByRankRange(int rank, int count, ReturnType returnResultsOfType) {
 		return this.getByRankRange(null, rank, count, returnResultsOfType);
 	}
 
+	/**
+	 * Get "count" items starting at specified rank to the last ranked item.
+	 * @param writePolicy An Aerospike write policy to use for the operate() operation.
+	 * @param rank The starting rank.
+	 * @param returnResultsOfType Type to return.
+	 * @return A list of the records which match the given rank and count.
+	 */
 	@SuppressWarnings("unchecked")
 	public List<E> getByRankRange(WritePolicy writePolicy, int rank, int count, ReturnType returnResultsOfType) {
 		if (writePolicy == null) {
@@ -320,10 +443,23 @@ public class VirtualList<E> extends BaseVirtualList<E> implements IVirtualList<E
 		return (List<E>)interactor.getResult(record.getList(binName));
 	}
 
+	/**
+	 * Remove items identified by value and returns the removed data.
+	 * @param value The value to base the items to remove on.
+	 * @param returnResultsOfType Type to return.
+	 * @return A list of the records which have been removed from the database if returnResults is true, null otherwise.
+	 */
 	public List<E> removeByValue(Object value, ReturnType returnResultsOfType) {
 		return this.removeByValue(null, value, returnResultsOfType);
 	}
 
+	/**
+	 * Remove items identified by value and returns the removed data.
+	 * @param writePolicy An Aerospike write policy to use for the operate() operation.
+	 * @param value The value to base the items to remove on.
+	 * @param returnResultsOfType Type to return.
+	 * @return A list of the records which have been removed from the database if returnResults is true, null otherwise.
+	 */
 	@SuppressWarnings("unchecked")
 	public List<E> removeByValue(WritePolicy writePolicy, Object value, ReturnType returnResultsOfType) {
 		if (writePolicy == null) {
@@ -337,10 +473,23 @@ public class VirtualList<E> extends BaseVirtualList<E> implements IVirtualList<E
 		return (List<E>)interactor.getResult(record.getList(binName));
 	}
 
+	/**
+	 * Remove items identified by list of values and returns the removed data.
+	 * @param values The list of values to base the items to remove on.
+	 * @param returnResultsOfType Type to return.
+	 * @return A list of the records which have been removed from the database if returnResults is true, null otherwise.
+	 */
 	public List<E> removeByValueList(List<Object> values, ReturnType returnResultsOfType) {
 		return this.removeByValueList(null, values, returnResultsOfType);
 	}
 
+	/**
+	 * Remove items identified by list of values and returns the removed data.
+	 * @param writePolicy An Aerospike write policy to use for the operate() operation.
+	 * @param values The list of values to base the items to remove on.
+	 * @param returnResultsOfType Type to return.
+	 * @return A list of the records which have been removed from the database if returnResults is true, null otherwise.
+	 */
 	@SuppressWarnings("unchecked")
 	public List<E> removeByValueList(WritePolicy writePolicy, List<Object> values, ReturnType returnResultsOfType) {
 		if (writePolicy == null) {
@@ -396,10 +545,25 @@ public class VirtualList<E> extends BaseVirtualList<E> implements IVirtualList<E
 		return (List<E>)interactor.getResult(record.getList(binName));
 	}
 
+	/**
+	 * Remove items nearest to value and greater by relative rank.
+	 * @param value The value to base the items to remove on.
+	 * @param rank The rank.
+	 * @param returnResultsOfType Type to return.
+	 * @return A list of the records which have been removed from the database if returnResults is true, null otherwise.
+	 */
 	public List<E> removeByValueRelativeRankRange(Object value, int rank, ReturnType returnResultsOfType) {
 		return this.removeByValueRelativeRankRange(null, value, rank, returnResultsOfType);
 	}
 
+	/**
+	 * Remove items nearest to value and greater by relative rank.
+	 * @param writePolicy An Aerospike write policy to use for the operate() operation.
+	 * @param value The value to base the items to remove on.
+	 * @param rank The rank.
+	 * @param returnResultsOfType Type to return.
+	 * @return A list of the records which have been removed from the database if returnResults is true, null otherwise.
+	 */
 	@SuppressWarnings("unchecked")
 	public List<E> removeByValueRelativeRankRange(WritePolicy writePolicy, Object value, int rank, ReturnType returnResultsOfType) {
 		if (writePolicy == null) {
@@ -413,10 +577,27 @@ public class VirtualList<E> extends BaseVirtualList<E> implements IVirtualList<E
 		return (List<E>)interactor.getResult(record.getList(binName));
 	}
 
+	/**
+	 * Remove items nearest to value and greater by relative rank with a count limit.
+	 * @param value The value to base the items to remove on.
+	 * @param rank The rank.
+	 * @param count The count limit.
+	 * @param returnResultsOfType Type to return.
+	 * @return A list of the records which have been removed from the database if returnResults is true, null otherwise.
+	 */
 	public List<E> removeByValueRelativeRankRange(Object value, int rank, int count, ReturnType returnResultsOfType) {
 		return this.removeByValueRelativeRankRange(null, value, rank, count, returnResultsOfType);
 	}
 
+	/**
+	 * Remove items nearest to value and greater by relative rank with a count limit.
+	 * @param writePolicy An Aerospike write policy to use for the operate() operation.
+	 * @param value The value to base the items to remove on.
+	 * @param rank The rank.
+	 * @param count The count limit.
+	 * @param returnResultsOfType Type to return.
+	 * @return A list of the records which have been removed from the database if returnResults is true, null otherwise.
+	 */
 	@SuppressWarnings("unchecked")
 	public List<E> removeByValueRelativeRankRange(WritePolicy writePolicy, Object value, int rank, int count, ReturnType returnResultsOfType) {
 		if (writePolicy == null) {
@@ -430,10 +611,23 @@ public class VirtualList<E> extends BaseVirtualList<E> implements IVirtualList<E
 		return (List<E>)interactor.getResult(record.getList(binName));
 	}
 
+	/**
+	 * Remove item identified by index and returns removed data.
+	 * @param index The index to remove the item from.
+	 * @param returnResultsOfType Type to return.
+	 * @return A list of the records which have been removed from the database if returnResults is true, null otherwise.
+	 */
 	public List<E> removeByIndex(int index, ReturnType returnResultsOfType) {
 		return this.removeByIndex(null, index, returnResultsOfType);
 	}
 
+	/**
+	 * Remove item identified by index and returns removed data.
+	 * @param writePolicy An Aerospike write policy to use for the operate() operation.
+	 * @param index The index to remove the item from.
+	 * @param returnResultsOfType Type to return.
+	 * @return A list of the records which have been removed from the database if returnResults is true, null otherwise.
+	 */
 	@SuppressWarnings("unchecked")
 	public List<E> removeByIndex(WritePolicy writePolicy, int index, ReturnType returnResultsOfType) {
 		if (writePolicy == null) {
@@ -447,10 +641,23 @@ public class VirtualList<E> extends BaseVirtualList<E> implements IVirtualList<E
 		return (List<E>)interactor.getResult(record.getList(binName));
 	}
 
+	/**
+	 * Remove items starting at specified index to the end of list and returns removed data.
+	 * @param index The start index to remove the item from.
+	 * @param returnResultsOfType Type to return.
+	 * @return A list of the records which have been removed from the database if returnResults is true, null otherwise.
+	 */
 	public List<E> removeByIndexRange(int index, ReturnType returnResultsOfType) {
 		return this.removeByIndexRange(null, index, returnResultsOfType);
 	}
 
+	/**
+	 * Remove items starting at specified index to the end of list and returns removed data.
+	 * @param writePolicy An Aerospike write policy to use for the operate() operation.
+	 * @param index The start index to remove the item from.
+	 * @param returnResultsOfType Type to return.
+	 * @return A list of the records which have been removed from the database if returnResults is true, null otherwise.
+	 */
 	@SuppressWarnings("unchecked")
 	public List<E> removeByIndexRange(WritePolicy writePolicy, int index, ReturnType returnResultsOfType) {
 		if (writePolicy == null) {
@@ -464,10 +671,25 @@ public class VirtualList<E> extends BaseVirtualList<E> implements IVirtualList<E
 		return (List<E>)interactor.getResult(record.getList(binName));
 	}
 
+	/**
+	 * Remove "count" items starting at specified index and returns removed data.
+	 * @param index The start index to remove the item from.
+	 * @param count The count limit.
+	 * @param returnResultsOfType Type to return.
+	 * @return A list of the records which have been removed from the database if returnResults is true, null otherwise.
+	 */
 	public List<E> removeByIndexRange(int index, int count, ReturnType returnResultsOfType) {
 		return this.removeByIndexRange(null, index, count, returnResultsOfType);
 	}
 
+	/**
+	 * Remove "count" items starting at specified index and returns removed data.
+	 * @param writePolicy An Aerospike write policy to use for the operate() operation.
+	 * @param index The start index to remove the item from.
+	 * @param count The count limit.
+	 * @param returnResultsOfType Type to return.
+	 * @return A list of the records which have been removed from the database if returnResults is true, null otherwise.
+	 */
 	@SuppressWarnings("unchecked")
 	public List<E> removeByIndexRange(WritePolicy writePolicy, int index, int count, ReturnType returnResultsOfType) {
 		if (writePolicy == null) {
@@ -481,10 +703,23 @@ public class VirtualList<E> extends BaseVirtualList<E> implements IVirtualList<E
 		return (List<E>)interactor.getResult(record.getList(binName));
 	}
 
+	/**
+	 * Remove item identified by rank and returns removed data.
+	 * @param rank The rank.
+	 * @param returnResultsOfType Type to return.
+	 * @return A list of the records which have been removed from the database if returnResults is true, null otherwise.
+	 */
 	public List<E> removeByRank(int rank, ReturnType returnResultsOfType) {
 		return this.removeByRank(null, rank, returnResultsOfType);
 	}
 
+	/**
+	 * Remove item identified by rank and returns removed data.
+	 * @param writePolicy An Aerospike write policy to use for the operate() operation.
+	 * @param rank The rank.
+	 * @param returnResultsOfType Type to return.
+	 * @return A list of the records which have been removed from the database if returnResults is true, null otherwise.
+	 */
 	@SuppressWarnings("unchecked")
 	public List<E> removeByRank(WritePolicy writePolicy, int rank, ReturnType returnResultsOfType) {
 		if (writePolicy == null) {
@@ -498,10 +733,23 @@ public class VirtualList<E> extends BaseVirtualList<E> implements IVirtualList<E
 		return (List<E>)interactor.getResult(record.getList(binName));
 	}
 
+	/**
+	 * Remove items starting at specified rank to the last ranked item and returns removed data.
+	 * @param rank The starting rank.
+	 * @param returnResultsOfType Type to return.
+	 * @return A list of the records which have been removed from the database if returnResults is true, null otherwise.
+	 */
 	public List<E> removeByRankRange(int rank, ReturnType returnResultsOfType) {
 		return this.removeByRankRange(null, rank, returnResultsOfType);
 	}
 
+	/**
+	 * Remove items starting at specified rank to the last ranked item and returns removed data.
+	 * @param writePolicy An Aerospike write policy to use for the operate() operation.
+	 * @param rank The starting rank.
+	 * @param returnResultsOfType Type to return.
+	 * @return A list of the records which have been removed from the database if returnResults is true, null otherwise.
+	 */
 	@SuppressWarnings("unchecked")
 	public List<E> removeByRankRange(WritePolicy writePolicy, int rank, ReturnType returnResultsOfType) {
 		if (writePolicy == null) {
@@ -515,10 +763,25 @@ public class VirtualList<E> extends BaseVirtualList<E> implements IVirtualList<E
 		return (List<E>)interactor.getResult(record.getList(binName));
 	}
 
+	/**
+	 * Remove "count" items starting at specified rank and returns removed data.
+	 * @param rank The starting rank.
+	 * @param count The count limit.
+	 * @param returnResultsOfType Type to return.
+	 * @return A list of the records which have been removed from the database if returnResults is true, null otherwise.
+	 */
 	public List<E> removeByRankRange(int rank, int count, ReturnType returnResultsOfType) {
 		return this.removeByRankRange(null, rank, count, returnResultsOfType);
 	}
 
+	/**
+	 * Remove "count" items starting at specified rank and returns removed data.
+	 * @param writePolicy An Aerospike write policy to use for the operate() operation.
+	 * @param rank The starting rank.
+	 * @param count The count limit.
+	 * @param returnResultsOfType Type to return.
+	 * @return A list of the records which have been removed from the database if returnResults is true, null otherwise.
+	 */
 	@SuppressWarnings("unchecked")
 	public List<E> removeByRankRange(WritePolicy writePolicy, int rank, int count, ReturnType returnResultsOfType) {
 		if (writePolicy == null) {
