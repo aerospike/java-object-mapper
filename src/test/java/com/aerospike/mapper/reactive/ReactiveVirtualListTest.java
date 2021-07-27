@@ -3,6 +3,7 @@ package com.aerospike.mapper.reactive;
 import com.aerospike.mapper.annotations.*;
 import com.aerospike.mapper.tools.ReactiveAeroMapper;
 import com.aerospike.mapper.tools.virtuallist.ReactiveVirtualList;
+import com.aerospike.mapper.tools.virtuallist.ReturnType;
 import org.junit.jupiter.api.Test;
 import reactor.core.scheduler.Schedulers;
 
@@ -133,7 +134,8 @@ public class ReactiveVirtualListTest extends ReactiveAeroMapperBaseTest {
     }
 
     @Test
-    public void test() {
+    @SuppressWarnings("unchecked")
+    public void testVirtualList() {
         C a = new C(1, "a");
         C b = new C(2, "b");
         C c = new C(3, "c");
@@ -157,18 +159,12 @@ public class ReactiveVirtualListTest extends ReactiveAeroMapperBaseTest {
         reactiveMapper.save(a,b,c,d,e,f,g,h,i,j).subscribeOn(Schedulers.parallel()).collectList().block();
 
         ReactiveVirtualList<B> list = reactiveMapper.asBackedList(collection, "elements", B.class);
-//		list.append(new CollectionElement(103, "tom", 45678));
-//		System.out.println("Get by index returned: " + list.get(2));
-//		System.out.println("Delete by Key Range returned: " + list.removeByKeyRange(100, 102, true));
         List<B> results = (List<B>) list.beginMultiOperation()
                 .append(new B(104, "tim", 22222, i, e, f))
                 .append(new B(103, "tom", 45678, h, g, g))
                 .append(new B(105, "sam", 33333, j, a, b))
                 .append(new B(106, "rob", 44444, j, g))
                 .getByKeyRange(101, 105)
-//				.removeByKeyRange(100, 102).asResult()
-//				.get(0)
-//				.size()
                 .end().subscribeOn(Schedulers.parallel()).block();
 
         assert results != null;
@@ -203,5 +199,34 @@ public class ReactiveVirtualListTest extends ReactiveAeroMapperBaseTest {
             }
             assertTrue(found);
         }
+
+        // reset
+        list.clear().subscribeOn(Schedulers.parallel()).block();
+        assertEquals(0, list.size(null).subscribeOn(Schedulers.parallel()).block());
+        reactiveMapper.save(collection).subscribeOn(Schedulers.parallel()).block();
+        list = reactiveMapper.asBackedList(collection, "elements", B.class);
+
+        results = (List<B>) list.beginMultiOperation()
+                .removeByIndex(0) // Remove the first element
+                .removeByKey(102) // Remove item with id = 102
+                .getByIndexRange(0) // Get all elements starting at index 0
+                .end().subscribeOn(Schedulers.parallel()).block();
+
+        assert results != null;
+        assertEquals(1, results.size());
+        assertEquals(101, results.get(0).id);
+
+        // reset
+        list.clear().subscribeOn(Schedulers.parallel()).block();
+        assertEquals(0, list.size(null).subscribeOn(Schedulers.parallel()).block());
+        reactiveMapper.save(collection).subscribeOn(Schedulers.parallel()).block();
+        list = reactiveMapper.asBackedList(collection, "elements", B.class);
+
+        results = (List<B>) list.getByKey(102, ReturnType.DEFAULT).subscribeOn(Schedulers.parallel()).block();
+        assertEquals(3, list.size(null).subscribeOn(Schedulers.parallel()).block());
+        assert results != null;
+        assertEquals(1, results.size());
+        assertEquals(12345, results.get(0).getDate());
+        assertEquals("bob", results.get(0).getName());
     }
 }
