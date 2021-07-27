@@ -363,6 +363,39 @@ public class VirtualListInteractors {
         return new Interactor(deferred);
     }
 
+    public Interactor getGetByKeyInteractor(Object key) {
+        DeferredOperation deferred = new DeferredOperation() {
+
+            @Override
+            public ResultsUnpacker[] getUnpackers(OperationParameters operationParams) {
+                switch (operationParams.getNeedsResultOfType()) {
+                    case DEFAULT:
+                    case ELEMENTS:
+                        return new ResultsUnpacker[] { new ResultsUnpacker.ArrayUnpacker(instanceMapper) };
+                    default:
+                        return new ResultsUnpacker[0];
+                }
+            }
+
+            @Override
+            public Operation getOperation(OperationParameters operationParams) {
+                if (listType == AerospikeEmbed.EmbedType.LIST) {
+                    return ListOperation.getByValue(binName, getValue(key, true),
+                            TypeUtils.returnTypeToListReturnType(operationParams.getNeedsResultOfType()));
+                } else {
+                    return MapOperation.getByKey(binName, getValue(key, true),
+                            TypeUtils.returnTypeToMapReturnType(operationParams.getNeedsResultOfType()));
+                }
+            }
+
+            @Override
+            public boolean isGetOperation() {
+                return true;
+            }
+        };
+        return new Interactor(deferred);
+    }
+
     public Interactor getGetByKeyRangeInteractor(Object startKey, Object endKey) {
         DeferredOperation deferred = new DeferredOperation() {
 

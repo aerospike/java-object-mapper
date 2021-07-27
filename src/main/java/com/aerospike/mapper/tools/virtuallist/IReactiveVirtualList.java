@@ -48,6 +48,10 @@ public interface IReactiveVirtualList<E> {
 
     Mono<E> getByRankRange(WritePolicy writePolicy, int rank, int count, ReturnType returnResultsOfType);
 
+    Mono<E> getByKey(Object key, ReturnType returnResultsOfType);
+
+    Mono<E> getByKey(WritePolicy writePolicy, Object key, ReturnType returnResultsOfType);
+
     Mono<E> getByKeyRange(Object startKey, Object endKey, ReturnType returnResultsOfType);
 
     Mono<E> getByKeyRange(WritePolicy writePolicy, Object startKey, Object endKey, ReturnType returnResultsOfType);

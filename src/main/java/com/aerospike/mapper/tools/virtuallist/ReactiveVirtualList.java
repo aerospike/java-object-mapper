@@ -374,6 +374,45 @@ public class ReactiveVirtualList<E> extends BaseVirtualList<E> implements IReact
     }
 
     /**
+     * Get items from the list matching the specified key. If the list is mapped to a MAP in Aerospike,
+     * It will get the matching key.
+     * <p/>
+     * If the list is mapped to a LIST in Aerospike however, it will get the matching value.
+     * <p/>
+     * @param key Key to get.
+     * @param returnResultsOfType Type to return.
+     * @return A list of the records which match the given key range.
+     */
+    public Mono<E> getByKey(Object key, ReturnType returnResultsOfType) {
+        return getByKey(null, key, returnResultsOfType);
+    }
+
+    /**
+     * Get items from the list matching the specified key. If the list is mapped to a MAP in Aerospike,
+     * It will get the matching key.
+     * <p/>
+     * If the list is mapped to a LIST in Aerospike however, it will get the matching value.
+     * <p/>
+     * @param writePolicy An Aerospike write policy to use for the operate() operation.
+     * @param key Key to get.
+     * @param returnResultsOfType Type to return.
+     * @return A list of the records which match the given key range.
+     */
+    @SuppressWarnings("unchecked")
+    public Mono<E> getByKey(WritePolicy writePolicy, Object key, ReturnType returnResultsOfType) {
+        if (writePolicy == null) {
+            writePolicy = new WritePolicy(owningEntry.getWritePolicy());
+            writePolicy.recordExistsAction = RecordExistsAction.UPDATE;
+        }
+        Interactor interactor = virtualListInteractors.getGetByKeyInteractor(key);
+        interactor.setNeedsResultOfType(returnResultsOfType);
+
+        return reactiveAeroMapper.getReactorClient()
+                .operate(writePolicy, this.key, interactor.getOperation())
+                .map(keyRecord -> (E)interactor.getResult(keyRecord.record.getList(binName)));
+    }
+
+    /**
      * Get items from the list matching the specified key range. If the list is mapped to a MAP in Aerospike,
      * the start key and end key will dictate the range of keys to get,
      * inclusive of the start, exclusive of the end.

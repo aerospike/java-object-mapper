@@ -150,6 +150,11 @@ public class ReactiveMultiOperation<E> {
         return this;
     }
 
+    public ReactiveMultiOperation<E> getByKey(Object key) {
+        this.interactions.add(virtualListInteractors.getGetByKeyInteractor(key));
+        return this;
+    }
+
     public ReactiveMultiOperation<E> getByKeyRange(Object startKey, Object endKey) {
         this.interactions.add(virtualListInteractors.getGetByKeyRangeInteractor(startKey, endKey));
         return this;

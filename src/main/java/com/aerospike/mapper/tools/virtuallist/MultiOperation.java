@@ -160,6 +160,11 @@ public class MultiOperation<E> {
         return this;
     }
 
+    public MultiOperation<E> getByKey(Object key) {
+        this.interactions.add(virtualListInteractors.getGetByKeyInteractor(key));
+        return this;
+    }
+
     public MultiOperation<E> getByKeyRange(Object startKey, Object endKey) {
         this.interactions.add(virtualListInteractors.getGetByKeyRangeInteractor(startKey, endKey));
         return this;

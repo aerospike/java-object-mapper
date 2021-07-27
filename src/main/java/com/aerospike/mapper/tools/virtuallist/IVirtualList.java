@@ -47,6 +47,10 @@ public interface IVirtualList<E> {
 
     List<E> getByRankRange(WritePolicy writePolicy, int rank, int count, ReturnType returnResultsOfType);
 
+    List<E> getByKey(Object key, ReturnType returnResultsOfType);
+
+    List<E> getByKey(WritePolicy writePolicy, Object key, ReturnType returnResultsOfType);
+
     List<E> getByKeyRange(Object startKey, Object endKey, ReturnType returnResultsOfType);
 
     List<E> getByKeyRange(WritePolicy writePolicy, Object startKey, Object endKey, ReturnType returnResultsOfType);
