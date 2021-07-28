@@ -10,8 +10,7 @@ import org.junit.jupiter.api.Test;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class VirtualListTest extends AeroMapperBaseTest {
 	
@@ -131,6 +130,19 @@ public class VirtualListTest extends AeroMapperBaseTest {
 			elements = new ArrayList<>();
 		}
 	}
+
+	@AerospikeRecord(namespace = "test", set = "D")
+	public static class D {
+		@AerospikeEmbed(type = EmbedType.LIST)
+		public List<Long> elements2;
+
+		@AerospikeKey
+		public int id;
+
+		public D() {
+			elements2 = new ArrayList<>();
+		}
+	}
 	
 	@Test
 	@SuppressWarnings("unchecked")
@@ -224,5 +236,51 @@ public class VirtualListTest extends AeroMapperBaseTest {
 		assertEquals(1, results.size());
 		assertEquals(12345, results.get(0).getDate());
 		assertEquals("bob", results.get(0).getName());
+
+		// reset
+		list.clear();
+		assertEquals(0, list.size(null));
+		mapper.save(collection);
+		list = mapper.asBackedList(collection, "elements", B.class);
+
+		results = (List<B>) list.beginMultiOperation()
+				.removeByRank(0)
+				.getByRankRange(1)
+				.end();
+		assertEquals(2, list.size(null));
+		assertEquals(1, results.size());
+		assertEquals(101, results.get(0).getId());
+		assertEquals("joe", results.get(0).getName());
+
+		// reset
+		list.clear();
+		assertEquals(0, list.size(null));
+
+		D collection2 = new D();
+		collection2.id = 1;
+
+		collection2.elements2.add(12345L);
+		collection2.elements2.add(23456L);
+		collection2.elements2.add(34567L);
+		collection2.elements2.add(44444L);
+		collection2.elements2.add(55555L);
+
+		mapper.save(collection2);
+		VirtualList<Long> list2 = mapper.asBackedList(collection2, "elements2", Long.class);
+
+		List<Object> valueList = new ArrayList<>();
+		valueList.add(12345L);
+		valueList.add(34567L);
+		valueList.add(55555L);
+
+		List<Long> results2 = (List<Long>) list2.beginMultiOperation()
+				.removeByValue(23456L)
+				.getByValueList(valueList)
+				.end();
+
+		assertEquals(4, list2.size(null));
+		assertEquals(3, results2.size());
+		assertTrue(results2.containsAll(valueList));
+		assertFalse(results2.contains(44444L));
 	}
 }
