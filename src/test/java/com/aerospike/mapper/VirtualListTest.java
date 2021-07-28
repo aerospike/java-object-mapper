@@ -38,6 +38,7 @@ public class VirtualListTest extends AeroMapperBaseTest {
 			return 17*a + (b == null ? 0 : b.hashCode());
 		}
 	}
+
 	@AerospikeRecord
 	public static class B {
 		@AerospikeKey

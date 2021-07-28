@@ -258,8 +258,6 @@ public class ReactiveVirtualListTest extends ReactiveAeroMapperBaseTest {
         assertEquals(101, results.get(0).getId());
         assertEquals("joe", results.get(0).getName());
 
-
-
         D collection2 = new D();
         collection2.id = 1;
 
