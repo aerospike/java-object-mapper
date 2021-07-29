@@ -42,6 +42,7 @@ public class VirtualListReferenceTest extends AeroMapperBaseTest {
 	}
 
 	@Test
+	@SuppressWarnings("unchecked")
 	public void testSingleOpList() {
 		C c1 = new C();
 		c1.id = 1000;
@@ -65,9 +66,7 @@ public class VirtualListReferenceTest extends AeroMapperBaseTest {
 		a.name = "fred";
 		a.refs = new ArrayList<>();
 		a.refs.add(b);
-		
-		
-		
+
 		AeroMapper mapper = new AeroMapper.Builder(client).build();
 		mapper.save(a, b, c1, c2);
 		VirtualList<B> list = mapper.asBackedList(a, "refs", B.class);

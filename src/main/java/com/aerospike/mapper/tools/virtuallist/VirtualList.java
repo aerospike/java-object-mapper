@@ -10,8 +10,6 @@ import com.aerospike.mapper.tools.ClassCache;
 import com.aerospike.mapper.tools.IAeroMapper;
 
 import javax.validation.constraints.NotNull;
-
-import java.util.Collection;
 import java.util.List;
 
 public class VirtualList<E> extends BaseVirtualList<E> implements IVirtualList<E> {
@@ -77,7 +75,6 @@ public class VirtualList<E> extends BaseVirtualList<E> implements IVirtualList<E
 	 * @param returnResultsOfType Type to return.
 	 * @return A list of the records which match the given value range.
 	 */
-	@SuppressWarnings("unchecked")
 	public List<E> getByValueRange(WritePolicy writePolicy, Object startValue, Object endValue, ReturnType returnResultsOfType) {
     	if (writePolicy == null) {
         	writePolicy = new WritePolicy(owningEntry.getWritePolicy());
@@ -86,12 +83,7 @@ public class VirtualList<E> extends BaseVirtualList<E> implements IVirtualList<E
 		Interactor interactor = virtualListInteractors.getGetByValueRangeInteractor(startValue, endValue);
 		interactor.setNeedsResultOfType(returnResultsOfType);
 		Record record = this.mapper.getClient().operate(writePolicy, key, interactor.getOperation());
-
-		List<E> result = record == null ? null : (List<E>)interactor.getResult(record.getList(binName));
-        if (result != null) {
-            mapper.getMappingConverter().resolveDependencies(ClassCache.getInstance().loadClass(result.getClass(), mapper));
-        }
-        return result;
+		return getResultsAsListWithDependencies(record, interactor);
 	}
 
 	/**
@@ -123,7 +115,6 @@ public class VirtualList<E> extends BaseVirtualList<E> implements IVirtualList<E
 	 * @param returnResultsOfType Type to return.
 	 * @return A list of the records which match the given key range.
 	 */
-	@SuppressWarnings("unchecked")
 	public List<E> getByKeyRange(WritePolicy writePolicy, Object startKey, Object endKey, ReturnType returnResultsOfType) {
 		if (writePolicy == null) {
 			writePolicy = new WritePolicy(owningEntry.getWritePolicy());
@@ -132,12 +123,7 @@ public class VirtualList<E> extends BaseVirtualList<E> implements IVirtualList<E
 		Interactor interactor = virtualListInteractors.getGetByKeyRangeInteractor(startKey, endKey);
 		interactor.setNeedsResultOfType(returnResultsOfType);
 		Record record = this.mapper.getClient().operate(writePolicy, this.key, interactor.getOperation());
-
-		List<E> result = record == null ? null : (List<E>)interactor.getResult(record.getList(binName));
-        if (result != null) {
-            mapper.getMappingConverter().resolveDependencies(ClassCache.getInstance().loadClass(result.getClass(), mapper));
-        }
-        return result;
+		return getResultsAsListWithDependencies(record, interactor);
 	}
 
 	/**
@@ -165,7 +151,6 @@ public class VirtualList<E> extends BaseVirtualList<E> implements IVirtualList<E
 	 * @param returnResultsOfType Type to return.
 	 * @return A list of the records which have been removed from the database if returnResults is true, null otherwise.
 	 */
-	@SuppressWarnings("unchecked")
 	public List<E> removeByKey(WritePolicy writePolicy, Object key, ReturnType returnResultsOfType) {
 		if (writePolicy == null) {
 			writePolicy = new WritePolicy(owningEntry.getWritePolicy());
@@ -174,12 +159,7 @@ public class VirtualList<E> extends BaseVirtualList<E> implements IVirtualList<E
 		Interactor interactor = virtualListInteractors.getRemoveKeyInteractor(key);
 		interactor.setNeedsResultOfType(returnResultsOfType);
 		Record record = this.mapper.getClient().operate(writePolicy, this.key, interactor.getOperation());
-
-		List<E> result = record == null ? null : (List<E>)interactor.getResult(record.getList(binName));
-        if (result != null) {
-            mapper.getMappingConverter().resolveDependencies(ClassCache.getInstance().loadClass(result.getClass(), mapper));
-        }
-        return result;
+		return getResultsAsListWithDependencies(record, interactor);
 	}
 
 	/**
@@ -211,7 +191,6 @@ public class VirtualList<E> extends BaseVirtualList<E> implements IVirtualList<E
 	 * @param returnResultsOfType Type to return.
 	 * @return A list of the records which have been removed from the database if returnResults is true, null otherwise.
 	 */
-	@SuppressWarnings("unchecked")
 	public List<E> removeByValueRange(WritePolicy writePolicy, Object startValue, Object endValue, ReturnType returnResultsOfType) {
     	if (writePolicy == null) {
         	writePolicy = new WritePolicy(owningEntry.getWritePolicy());
@@ -220,12 +199,7 @@ public class VirtualList<E> extends BaseVirtualList<E> implements IVirtualList<E
 		Interactor interactor = virtualListInteractors.getRemoveValueRangeInteractor(startValue, endValue);
 		interactor.setNeedsResultOfType(returnResultsOfType);
 		Record record = this.mapper.getClient().operate(writePolicy, key, interactor.getOperation());
-
-		List<E> result = record == null ? null : (List<E>)interactor.getResult(record.getList(binName));
-        if (result != null) {
-            mapper.getMappingConverter().resolveDependencies(ClassCache.getInstance().loadClass(result.getClass(), mapper));
-        }
-        return result;
+		return getResultsAsListWithDependencies(record, interactor);
 	}
 	
 	/**
@@ -259,7 +233,6 @@ public class VirtualList<E> extends BaseVirtualList<E> implements IVirtualList<E
 	 * @return The result of the method is a list of the records which have been removed from the database if
 	 * returnResults is true, null otherwise.
 	 */
-	@SuppressWarnings("unchecked")
 	public List<E> removeByKeyRange(WritePolicy writePolicy, Object startKey, Object endKey, ReturnType returnResultsOfType) {
     	if (writePolicy == null) {
         	writePolicy = new WritePolicy(owningEntry.getWritePolicy());
@@ -268,12 +241,7 @@ public class VirtualList<E> extends BaseVirtualList<E> implements IVirtualList<E
 		Interactor interactor = virtualListInteractors.getRemoveKeyRangeInteractor(startKey, endKey);
 		interactor.setNeedsResultOfType(returnResultsOfType);
 		Record record = this.mapper.getClient().operate(writePolicy, key, interactor.getOperation());
-
-		List<E> result = record == null ? null : (List<E>)interactor.getResult(record.getList(binName));
-        if (result != null) {
-            mapper.getMappingConverter().resolveDependencies(ClassCache.getInstance().loadClass(result.getClass(), mapper));
-        }
-        return result;
+		return getResultsAsListWithDependencies(record, interactor);
 	}
 
 	/**
@@ -289,7 +257,7 @@ public class VirtualList<E> extends BaseVirtualList<E> implements IVirtualList<E
 	 * Append a new element at the end of the virtual list.
 	 * @param writePolicy An Aerospike write policy to use for the operate() operation.
 	 * @param element The given element to append.
-	 * @return The size of the list. If the record is not found, this method returns -1;
+	 * @return The size of the list. If the record is not found, this method returns -1.
 	 */
 	public long append(WritePolicy writePolicy, E element) {
     	Object result = listMapper.toAerospikeInstanceFormat(element);
@@ -298,7 +266,7 @@ public class VirtualList<E> extends BaseVirtualList<E> implements IVirtualList<E
     		writePolicy.recordExistsAction = RecordExistsAction.UPDATE;
     	}
 		Record record = this.mapper.getClient().operate(writePolicy, key, virtualListInteractors.getAppendOperation(result));
-    	return record == null ? -1 : record.getLong(binName);
+    	return record == null ? -1L : record.getLong(binName);
 	}
 
 	/**
@@ -316,27 +284,21 @@ public class VirtualList<E> extends BaseVirtualList<E> implements IVirtualList<E
 	 * @param index The index to get the item from.
 	 * @return The element to get from the virtual list.
 	 */
-	@SuppressWarnings("unchecked")
 	public E get(Policy policy, int index) {
     	Interactor interactor = virtualListInteractors.getIndexInteractor(index);
 		Record record = this.mapper.getClient().operate(getWritePolicy(policy), key, interactor.getOperation());
-		
-		E result = record == null ? null : (E)interactor.getResult(record.getList(binName));
-        if (result != null) {
-            mapper.getMappingConverter().resolveDependencies(ClassCache.getInstance().loadClass(result.getClass(), mapper));
-        }
-        return result;
+		return getResultsWithDependencies(record, interactor);
 	}
 
 	/**
 	 * Get the size of the virtual list (number of elements)
 	 * @param policy - The policy to use for the operate() operation.
-	 * @return The size of the list. If the record is not found, this method returns -1
+	 * @return The size of the list. If the record is not found, this method returns -1.
 	 */
 	public long size(Policy policy) {
     	Interactor interactor = virtualListInteractors.getSizeInteractor();
 		Record record = this.mapper.getClient().operate(getWritePolicy(policy), key, interactor.getOperation());
-		return record == null ? null : record.getLong(binName);
+		return record == null ? -1L : record.getLong(binName);
 	}
 
 	/**
@@ -345,5 +307,23 @@ public class VirtualList<E> extends BaseVirtualList<E> implements IVirtualList<E
 	public void clear() {
 		Interactor interactor = virtualListInteractors.getClearInteractor();
 		this.mapper.getClient().operate(null, key, interactor.getOperation());
+	}
+
+	@SuppressWarnings("unchecked")
+	private E getResultsWithDependencies(Record record, Interactor interactor) {
+		E result = record == null ? null : (E)interactor.getResult(record.getList(binName));
+		if (result != null) {
+			mapper.getMappingConverter().resolveDependencies(ClassCache.getInstance().loadClass(result.getClass(), mapper));
+		}
+		return result;
+	}
+
+	@SuppressWarnings("unchecked")
+	private List<E> getResultsAsListWithDependencies(Record record, Interactor interactor) {
+		List<E> result = record == null ? null : (List<E>)interactor.getResult(record.getList(binName));
+		if (result != null) {
+			mapper.getMappingConverter().resolveDependencies(ClassCache.getInstance().loadClass(result.getClass(), mapper));
+		}
+		return result;
 	}
 }

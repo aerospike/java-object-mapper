@@ -5,6 +5,8 @@ import com.aerospike.client.Value;
 import com.aerospike.client.policy.Policy;
 import com.aerospike.client.policy.RecordExistsAction;
 import com.aerospike.client.policy.WritePolicy;
+import com.aerospike.client.query.KeyRecord;
+import com.aerospike.mapper.tools.ClassCache;
 import com.aerospike.mapper.tools.IReactiveAeroMapper;
 import reactor.core.publisher.Mono;
 
@@ -73,7 +75,6 @@ public class ReactiveVirtualList<E> extends BaseVirtualList<E> implements IReact
      * @param returnResultsOfType Type to return.
      * @return A list of the records which match the given value range.
      */
-    @SuppressWarnings("unchecked")
     public Mono<E> getByValueRange(WritePolicy writePolicy, Object startValue, Object endValue, ReturnType returnResultsOfType) {
         if (writePolicy == null) {
             writePolicy = new WritePolicy(owningEntry.getWritePolicy());
@@ -84,7 +85,7 @@ public class ReactiveVirtualList<E> extends BaseVirtualList<E> implements IReact
 
         return reactiveAeroMapper.getReactorClient()
                 .operate(writePolicy, key, interactor.getOperation())
-                .map(keyRecord -> (E)interactor.getResult(keyRecord.record.getList(binName)));
+                .map(keyRecord -> getResultsWithDependencies(keyRecord, interactor));
     }
 
     /**
@@ -116,7 +117,6 @@ public class ReactiveVirtualList<E> extends BaseVirtualList<E> implements IReact
      * @param returnResultsOfType Type to return.
      * @return A list of the records which match the given key range.
      */
-    @SuppressWarnings("unchecked")
     public Mono<E> getByKeyRange(WritePolicy writePolicy, Object startKey, Object endKey, ReturnType returnResultsOfType) {
         if (writePolicy == null) {
             writePolicy = new WritePolicy(owningEntry.getWritePolicy());
@@ -127,7 +127,7 @@ public class ReactiveVirtualList<E> extends BaseVirtualList<E> implements IReact
 
         return reactiveAeroMapper.getReactorClient()
                 .operate(writePolicy, this.key, interactor.getOperation())
-                .map(keyRecord -> (E)interactor.getResult(keyRecord.record.getList(binName)));
+                .map(keyRecord -> getResultsWithDependencies(keyRecord, interactor));
     }
 
     /**
@@ -155,7 +155,6 @@ public class ReactiveVirtualList<E> extends BaseVirtualList<E> implements IReact
      * @param returnResultsOfType Type to return.
      * @return A list of the records which have been removed from the database if returnResults is true, null otherwise.
      */
-    @SuppressWarnings("unchecked")
     public Mono<E> removeByKey(WritePolicy writePolicy, Object key, ReturnType returnResultsOfType) {
         if (writePolicy == null) {
             writePolicy = new WritePolicy(owningEntry.getWritePolicy());
@@ -166,7 +165,7 @@ public class ReactiveVirtualList<E> extends BaseVirtualList<E> implements IReact
 
         return reactiveAeroMapper.getReactorClient()
                 .operate(writePolicy, this.key, interactor.getOperation())
-                .map(keyRecord -> (E)interactor.getResult(keyRecord.record.getList(binName)));
+                .map(keyRecord -> getResultsWithDependencies(keyRecord, interactor));
     }
 
     /**
@@ -198,7 +197,6 @@ public class ReactiveVirtualList<E> extends BaseVirtualList<E> implements IReact
      * @param returnResultsOfType Type to return.
      * @return A list of the records which have been removed from the database if returnResults is true, null otherwise.
      */
-    @SuppressWarnings("unchecked")
     public Mono<E> removeByValueRange(WritePolicy writePolicy, Object startValue, Object endValue, ReturnType returnResultsOfType) {
         if (writePolicy == null) {
             writePolicy = new WritePolicy(owningEntry.getWritePolicy());
@@ -209,7 +207,7 @@ public class ReactiveVirtualList<E> extends BaseVirtualList<E> implements IReact
 
         return reactiveAeroMapper.getReactorClient()
                 .operate(writePolicy, key, interactor.getOperation())
-                .map(keyRecord -> (E)interactor.getResult(keyRecord.record.getList(binName)));
+                .map(keyRecord -> getResultsWithDependencies(keyRecord, interactor));
     }
 
     /**
@@ -243,7 +241,6 @@ public class ReactiveVirtualList<E> extends BaseVirtualList<E> implements IReact
      * @return The result of the method is a list of the records which have been removed from the database if
      * returnResults is true, null otherwise.
      */
-    @SuppressWarnings("unchecked")
     public Mono<E> removeByKeyRange(WritePolicy writePolicy, Object startKey, Object endKey, ReturnType returnResultsOfType) {
         if (writePolicy == null) {
             writePolicy = new WritePolicy(owningEntry.getWritePolicy());
@@ -254,7 +251,7 @@ public class ReactiveVirtualList<E> extends BaseVirtualList<E> implements IReact
 
         return reactiveAeroMapper.getReactorClient()
                 .operate(writePolicy, key, interactor.getOperation())
-                .map(keyRecord -> (E)interactor.getResult(keyRecord.record.getList(binName)));
+                .map(keyRecord -> getResultsWithDependencies(keyRecord, interactor));
     }
 
     /**
@@ -270,7 +267,7 @@ public class ReactiveVirtualList<E> extends BaseVirtualList<E> implements IReact
      * Append a new element at the end of the virtual list.
      * @param writePolicy An Aerospike write policy to use for the operate() operation.
      * @param element The given element to append.
-     * @return The size of the list.
+     * @return The size of the list. If the record is not found, this method returns -1.
      */
     public Mono<Long> append(WritePolicy writePolicy, E element) {
         Object result = listMapper.toAerospikeInstanceFormat(element);
@@ -280,7 +277,7 @@ public class ReactiveVirtualList<E> extends BaseVirtualList<E> implements IReact
         }
         return reactiveAeroMapper.getReactorClient()
                 .operate(writePolicy, key, virtualListInteractors.getAppendOperation(result))
-                .map(keyRecord -> keyRecord.record.getLong(binName));
+                .map(keyRecord -> keyRecord == null ? -1L : keyRecord.record.getLong(binName));
     }
 
     /**
@@ -298,24 +295,23 @@ public class ReactiveVirtualList<E> extends BaseVirtualList<E> implements IReact
      * @param index The index to get the item from.
      * @return The element to get from the virtual list.
      */
-    @SuppressWarnings("unchecked")
     public Mono<E> get(Policy policy, int index) {
         Interactor interactor = virtualListInteractors.getIndexInteractor(index);
         return reactiveAeroMapper.getReactorClient()
                 .operate(getWritePolicy(policy), key, interactor.getOperation())
-                .map(keyRecord -> (E)interactor.getResult(keyRecord.record.getList(binName)));
+                .map(keyRecord -> getResultsWithDependencies(keyRecord, interactor));
     }
 
     /**
      * Get the size of the virtual list (number of elements)
      * @param policy - The policy to use for the operate() operation.
-     * @return The size of the list.
+     * @return The size of the list. If the record is not found, this method returns -1.
      */
     public Mono<Long> size(Policy policy) {
         Interactor interactor = virtualListInteractors.getSizeInteractor();
         return reactiveAeroMapper.getReactorClient()
                 .operate(getWritePolicy(policy), key, interactor.getOperation())
-                .map(keyRecord -> keyRecord.record.getLong(binName));
+                .map(keyRecord -> keyRecord == null ? -1L : keyRecord.record.getLong(binName));
     }
 
     /**
@@ -325,5 +321,14 @@ public class ReactiveVirtualList<E> extends BaseVirtualList<E> implements IReact
         Interactor interactor = virtualListInteractors.getClearInteractor();
         return reactiveAeroMapper.getReactorClient()
                 .operate(null, key, interactor.getOperation()).then();
+    }
+
+    @SuppressWarnings("unchecked")
+    private E getResultsWithDependencies(KeyRecord keyRecord, Interactor interactor) {
+        E result = keyRecord == null ? null : (E) interactor.getResult(keyRecord.record.getList(binName));
+        if (result != null) {
+            reactiveAeroMapper.getMappingConverter().resolveDependencies(ClassCache.getInstance().loadClass(result.getClass(), reactiveAeroMapper));
+        }
+        return result;
     }
 }
