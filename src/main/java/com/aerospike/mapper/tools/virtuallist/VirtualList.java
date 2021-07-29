@@ -6,9 +6,12 @@ import com.aerospike.client.Value;
 import com.aerospike.client.policy.Policy;
 import com.aerospike.client.policy.RecordExistsAction;
 import com.aerospike.client.policy.WritePolicy;
+import com.aerospike.mapper.tools.ClassCache;
 import com.aerospike.mapper.tools.IAeroMapper;
 
 import javax.validation.constraints.NotNull;
+
+import java.util.Collection;
 import java.util.List;
 
 public class VirtualList<E> extends BaseVirtualList<E> implements IVirtualList<E> {
@@ -84,7 +87,11 @@ public class VirtualList<E> extends BaseVirtualList<E> implements IVirtualList<E
 		interactor.setNeedsResultOfType(returnResultsOfType);
 		Record record = this.mapper.getClient().operate(writePolicy, key, interactor.getOperation());
 
-		return (List<E>)interactor.getResult(record.getList(binName));
+		List<E> result = record == null ? null : (List<E>)interactor.getResult(record.getList(binName));
+        if (result != null) {
+            mapper.getMappingConverter().resolveDependencies(ClassCache.getInstance().loadClass(result.getClass(), mapper));
+        }
+        return result;
 	}
 
 	/**
@@ -126,7 +133,11 @@ public class VirtualList<E> extends BaseVirtualList<E> implements IVirtualList<E
 		interactor.setNeedsResultOfType(returnResultsOfType);
 		Record record = this.mapper.getClient().operate(writePolicy, this.key, interactor.getOperation());
 
-		return (List<E>)interactor.getResult(record.getList(binName));
+		List<E> result = record == null ? null : (List<E>)interactor.getResult(record.getList(binName));
+        if (result != null) {
+            mapper.getMappingConverter().resolveDependencies(ClassCache.getInstance().loadClass(result.getClass(), mapper));
+        }
+        return result;
 	}
 
 	/**
@@ -164,7 +175,11 @@ public class VirtualList<E> extends BaseVirtualList<E> implements IVirtualList<E
 		interactor.setNeedsResultOfType(returnResultsOfType);
 		Record record = this.mapper.getClient().operate(writePolicy, this.key, interactor.getOperation());
 
-		return (List<E>)interactor.getResult(record.getList(binName));
+		List<E> result = record == null ? null : (List<E>)interactor.getResult(record.getList(binName));
+        if (result != null) {
+            mapper.getMappingConverter().resolveDependencies(ClassCache.getInstance().loadClass(result.getClass(), mapper));
+        }
+        return result;
 	}
 
 	/**
@@ -206,7 +221,11 @@ public class VirtualList<E> extends BaseVirtualList<E> implements IVirtualList<E
 		interactor.setNeedsResultOfType(returnResultsOfType);
 		Record record = this.mapper.getClient().operate(writePolicy, key, interactor.getOperation());
 
-		return (List<E>)interactor.getResult(record.getList(binName));
+		List<E> result = record == null ? null : (List<E>)interactor.getResult(record.getList(binName));
+        if (result != null) {
+            mapper.getMappingConverter().resolveDependencies(ClassCache.getInstance().loadClass(result.getClass(), mapper));
+        }
+        return result;
 	}
 	
 	/**
@@ -250,7 +269,11 @@ public class VirtualList<E> extends BaseVirtualList<E> implements IVirtualList<E
 		interactor.setNeedsResultOfType(returnResultsOfType);
 		Record record = this.mapper.getClient().operate(writePolicy, key, interactor.getOperation());
 
-		return (List<E>)interactor.getResult(record.getList(binName));
+		List<E> result = record == null ? null : (List<E>)interactor.getResult(record.getList(binName));
+        if (result != null) {
+            mapper.getMappingConverter().resolveDependencies(ClassCache.getInstance().loadClass(result.getClass(), mapper));
+        }
+        return result;
 	}
 
 	/**
@@ -266,7 +289,7 @@ public class VirtualList<E> extends BaseVirtualList<E> implements IVirtualList<E
 	 * Append a new element at the end of the virtual list.
 	 * @param writePolicy An Aerospike write policy to use for the operate() operation.
 	 * @param element The given element to append.
-	 * @return The size of the list.
+	 * @return The size of the list. If the record is not found, this method returns -1;
 	 */
 	public long append(WritePolicy writePolicy, E element) {
     	Object result = listMapper.toAerospikeInstanceFormat(element);
@@ -275,7 +298,7 @@ public class VirtualList<E> extends BaseVirtualList<E> implements IVirtualList<E
     		writePolicy.recordExistsAction = RecordExistsAction.UPDATE;
     	}
 		Record record = this.mapper.getClient().operate(writePolicy, key, virtualListInteractors.getAppendOperation(result));
-    	return record.getLong(binName);
+    	return record == null ? -1 : record.getLong(binName);
 	}
 
 	/**
@@ -297,18 +320,23 @@ public class VirtualList<E> extends BaseVirtualList<E> implements IVirtualList<E
 	public E get(Policy policy, int index) {
     	Interactor interactor = virtualListInteractors.getIndexInteractor(index);
 		Record record = this.mapper.getClient().operate(getWritePolicy(policy), key, interactor.getOperation());
-		return (E)interactor.getResult(record.getList(binName));
+		
+		E result = record == null ? null : (E)interactor.getResult(record.getList(binName));
+        if (result != null) {
+            mapper.getMappingConverter().resolveDependencies(ClassCache.getInstance().loadClass(result.getClass(), mapper));
+        }
+        return result;
 	}
 
 	/**
 	 * Get the size of the virtual list (number of elements)
 	 * @param policy - The policy to use for the operate() operation.
-	 * @return The size of the list.
+	 * @return The size of the list. If the record is not found, this method returns -1
 	 */
 	public long size(Policy policy) {
     	Interactor interactor = virtualListInteractors.getSizeInteractor();
 		Record record = this.mapper.getClient().operate(getWritePolicy(policy), key, interactor.getOperation());
-		return record.getLong(binName);
+		return record == null ? null : record.getLong(binName);
 	}
 
 	/**
