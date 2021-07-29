@@ -1,21 +1,16 @@
 package com.aerospike.mapper;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import com.aerospike.mapper.annotations.*;
+import com.aerospike.mapper.annotations.AerospikeEmbed.EmbedType;
+import com.aerospike.mapper.tools.AeroMapper;
+import com.aerospike.mapper.tools.virtuallist.ReturnType;
+import com.aerospike.mapper.tools.virtuallist.VirtualList;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import org.junit.jupiter.api.Test;
-
-import com.aerospike.mapper.annotations.AerospikeConstructor;
-import com.aerospike.mapper.annotations.AerospikeEmbed;
-import com.aerospike.mapper.annotations.AerospikeEmbed.EmbedType;
-import com.aerospike.mapper.annotations.AerospikeKey;
-import com.aerospike.mapper.annotations.AerospikeRecord;
-import com.aerospike.mapper.annotations.ParamFrom;
-import com.aerospike.mapper.tools.AeroMapper;
-import com.aerospike.mapper.tools.virtuallist.VirtualList;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class VirtualListTest extends AeroMapperBaseTest {
 	
@@ -43,6 +38,7 @@ public class VirtualListTest extends AeroMapperBaseTest {
 			return 17*a + (b == null ? 0 : b.hashCode());
 		}
 	}
+
 	@AerospikeRecord
 	public static class B {
 		@AerospikeKey
@@ -135,9 +131,23 @@ public class VirtualListTest extends AeroMapperBaseTest {
 			elements = new ArrayList<>();
 		}
 	}
+
+	@AerospikeRecord(namespace = "test", set = "D")
+	public static class D {
+		@AerospikeEmbed(type = EmbedType.LIST)
+		public List<Long> elements2;
+
+		@AerospikeKey
+		public int id;
+
+		public D() {
+			elements2 = new ArrayList<>();
+		}
+	}
 	
 	@Test
-	public void test() {
+	@SuppressWarnings("unchecked")
+	public void testVirtualList() {
 		C a = new C(1, "a");
 		C b = new C(2, "b");
 		C c = new C(3, "c");
@@ -148,10 +158,10 @@ public class VirtualListTest extends AeroMapperBaseTest {
 		C h = new C(8, "h");
 		C i = new C(9, "i");
 		C j = new C(10, "j");
-		
+
 		A collection = new A();
 		collection.id = 1;
-		
+
 		collection.elements.add(new B(102, "bob", 12345, a, b, c));
 		collection.elements.add(new B(101, "joe", 23456, b, d, e, f));
 		collection.elements.add(new B(100, "sue", 34567, c));
@@ -161,19 +171,13 @@ public class VirtualListTest extends AeroMapperBaseTest {
 		mapper.save(a,b,c,d,e,f,g,h,i,j);
 		
 		VirtualList<B> list = mapper.asBackedList(collection, "elements", B.class);
-//		list.append(new CollectionElement(103, "tom", 45678));
-//		System.out.println("Get by index returned: " + list.get(2));
-//		System.out.println("Delete by Key Range returned: " + list.removeByKeyRange(100, 102, true));
-		@SuppressWarnings("unchecked")
+
 		List<B> results = (List<B>) list.beginMultiOperation()
 				.append(new B(104, "tim", 22222, i, e, f))
 				.append(new B(103, "tom", 45678, h, g, g))
 				.append(new B(105, "sam", 33333, j, a, b))
 				.append(new B(106, "rob", 44444, j, g))
 				.getByKeyRange(101, 105)
-//				.removeByKeyRange(100, 102).asResult()
-//				.get(0)
-//				.size()
 			.end();
 		
 		assertEquals(4, results.size());
@@ -206,5 +210,78 @@ public class VirtualListTest extends AeroMapperBaseTest {
 			}
 			assertTrue(found);
 		}
+
+		// reset
+		list.clear();
+		assertEquals(0, list.size(null));
+		mapper.save(collection);
+		list = mapper.asBackedList(collection, "elements", B.class);
+
+		results = (List<B>) list.beginMultiOperation()
+				.removeByIndex(0) // Remove the first element
+				.removeByKey(102) // Remove item with id = 102
+				.getByIndexRange(0) // Get all elements starting at index 0
+				.end();
+
+		assertEquals(1, results.size());
+		assertEquals(101, results.get(0).id);
+
+		// reset
+		list.clear();
+		assertEquals(0, list.size(null));
+		mapper.save(collection);
+		list = mapper.asBackedList(collection, "elements", B.class);
+
+		results = list.getByKey(102, ReturnType.DEFAULT);
+		assertEquals(3, list.size(null));
+		assertEquals(1, results.size());
+		assertEquals(12345, results.get(0).getDate());
+		assertEquals("bob", results.get(0).getName());
+
+		// reset
+		list.clear();
+		assertEquals(0, list.size(null));
+		mapper.save(collection);
+		list = mapper.asBackedList(collection, "elements", B.class);
+
+		results = (List<B>) list.beginMultiOperation()
+				.removeByRank(0)
+				.getByRankRange(1)
+				.end();
+		assertEquals(2, list.size(null));
+		assertEquals(1, results.size());
+		assertEquals(101, results.get(0).getId());
+		assertEquals("joe", results.get(0).getName());
+
+		// reset
+		list.clear();
+		assertEquals(0, list.size(null));
+
+		D collection2 = new D();
+		collection2.id = 1;
+
+		collection2.elements2.add(12345L);
+		collection2.elements2.add(23456L);
+		collection2.elements2.add(34567L);
+		collection2.elements2.add(44444L);
+		collection2.elements2.add(55555L);
+
+		mapper.save(collection2);
+		VirtualList<Long> list2 = mapper.asBackedList(collection2, "elements2", Long.class);
+
+		List<Object> valueList = new ArrayList<>();
+		valueList.add(12345L);
+		valueList.add(34567L);
+		valueList.add(55555L);
+
+		List<Long> results2 = (List<Long>) list2.beginMultiOperation()
+				.removeByValue(23456L)
+				.getByValueList(valueList)
+				.end();
+
+		assertEquals(4, list2.size(null));
+		assertEquals(3, results2.size());
+		assertTrue(results2.containsAll(valueList));
+		assertFalse(results2.contains(44444L));
 	}
 }

@@ -3,14 +3,14 @@ package com.aerospike.mapper.reactive;
 import com.aerospike.mapper.annotations.*;
 import com.aerospike.mapper.tools.ReactiveAeroMapper;
 import com.aerospike.mapper.tools.virtuallist.ReactiveVirtualList;
+import com.aerospike.mapper.tools.virtuallist.ReturnType;
 import org.junit.jupiter.api.Test;
 import reactor.core.scheduler.Schedulers;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class ReactiveVirtualListTest extends ReactiveAeroMapperBaseTest {
 
@@ -132,8 +132,22 @@ public class ReactiveVirtualListTest extends ReactiveAeroMapperBaseTest {
         }
     }
 
+    @AerospikeRecord(namespace = "test", set = "D")
+    public static class D {
+        @AerospikeEmbed(type = AerospikeEmbed.EmbedType.LIST)
+        public List<Long> elements2;
+
+        @AerospikeKey
+        public int id;
+
+        public D() {
+            elements2 = new ArrayList<>();
+        }
+    }
+
     @Test
-    public void test() {
+    @SuppressWarnings("unchecked")
+    public void testVirtualList() {
         C a = new C(1, "a");
         C b = new C(2, "b");
         C c = new C(3, "c");
@@ -157,18 +171,12 @@ public class ReactiveVirtualListTest extends ReactiveAeroMapperBaseTest {
         reactiveMapper.save(a,b,c,d,e,f,g,h,i,j).subscribeOn(Schedulers.parallel()).collectList().block();
 
         ReactiveVirtualList<B> list = reactiveMapper.asBackedList(collection, "elements", B.class);
-//		list.append(new CollectionElement(103, "tom", 45678));
-//		System.out.println("Get by index returned: " + list.get(2));
-//		System.out.println("Delete by Key Range returned: " + list.removeByKeyRange(100, 102, true));
         List<B> results = (List<B>) list.beginMultiOperation()
                 .append(new B(104, "tim", 22222, i, e, f))
                 .append(new B(103, "tom", 45678, h, g, g))
                 .append(new B(105, "sam", 33333, j, a, b))
                 .append(new B(106, "rob", 44444, j, g))
                 .getByKeyRange(101, 105)
-//				.removeByKeyRange(100, 102).asResult()
-//				.get(0)
-//				.size()
                 .end().subscribeOn(Schedulers.parallel()).block();
 
         assert results != null;
@@ -203,5 +211,83 @@ public class ReactiveVirtualListTest extends ReactiveAeroMapperBaseTest {
             }
             assertTrue(found);
         }
+
+        // reset
+        list.clear().subscribeOn(Schedulers.parallel()).block();
+        assertEquals(0, list.size(null).subscribeOn(Schedulers.parallel()).block());
+        reactiveMapper.save(collection).subscribeOn(Schedulers.parallel()).block();
+        list = reactiveMapper.asBackedList(collection, "elements", B.class);
+
+        results = (List<B>) list.beginMultiOperation()
+                .removeByIndex(0) // Remove the first element
+                .removeByKey(102) // Remove item with id = 102
+                .getByIndexRange(0) // Get all elements starting at index 0
+                .end().subscribeOn(Schedulers.parallel()).block();
+
+        assert results != null;
+        assertEquals(1, results.size());
+        assertEquals(101, results.get(0).id);
+
+        // reset
+        list.clear().subscribeOn(Schedulers.parallel()).block();
+        assertEquals(0, list.size(null).subscribeOn(Schedulers.parallel()).block());
+        reactiveMapper.save(collection).subscribeOn(Schedulers.parallel()).block();
+        list = reactiveMapper.asBackedList(collection, "elements", B.class);
+
+        results = (List<B>) list.getByKey(102, ReturnType.DEFAULT).subscribeOn(Schedulers.parallel()).block();
+        assertEquals(3, list.size(null).subscribeOn(Schedulers.parallel()).block());
+        assert results != null;
+        assertEquals(1, results.size());
+        assertEquals(12345, results.get(0).getDate());
+        assertEquals("bob", results.get(0).getName());
+
+        // reset
+        list.clear().subscribeOn(Schedulers.parallel()).block();
+        assertEquals(0, list.size(null).subscribeOn(Schedulers.parallel()).block());
+        reactiveMapper.save(collection).subscribeOn(Schedulers.parallel()).block();
+        list = reactiveMapper.asBackedList(collection, "elements", B.class);
+
+        results = (List<B>) list.beginMultiOperation()
+                .removeByRank(0) // remove by rank 0
+                .getByRankRange(1) // get by rank range starting at rank 1
+                .end().subscribeOn(Schedulers.parallel()).block();
+
+        assertEquals(2, list.size(null).subscribeOn(Schedulers.parallel()).block());
+        assert results != null;
+        assertEquals(1, results.size());
+        assertEquals(101, results.get(0).getId());
+        assertEquals("joe", results.get(0).getName());
+
+        D collection2 = new D();
+        collection2.id = 1;
+
+        collection2.elements2.add(12345L);
+        collection2.elements2.add(23456L);
+        collection2.elements2.add(34567L);
+        collection2.elements2.add(44444L);
+        collection2.elements2.add(55555L);
+
+        // reset
+        list.clear().subscribeOn(Schedulers.parallel()).block();
+        assertEquals(0, list.size(null).subscribeOn(Schedulers.parallel()).block());
+
+        reactiveMapper.save(collection2).subscribeOn(Schedulers.parallel()).block();
+        ReactiveVirtualList<Long> list2 = reactiveMapper.asBackedList(collection2, "elements2", Long.class);
+
+        List<Object> valueList = new ArrayList<>();
+        valueList.add(12345L);
+        valueList.add(34567L);
+        valueList.add(55555L);
+
+        List<Long> results2 = (List<Long>) list2.beginMultiOperation()
+                .removeByValue(23456L)
+                .getByValueList(valueList)
+                .end().subscribeOn(Schedulers.parallel()).block();
+
+        assertEquals(4, list2.size(null).subscribeOn(Schedulers.parallel()).block());
+        assert results2 != null;
+        assertEquals(3, results2.size());
+        assertTrue(results2.containsAll(valueList));
+        assertFalse(results2.contains(44444L));
     }
 }
