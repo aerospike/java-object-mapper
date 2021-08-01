@@ -166,7 +166,7 @@ public class MappingConverter {
      * Given an instance of a class (of any type), convert its properties to a map, properties names will use as the
      * key and properties values will be the values.
      * @param instance The instance of a class (of any type).
-     * @return a Map of the properties propertyName, propertyValue of the given instance.
+     * @return the properties {@link Map} of the given instance.
      */
     public <T> Map<String, Object> convertToMap(@NotNull T instance) {
         ClassCacheEntry<T> entry = (ClassCacheEntry<T>) ClassCache.getInstance().loadClass(instance.getClass(), mapper);
