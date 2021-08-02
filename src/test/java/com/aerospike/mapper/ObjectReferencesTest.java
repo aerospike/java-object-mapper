@@ -2,15 +2,13 @@ package com.aerospike.mapper;
 
 import org.junit.jupiter.api.Test;
 
-import com.aerospike.client.AerospikeClient;
-import com.aerospike.client.IAerospikeClient;
 import com.aerospike.mapper.annotations.AerospikeEmbed;
 import com.aerospike.mapper.annotations.AerospikeKey;
 import com.aerospike.mapper.annotations.AerospikeRecord;
 import com.aerospike.mapper.annotations.AerospikeEmbed.EmbedType;
 import com.aerospike.mapper.tools.AeroMapper;
 
-public class ObjectReferencesTest {
+public class ObjectReferencesTest extends AeroMapperBaseTest {
 	@AerospikeRecord(namespace = "test", set = "parent")
 	public static class Parent {
 		@AerospikeKey
@@ -37,8 +35,7 @@ public class ObjectReferencesTest {
 		Parent parent = new Parent();
 		parent.id = 1;
 		parent.child = child;
-		
-		IAerospikeClient client = new AerospikeClient("127.0.0.1", 3000);
+
 		AeroMapper mapper = new AeroMapper.Builder(client).build();
 		mapper.save(parent);
 		mapper.save(child);

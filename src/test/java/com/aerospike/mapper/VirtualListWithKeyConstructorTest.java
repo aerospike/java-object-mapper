@@ -53,7 +53,9 @@ public class VirtualListWithKeyConstructorTest extends AeroMapperBaseTest {
 			return 17*a + (b == null ? 0 : b.hashCode());
 		}
 		public void setB(String b, Key key) {
-			this.b = key.userKey + ":" +b;
+			// TODO
+			//this.b = key.userKey + ":" +b;
+			this.b = b;
 			System.out.printf("setB(%s, %s)\n", b, key);
 		}
 		public String getB() {
