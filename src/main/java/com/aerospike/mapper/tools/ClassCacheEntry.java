@@ -21,7 +21,9 @@ import org.apache.commons.lang3.StringUtils;
 
 import com.aerospike.client.AerospikeException;
 import com.aerospike.client.Bin;
+import com.aerospike.client.Key;
 import com.aerospike.client.Record;
+import com.aerospike.client.Value;
 import com.aerospike.client.cdt.MapOrder;
 import com.aerospike.client.policy.BatchPolicy;
 import com.aerospike.client.policy.Policy;
@@ -137,8 +139,8 @@ public class ClassCacheEntry<T> {
 			this.overrideSettings(config);
 		}
 		
-		this.loadFieldsFromClass(clazz, this.mapAll, config);
-		this.loadPropertiesFromClass(clazz, config);
+		this.loadFieldsFromClass();
+		this.loadPropertiesFromClass();
 		this.superClazz = ClassCache.getInstance().loadClass(this.clazz.getSuperclass(), this.mapper);
 		this.binCount = this.values.size() + (superClazz != null ? superClazz.binCount : 0);
 		if (this.binCount == 0) {
@@ -538,7 +540,7 @@ public class ClassCacheEntry<T> {
 		return thisProperty;
 	}
 	
-	private void loadPropertiesFromClass(@NotNull Class<?> clazz, ClassConfig config) {
+	private void loadPropertiesFromClass() {
 		Map<String, PropertyDefinition> properties = new HashMap<>();
 		PropertyDefinition keyProperty = null;
 		KeyConfig keyConfig = config != null ? config.getKey() : null;
@@ -617,10 +619,10 @@ public class ClassCacheEntry<T> {
 		}
 	}
 
-	private void loadFieldsFromClass(Class<?> clazz, boolean mapAll, ClassConfig config) {
+	private void loadFieldsFromClass() {
 		KeyConfig keyConfig = config != null ? config.getKey() : null;
 		String keyField = keyConfig == null ? null : keyConfig.getField();
-		for (Field thisField : clazz.getDeclaredFields()) {
+		for (Field thisField : this.clazz.getDeclaredFields()) {
 			boolean isKey = false;
 			BinConfig thisBin = getBinFromField(thisField);
 			if (thisField.isAnnotationPresent(AerospikeKey.class) || (!StringUtils.isBlank(keyField) && keyField.equals(thisField.getName()))) {
@@ -643,7 +645,6 @@ public class ClassCacheEntry<T> {
 			
 			if (this.mapAll || thisField.isAnnotationPresent(AerospikeBin.class) || thisBin != null) {
 				// This field needs to be mapped
-				thisField.setAccessible(true);
 				AerospikeBin bin = thisField.getAnnotation(AerospikeBin.class);
 				String binName = bin == null ? null : ParserUtils.getInstance().get(bin.name());
 				if (thisBin != null && !StringUtils.isBlank(thisBin.getDerivedName())) {
@@ -663,14 +664,73 @@ public class ClassCacheEntry<T> {
 				if (this.values.get(name) != null) {
 					throw new AerospikeException("Class " + clazz.getName() + " cannot define the mapped name " + name + " more than once");
 				}
-				AnnotatedType annotatedType = new AnnotatedType(config, thisField);
-				TypeMapper typeMapper = TypeUtils.getMapper(thisField.getType(), annotatedType, this.mapper);
-				ValueType valueType = new ValueType.FieldValue(thisField, typeMapper, annotatedType);
-				values.put(name, valueType);
+				if ((bin != null && bin.useAccessors()) || (thisBin != null && thisBin.getUseAccessors() != null && thisBin.getUseAccessors())) {
+					validateAccessorsForField(name, thisField);
+				}
+				else {
+					thisField.setAccessible(true);
+					AnnotatedType annotatedType = new AnnotatedType(config, thisField);
+					TypeMapper typeMapper = TypeUtils.getMapper(thisField.getType(), annotatedType, this.mapper);
+					ValueType valueType = new ValueType.FieldValue(thisField, typeMapper, annotatedType);
+					values.put(name, valueType);
+				}
 			}
 		}
 	}
 	
+	private Method findMethodWithNameAndParams(String name, Class<?> ... params) {
+		try {
+			Method method = this.clazz.getDeclaredMethod(name, params);
+			// TODO: Should this ascend the inheritance hierarchy using getMethod on superclasses?
+			return method;
+		}
+		catch (NoSuchMethodException nsme) {
+			return null;
+		}
+	}
+	
+	private void validateAccessorsForField(String binName, Field thisField) {
+		String fieldName = thisField.getName();
+		String methodNameBase = fieldName.substring(0,1).toUpperCase() + fieldName.substring(1);
+		String getterName = "get" + methodNameBase;
+		String setterName = "set" + methodNameBase;
+		
+		Method getter = findMethodWithNameAndParams(getterName);
+		if (getter == null ) {
+			throw new AerospikeException(String.format(
+					"Expected to find getter for field %s on class %s due to it being configured to useAccessors, but no method with the signature \"%s %s()\" was found",
+					fieldName,
+					this.clazz.getSimpleName(),
+					thisField.getType().getSimpleName(),
+					getterName));
+		}
+		
+		Method setter = findMethodWithNameAndParams(setterName, thisField.getType());
+		if (setter == null) {
+			setter = findMethodWithNameAndParams(setterName, thisField.getType(), Key.class);
+		}
+		if (setter == null) {
+			setter = findMethodWithNameAndParams(setterName, thisField.getType(), Value.class);
+		}
+		if (setter == null ) {
+			throw new AerospikeException(String.format(
+					"Expected to find setter for field %s on class %s due to it being configured to useAccessors, but no method with the name \"%s\" was found",
+					fieldName,
+					this.clazz.getSimpleName(),
+					setterName));
+		}
+		
+		AnnotatedType annotatedType = new AnnotatedType(config, thisField);
+		TypeMapper typeMapper = TypeUtils.getMapper(thisField.getType(), annotatedType, this.mapper);
+		PropertyDefinition property = new PropertyDefinition(binName, mapper);
+		property.setGetter(getter);
+		property.setSetter(setter);
+		property.validate(clazz.getName(), config, false);
+
+		ValueType value = new ValueType.MethodValue(property, typeMapper, annotatedType);
+		values.put(binName, value);
+	}
+
 	public Object translateKeyToAerospikeKey(Object key) {
 		return this.key.getTypeMapper().toAerospikeFormat(key);
 	}

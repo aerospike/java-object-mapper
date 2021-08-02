@@ -7,6 +7,8 @@ import com.aerospike.client.policy.Policy;
 import com.aerospike.client.policy.RecordExistsAction;
 import com.aerospike.client.policy.WritePolicy;
 import com.aerospike.mapper.tools.IAeroMapper;
+import com.aerospike.mapper.tools.LoadedObjectResolver;
+import com.aerospike.mapper.tools.ThreadLocalKeySaver;
 
 import javax.validation.constraints.NotNull;
 import java.util.List;
@@ -125,8 +127,15 @@ public class VirtualList<E> extends BaseVirtualList<E> implements IVirtualList<E
 		Interactor interactor = virtualListInteractors.getGetByKeyRangeInteractor(startKey, endKey);
 		interactor.setNeedsResultOfType(returnResultsOfType);
 		Record record = this.mapper.getClient().operate(writePolicy, this.key, interactor.getOperation());
-
-		return (List<E>)interactor.getResult(record.getList(binName));
+		try {
+            ThreadLocalKeySaver.save(key);
+            LoadedObjectResolver.begin();
+    		return (List<E>)interactor.getResult(record.getList(binName));
+		}
+		finally {
+            LoadedObjectResolver.end();
+            ThreadLocalKeySaver.clear();
+		}
 	}
 
 	/**

@@ -15,4 +15,5 @@ public @interface AerospikeBin {
 	 * The name of the bin to use. If not specified, the field name is used for the bin name.
 	 */
 	String name() default "";
+	boolean useAccessors() default false;
 }
