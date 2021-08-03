@@ -4,6 +4,7 @@ import com.aerospike.client.policy.BatchPolicy;
 import com.aerospike.client.policy.Policy;
 import com.aerospike.client.policy.ScanPolicy;
 import com.aerospike.client.policy.WritePolicy;
+import com.aerospike.client.policy.QueryPolicy;
 import com.aerospike.mapper.tools.converters.MappingConverter;
 
 public interface IBaseAeroMapper {
@@ -15,7 +16,7 @@ public interface IBaseAeroMapper {
 
     ScanPolicy getScanPolicy(Class<?> clazz);
 
-    Policy getQueryPolicy(Class<?> clazz);
+    QueryPolicy getQueryPolicy(Class<?> clazz);
 
     IAeroMapper asMapper();
 

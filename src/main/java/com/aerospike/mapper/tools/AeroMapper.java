@@ -669,8 +669,8 @@ public class AeroMapper implements IAeroMapper {
      * @return - the appropriate query policy. If none is set, the client's queryPolicyDefault is returned.
      */
     @Override
-    public Policy getQueryPolicy(Class<?> clazz) {
-        return getPolicyByClassAndType(clazz, PolicyType.QUERY);
+    public QueryPolicy getQueryPolicy(Class<?> clazz) {
+        return (QueryPolicy) getPolicyByClassAndType(clazz, PolicyType.QUERY);
     }
 
     @Override
