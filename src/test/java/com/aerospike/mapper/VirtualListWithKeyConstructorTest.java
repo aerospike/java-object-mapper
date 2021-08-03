@@ -8,19 +8,14 @@ import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
-import com.aerospike.client.Key;
 import com.aerospike.mapper.annotations.AerospikeBin;
 import com.aerospike.mapper.annotations.AerospikeConstructor;
 import com.aerospike.mapper.annotations.AerospikeEmbed;
 import com.aerospike.mapper.annotations.AerospikeEmbed.EmbedType;
-import com.aerospike.mapper.annotations.AerospikeExclude;
-import com.aerospike.mapper.annotations.AerospikeGetter;
 import com.aerospike.mapper.annotations.AerospikeKey;
 import com.aerospike.mapper.annotations.AerospikeRecord;
-import com.aerospike.mapper.annotations.AerospikeSetter;
 import com.aerospike.mapper.annotations.ParamFrom;
 import com.aerospike.mapper.tools.AeroMapper;
-import com.aerospike.mapper.tools.virtuallist.ReturnType;
 import com.aerospike.mapper.tools.virtuallist.VirtualList;
 
 public class VirtualListWithKeyConstructorTest extends AeroMapperBaseTest {
@@ -36,7 +31,6 @@ public class VirtualListWithKeyConstructorTest extends AeroMapperBaseTest {
 		}
 		
 		public C() {
-			
 		}
 		
 		@Override
@@ -52,16 +46,16 @@ public class VirtualListWithKeyConstructorTest extends AeroMapperBaseTest {
 		public int hashCode() {
 			return 17*a + (b == null ? 0 : b.hashCode());
 		}
-		public void setB(String b, Key key) {
+		public void setB(String b) {
 			// TODO
 			//this.b = key.userKey + ":" +b;
 			this.b = b;
-			System.out.printf("setB(%s, %s)\n", b, key);
 		}
 		public String getB() {
 			return b;
 		}
 	}
+
 	@AerospikeRecord
 	public static class B {
 		@AerospikeKey
@@ -79,7 +73,6 @@ public class VirtualListWithKeyConstructorTest extends AeroMapperBaseTest {
 		
 		@AerospikeConstructor
 		public B() {
-			
 		}
 
 		public B(@ParamFrom("id") int id, @ParamFrom("name") String name, @ParamFrom("date") long date) {
@@ -104,9 +97,8 @@ public class VirtualListWithKeyConstructorTest extends AeroMapperBaseTest {
 		public C getAnonC() {
 			return anonC;
 		}
-		public void setAnonC(C anonC, Key key) {
+		public void setAnonC(C anonC) {
 			this.anonC = anonC;
-			System.out.printf("setAnonC(%s, %s)\n", anonC, key);
 		}
 		
 		public int getId() {
@@ -169,6 +161,7 @@ public class VirtualListWithKeyConstructorTest extends AeroMapperBaseTest {
 		public A() {
 			elements = new ArrayList<>();
 		}
+
 		@Override
 		public String toString() {
 			return String.format("{id=%d, elements=%s}", id, elements);
@@ -246,19 +239,5 @@ public class VirtualListWithKeyConstructorTest extends AeroMapperBaseTest {
 			}
 			assertTrue(found);
 		}
-		
-		System.out.println("--- Loading elements ---");
-		List<B> result1 = list.getByKeyRange(102, 103, ReturnType.ELEMENTS);
-		System.out.println(result1);
-		System.out.println("--- Loading elements with multi-get---");
-		List<B> result2 = (List<B>) list.beginMultiOperation().getByKeyRange(102, 103).end();
-		System.out.println(result2);
-		
-		System.out.println("--- Loading object ---");
-		collection.elements.clear();
-		collection.elements.add(b102);
-		mapper.save(collection);
-		System.out.println(mapper.read(A.class, collection.id));
 	}
-
 }

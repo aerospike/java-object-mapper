@@ -653,21 +653,19 @@ public class ClassCacheEntry<T> {
 				String name;
 				if (StringUtils.isBlank(binName)) {
 					name = thisField.getName();
-				}
-				else {
+				} else {
 					name = binName;
 				}
 				if (isKey) {
 					this.keyName = name;
 				}
-				
+
 				if (this.values.get(name) != null) {
 					throw new AerospikeException("Class " + clazz.getName() + " cannot define the mapped name " + name + " more than once");
 				}
 				if ((bin != null && bin.useAccessors()) || (thisBin != null && thisBin.getUseAccessors() != null && thisBin.getUseAccessors())) {
 					validateAccessorsForField(name, thisField);
-				}
-				else {
+				} else {
 					thisField.setAccessible(true);
 					AnnotatedType annotatedType = new AnnotatedType(config, thisField);
 					TypeMapper typeMapper = TypeUtils.getMapper(thisField.getType(), annotatedType, this.mapper);
@@ -683,20 +681,19 @@ public class ClassCacheEntry<T> {
 			Method method = this.clazz.getDeclaredMethod(name, params);
 			// TODO: Should this ascend the inheritance hierarchy using getMethod on superclasses?
 			return method;
-		}
-		catch (NoSuchMethodException nsme) {
+		} catch (NoSuchMethodException nsme) {
 			return null;
 		}
 	}
 	
 	private void validateAccessorsForField(String binName, Field thisField) {
 		String fieldName = thisField.getName();
-		String methodNameBase = fieldName.substring(0,1).toUpperCase() + fieldName.substring(1);
+		String methodNameBase = fieldName.substring(0, 1).toUpperCase() + fieldName.substring(1);
 		String getterName = "get" + methodNameBase;
 		String setterName = "set" + methodNameBase;
 		
 		Method getter = findMethodWithNameAndParams(getterName);
-		if (getter == null ) {
+		if (getter == null) {
 			throw new AerospikeException(String.format(
 					"Expected to find getter for field %s on class %s due to it being configured to useAccessors, but no method with the signature \"%s %s()\" was found",
 					fieldName,
@@ -712,7 +709,7 @@ public class ClassCacheEntry<T> {
 		if (setter == null) {
 			setter = findMethodWithNameAndParams(setterName, thisField.getType(), Value.class);
 		}
-		if (setter == null ) {
+		if (setter == null) {
 			throw new AerospikeException(String.format(
 					"Expected to find setter for field %s on class %s due to it being configured to useAccessors, but no method with the name \"%s\" was found",
 					fieldName,
