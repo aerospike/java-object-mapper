@@ -545,8 +545,8 @@ public class ReactiveAeroMapper implements IReactiveAeroMapper {
      * @return - the appropriate query policy. If none is set, the client's queryPolicyDefault is returned.
      */
     @Override
-    public Policy getQueryPolicy(Class<?> clazz) {
-        return getPolicyByClassAndType(clazz, ClassCache.PolicyType.QUERY);
+    public QueryPolicy getQueryPolicy(Class<?> clazz) {
+        return (QueryPolicy) getPolicyByClassAndType(clazz, ClassCache.PolicyType.QUERY);
     }
 
     @Override
