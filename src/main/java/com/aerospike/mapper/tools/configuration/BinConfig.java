@@ -7,6 +7,7 @@ import com.aerospike.client.AerospikeException;
 public class BinConfig {
 	private String name;
 	private String field;
+	private Boolean useAccessors;
 	private String getter;
 	private String setter;
 	private Boolean exclude;
@@ -19,6 +20,9 @@ public class BinConfig {
 	}
 	public String getField() {
 		return field;
+	}
+	public Boolean getUseAccessors() {
+		return useAccessors;
 	}
 	public String getGetter() {
 		return getter;

@@ -104,7 +104,7 @@ public class PropertyDefinition {
 					throw new AerospikeException(String.format("Property %s on class %s has a setter with 2 arguments, but the second one is neither a Key or a Value", this.name, className));
 				}
 			}
-			else if (setter.getParameterCount() != 1) {
+			else if (setter.getParameterCount() != 1 && setter.getParameterCount() != 2) {
 				throw new AerospikeException(String.format("Setter for property %s on class %s must take 1 or 2 arguments", this.name, className));
 			}
 			setterClazz = setter.getParameterTypes()[0];
