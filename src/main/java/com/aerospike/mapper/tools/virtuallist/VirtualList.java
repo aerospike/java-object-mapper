@@ -63,7 +63,6 @@ public class VirtualList<E> extends BaseVirtualList<E> implements IVirtualList<E
 	 * @param returnResultsOfType Type to return.
 	 * @return A list of the records which match the given value.
 	 */
-	@SuppressWarnings("unchecked")
 	public List<E> getByValue(WritePolicy writePolicy, Object value, ReturnType returnResultsOfType) {
 		if (writePolicy == null) {
 			writePolicy = new WritePolicy(owningEntry.getWritePolicy());
@@ -72,8 +71,7 @@ public class VirtualList<E> extends BaseVirtualList<E> implements IVirtualList<E
 		Interactor interactor = virtualListInteractors.getGetByValueInteractor(value);
 		interactor.setNeedsResultOfType(returnResultsOfType);
 		Record record = this.mapper.getClient().operate(writePolicy, key, interactor.getOperation());
-
-		return (List<E>)interactor.getResult(record.getList(binName));
+		return getResultsAsListWithDependencies(record, interactor);
 	}
 
 	/**
@@ -133,7 +131,6 @@ public class VirtualList<E> extends BaseVirtualList<E> implements IVirtualList<E
 	 * @param returnResultsOfType Type to return.
 	 * @return A list of the records which match the given list of values.
 	 */
-	@SuppressWarnings("unchecked")
 	public List<E> getByValueList(WritePolicy writePolicy, List<Object> values, ReturnType returnResultsOfType) {
 		if (writePolicy == null) {
 			writePolicy = new WritePolicy(owningEntry.getWritePolicy());
@@ -142,8 +139,7 @@ public class VirtualList<E> extends BaseVirtualList<E> implements IVirtualList<E
 		Interactor interactor = virtualListInteractors.getGetByValueListInteractor(values);
 		interactor.setNeedsResultOfType(returnResultsOfType);
 		Record record = this.mapper.getClient().operate(writePolicy, key, interactor.getOperation());
-
-		return (List<E>)interactor.getResult(record.getList(binName));
+		return getResultsAsListWithDependencies(record, interactor);
 	}
 
 	/**
@@ -165,7 +161,6 @@ public class VirtualList<E> extends BaseVirtualList<E> implements IVirtualList<E
 	 * @param returnResultsOfType Type to return.
 	 * @return A list of records that matches the given value and rank.
 	 */
-	@SuppressWarnings("unchecked")
 	public List<E> getByValueRelativeRankRange(WritePolicy writePolicy, Object value, int rank, ReturnType returnResultsOfType) {
 		if (writePolicy == null) {
 			writePolicy = new WritePolicy(owningEntry.getWritePolicy());
@@ -174,8 +169,7 @@ public class VirtualList<E> extends BaseVirtualList<E> implements IVirtualList<E
 		Interactor interactor = virtualListInteractors.getGetByValueRelativeRankRangeInteractor(value, rank);
 		interactor.setNeedsResultOfType(returnResultsOfType);
 		Record record = this.mapper.getClient().operate(writePolicy, key, interactor.getOperation());
-
-		return (List<E>)interactor.getResult(record.getList(binName));
+		return getResultsAsListWithDependencies(record, interactor);
 	}
 
 	/**
@@ -199,7 +193,6 @@ public class VirtualList<E> extends BaseVirtualList<E> implements IVirtualList<E
 	 * @param returnResultsOfType Type to return.
 	 * @return A list of records that matches the given value, rank and count.
 	 */
-	@SuppressWarnings("unchecked")
 	public List<E> getByValueRelativeRankRange(WritePolicy writePolicy, Object value, int rank, int count, ReturnType returnResultsOfType) {
 		if (writePolicy == null) {
 			writePolicy = new WritePolicy(owningEntry.getWritePolicy());
@@ -208,8 +201,7 @@ public class VirtualList<E> extends BaseVirtualList<E> implements IVirtualList<E
 		Interactor interactor = virtualListInteractors.getGetByValueRelativeRankRangeInteractor(value, rank, count);
 		interactor.setNeedsResultOfType(returnResultsOfType);
 		Record record = this.mapper.getClient().operate(writePolicy, key, interactor.getOperation());
-
-		return (List<E>)interactor.getResult(record.getList(binName));
+		return getResultsAsListWithDependencies(record, interactor);
 	}
 
 	/**
@@ -229,7 +221,6 @@ public class VirtualList<E> extends BaseVirtualList<E> implements IVirtualList<E
 	 * @param returnResultsOfType Type to return.
 	 * @return A list of the records which match the given index.
 	 */
-	@SuppressWarnings("unchecked")
 	public List<E> getByIndexRange(WritePolicy writePolicy, int index, ReturnType returnResultsOfType) {
 		if (writePolicy == null) {
 			writePolicy = new WritePolicy(owningEntry.getWritePolicy());
@@ -238,8 +229,7 @@ public class VirtualList<E> extends BaseVirtualList<E> implements IVirtualList<E
 		Interactor interactor = virtualListInteractors.getGetByIndexRangeInteractor(index);
 		interactor.setNeedsResultOfType(returnResultsOfType);
 		Record record = this.mapper.getClient().operate(writePolicy, key, interactor.getOperation());
-
-		return (List<E>)interactor.getResult(record.getList(binName));
+		return getResultsAsListWithDependencies(record, interactor);
 	}
 
 	/**
@@ -259,7 +249,6 @@ public class VirtualList<E> extends BaseVirtualList<E> implements IVirtualList<E
 	 * @param returnResultsOfType Type to return.
 	 * @return A list of the records which match the given index and count.
 	 */
-	@SuppressWarnings("unchecked")
 	public List<E> getByIndexRange(WritePolicy writePolicy, int index, int count, ReturnType returnResultsOfType) {
 		if (writePolicy == null) {
 			writePolicy = new WritePolicy(owningEntry.getWritePolicy());
@@ -268,8 +257,7 @@ public class VirtualList<E> extends BaseVirtualList<E> implements IVirtualList<E
 		Interactor interactor = virtualListInteractors.getGetByIndexRangeInteractor(index, count);
 		interactor.setNeedsResultOfType(returnResultsOfType);
 		Record record = this.mapper.getClient().operate(writePolicy, key, interactor.getOperation());
-
-		return (List<E>)interactor.getResult(record.getList(binName));
+		return getResultsAsListWithDependencies(record, interactor);
 	}
 
 	/**
@@ -289,7 +277,6 @@ public class VirtualList<E> extends BaseVirtualList<E> implements IVirtualList<E
 	 * @param returnResultsOfType Type to return.
 	 * @return A list of the records which match the given rank.
 	 */
-	@SuppressWarnings("unchecked")
 	public List<E> getByRank(WritePolicy writePolicy, int rank, ReturnType returnResultsOfType) {
 		if (writePolicy == null) {
 			writePolicy = new WritePolicy(owningEntry.getWritePolicy());
@@ -298,8 +285,7 @@ public class VirtualList<E> extends BaseVirtualList<E> implements IVirtualList<E
 		Interactor interactor = virtualListInteractors.getGetByRankInteractor(rank);
 		interactor.setNeedsResultOfType(returnResultsOfType);
 		Record record = this.mapper.getClient().operate(writePolicy, key, interactor.getOperation());
-
-		return (List<E>)interactor.getResult(record.getList(binName));
+		return getResultsAsListWithDependencies(record, interactor);
 	}
 
 	/**
@@ -319,7 +305,6 @@ public class VirtualList<E> extends BaseVirtualList<E> implements IVirtualList<E
 	 * @param returnResultsOfType Type to return.
 	 * @return A list of the records which match the given rank.
 	 */
-	@SuppressWarnings("unchecked")
 	public List<E> getByRankRange(WritePolicy writePolicy, int rank, ReturnType returnResultsOfType) {
 		if (writePolicy == null) {
 			writePolicy = new WritePolicy(owningEntry.getWritePolicy());
@@ -328,8 +313,7 @@ public class VirtualList<E> extends BaseVirtualList<E> implements IVirtualList<E
 		Interactor interactor = virtualListInteractors.getGetByRankRangeInteractor(rank);
 		interactor.setNeedsResultOfType(returnResultsOfType);
 		Record record = this.mapper.getClient().operate(writePolicy, key, interactor.getOperation());
-
-		return (List<E>)interactor.getResult(record.getList(binName));
+		return getResultsAsListWithDependencies(record, interactor);
 	}
 
 	/**
@@ -349,7 +333,6 @@ public class VirtualList<E> extends BaseVirtualList<E> implements IVirtualList<E
 	 * @param returnResultsOfType Type to return.
 	 * @return A list of the records which match the given rank and count.
 	 */
-	@SuppressWarnings("unchecked")
 	public List<E> getByRankRange(WritePolicy writePolicy, int rank, int count, ReturnType returnResultsOfType) {
 		if (writePolicy == null) {
 			writePolicy = new WritePolicy(owningEntry.getWritePolicy());
@@ -358,8 +341,7 @@ public class VirtualList<E> extends BaseVirtualList<E> implements IVirtualList<E
 		Interactor interactor = virtualListInteractors.getGetByRankRangeInteractor(rank, count);
 		interactor.setNeedsResultOfType(returnResultsOfType);
 		Record record = this.mapper.getClient().operate(writePolicy, key, interactor.getOperation());
-
-		return (List<E>)interactor.getResult(record.getList(binName));
+		return getResultsAsListWithDependencies(record, interactor);
 	}
 
 	/**
@@ -387,7 +369,6 @@ public class VirtualList<E> extends BaseVirtualList<E> implements IVirtualList<E
 	 * @param returnResultsOfType Type to return.
 	 * @return A list of the records which match the given key range.
 	 */
-	@SuppressWarnings("unchecked")
 	public List<E> getByKey(WritePolicy writePolicy, Object key, ReturnType returnResultsOfType) {
 		if (writePolicy == null) {
 			writePolicy = new WritePolicy(owningEntry.getWritePolicy());
@@ -396,8 +377,7 @@ public class VirtualList<E> extends BaseVirtualList<E> implements IVirtualList<E
 		Interactor interactor = virtualListInteractors.getGetByKeyInteractor(key);
 		interactor.setNeedsResultOfType(returnResultsOfType);
 		Record record = this.mapper.getClient().operate(writePolicy, this.key, interactor.getOperation());
-
-		return (List<E>)interactor.getResult(record.getList(binName));
+		return getResultsAsListWithDependencies(record, interactor);
 	}
 
 	/**
@@ -493,7 +473,6 @@ public class VirtualList<E> extends BaseVirtualList<E> implements IVirtualList<E
 	 * @param returnResultsOfType Type to return.
 	 * @return A list of the records which have been removed from the database if returnResults is true, null otherwise.
 	 */
-	@SuppressWarnings("unchecked")
 	public List<E> removeByValue(WritePolicy writePolicy, Object value, ReturnType returnResultsOfType) {
 		if (writePolicy == null) {
 			writePolicy = new WritePolicy(owningEntry.getWritePolicy());
@@ -502,8 +481,7 @@ public class VirtualList<E> extends BaseVirtualList<E> implements IVirtualList<E
 		Interactor interactor = virtualListInteractors.getRemoveByValueInteractor(value);
 		interactor.setNeedsResultOfType(returnResultsOfType);
 		Record record = this.mapper.getClient().operate(writePolicy, key, interactor.getOperation());
-
-		return (List<E>)interactor.getResult(record.getList(binName));
+		return getResultsAsListWithDependencies(record, interactor);
 	}
 
 	/**
@@ -523,7 +501,6 @@ public class VirtualList<E> extends BaseVirtualList<E> implements IVirtualList<E
 	 * @param returnResultsOfType Type to return.
 	 * @return A list of the records which have been removed from the database if returnResults is true, null otherwise.
 	 */
-	@SuppressWarnings("unchecked")
 	public List<E> removeByValueList(WritePolicy writePolicy, List<Object> values, ReturnType returnResultsOfType) {
 		if (writePolicy == null) {
 			writePolicy = new WritePolicy(owningEntry.getWritePolicy());
@@ -532,8 +509,7 @@ public class VirtualList<E> extends BaseVirtualList<E> implements IVirtualList<E
 		Interactor interactor = virtualListInteractors.getRemoveByValueListInteractor(values);
 		interactor.setNeedsResultOfType(returnResultsOfType);
 		Record record = this.mapper.getClient().operate(writePolicy, key, interactor.getOperation());
-
-		return (List<E>)interactor.getResult(record.getList(binName));
+		return getResultsAsListWithDependencies(record, interactor);
 	}
 
 	/**
@@ -573,8 +549,7 @@ public class VirtualList<E> extends BaseVirtualList<E> implements IVirtualList<E
 		Interactor interactor = virtualListInteractors.getRemoveByValueRangeInteractor(startValue, endValue);
 		interactor.setNeedsResultOfType(returnResultsOfType);
 		Record record = this.mapper.getClient().operate(writePolicy, key, interactor.getOperation());
-
-		return (List<E>)interactor.getResult(record.getList(binName));
+		return getResultsAsListWithDependencies(record, interactor);
 	}
 
 	/**
@@ -596,7 +571,6 @@ public class VirtualList<E> extends BaseVirtualList<E> implements IVirtualList<E
 	 * @param returnResultsOfType Type to return.
 	 * @return A list of the records which have been removed from the database if returnResults is true, null otherwise.
 	 */
-	@SuppressWarnings("unchecked")
 	public List<E> removeByValueRelativeRankRange(WritePolicy writePolicy, Object value, int rank, ReturnType returnResultsOfType) {
 		if (writePolicy == null) {
 			writePolicy = new WritePolicy(owningEntry.getWritePolicy());
@@ -605,8 +579,7 @@ public class VirtualList<E> extends BaseVirtualList<E> implements IVirtualList<E
 		Interactor interactor = virtualListInteractors.getRemoveByValueRelativeRankRangeInteractor(value, rank);
 		interactor.setNeedsResultOfType(returnResultsOfType);
 		Record record = this.mapper.getClient().operate(writePolicy, key, interactor.getOperation());
-
-		return (List<E>)interactor.getResult(record.getList(binName));
+		return getResultsAsListWithDependencies(record, interactor);
 	}
 
 	/**
@@ -630,7 +603,6 @@ public class VirtualList<E> extends BaseVirtualList<E> implements IVirtualList<E
 	 * @param returnResultsOfType Type to return.
 	 * @return A list of the records which have been removed from the database if returnResults is true, null otherwise.
 	 */
-	@SuppressWarnings("unchecked")
 	public List<E> removeByValueRelativeRankRange(WritePolicy writePolicy, Object value, int rank, int count, ReturnType returnResultsOfType) {
 		if (writePolicy == null) {
 			writePolicy = new WritePolicy(owningEntry.getWritePolicy());
@@ -639,8 +611,7 @@ public class VirtualList<E> extends BaseVirtualList<E> implements IVirtualList<E
 		Interactor interactor = virtualListInteractors.getRemoveByValueRelativeRankRangeInteractor(value, rank, count);
 		interactor.setNeedsResultOfType(returnResultsOfType);
 		Record record = this.mapper.getClient().operate(writePolicy, key, interactor.getOperation());
-
-		return (List<E>)interactor.getResult(record.getList(binName));
+		return getResultsAsListWithDependencies(record, interactor);
 	}
 
 	/**
@@ -660,7 +631,6 @@ public class VirtualList<E> extends BaseVirtualList<E> implements IVirtualList<E
 	 * @param returnResultsOfType Type to return.
 	 * @return A list of the records which have been removed from the database if returnResults is true, null otherwise.
 	 */
-	@SuppressWarnings("unchecked")
 	public List<E> removeByIndex(WritePolicy writePolicy, int index, ReturnType returnResultsOfType) {
 		if (writePolicy == null) {
 			writePolicy = new WritePolicy(owningEntry.getWritePolicy());
@@ -669,8 +639,7 @@ public class VirtualList<E> extends BaseVirtualList<E> implements IVirtualList<E
 		Interactor interactor = virtualListInteractors.getRemoveByIndexInteractor(index);
 		interactor.setNeedsResultOfType(returnResultsOfType);
 		Record record = this.mapper.getClient().operate(writePolicy, key, interactor.getOperation());
-
-		return (List<E>)interactor.getResult(record.getList(binName));
+		return getResultsAsListWithDependencies(record, interactor);
 	}
 
 	/**
@@ -690,7 +659,6 @@ public class VirtualList<E> extends BaseVirtualList<E> implements IVirtualList<E
 	 * @param returnResultsOfType Type to return.
 	 * @return A list of the records which have been removed from the database if returnResults is true, null otherwise.
 	 */
-	@SuppressWarnings("unchecked")
 	public List<E> removeByIndexRange(WritePolicy writePolicy, int index, ReturnType returnResultsOfType) {
 		if (writePolicy == null) {
 			writePolicy = new WritePolicy(owningEntry.getWritePolicy());
@@ -699,8 +667,7 @@ public class VirtualList<E> extends BaseVirtualList<E> implements IVirtualList<E
 		Interactor interactor = virtualListInteractors.getRemoveByIndexRangeInteractor(index);
 		interactor.setNeedsResultOfType(returnResultsOfType);
 		Record record = this.mapper.getClient().operate(writePolicy, key, interactor.getOperation());
-
-		return (List<E>)interactor.getResult(record.getList(binName));
+		return getResultsAsListWithDependencies(record, interactor);
 	}
 
 	/**
@@ -722,7 +689,6 @@ public class VirtualList<E> extends BaseVirtualList<E> implements IVirtualList<E
 	 * @param returnResultsOfType Type to return.
 	 * @return A list of the records which have been removed from the database if returnResults is true, null otherwise.
 	 */
-	@SuppressWarnings("unchecked")
 	public List<E> removeByIndexRange(WritePolicy writePolicy, int index, int count, ReturnType returnResultsOfType) {
 		if (writePolicy == null) {
 			writePolicy = new WritePolicy(owningEntry.getWritePolicy());
@@ -731,8 +697,7 @@ public class VirtualList<E> extends BaseVirtualList<E> implements IVirtualList<E
 		Interactor interactor = virtualListInteractors.getRemoveByIndexRangeInteractor(index, count);
 		interactor.setNeedsResultOfType(returnResultsOfType);
 		Record record = this.mapper.getClient().operate(writePolicy, key, interactor.getOperation());
-
-		return (List<E>)interactor.getResult(record.getList(binName));
+		return getResultsAsListWithDependencies(record, interactor);
 	}
 
 	/**
@@ -752,7 +717,6 @@ public class VirtualList<E> extends BaseVirtualList<E> implements IVirtualList<E
 	 * @param returnResultsOfType Type to return.
 	 * @return A list of the records which have been removed from the database if returnResults is true, null otherwise.
 	 */
-	@SuppressWarnings("unchecked")
 	public List<E> removeByRank(WritePolicy writePolicy, int rank, ReturnType returnResultsOfType) {
 		if (writePolicy == null) {
 			writePolicy = new WritePolicy(owningEntry.getWritePolicy());
@@ -761,8 +725,7 @@ public class VirtualList<E> extends BaseVirtualList<E> implements IVirtualList<E
 		Interactor interactor = virtualListInteractors.getRemoveByRankInteractor(rank);
 		interactor.setNeedsResultOfType(returnResultsOfType);
 		Record record = this.mapper.getClient().operate(writePolicy, key, interactor.getOperation());
-
-		return (List<E>)interactor.getResult(record.getList(binName));
+		return getResultsAsListWithDependencies(record, interactor);
 	}
 
 	/**
@@ -782,7 +745,6 @@ public class VirtualList<E> extends BaseVirtualList<E> implements IVirtualList<E
 	 * @param returnResultsOfType Type to return.
 	 * @return A list of the records which have been removed from the database if returnResults is true, null otherwise.
 	 */
-	@SuppressWarnings("unchecked")
 	public List<E> removeByRankRange(WritePolicy writePolicy, int rank, ReturnType returnResultsOfType) {
 		if (writePolicy == null) {
 			writePolicy = new WritePolicy(owningEntry.getWritePolicy());
@@ -791,8 +753,7 @@ public class VirtualList<E> extends BaseVirtualList<E> implements IVirtualList<E
 		Interactor interactor = virtualListInteractors.getRemoveByRankRangeInteractor(rank);
 		interactor.setNeedsResultOfType(returnResultsOfType);
 		Record record = this.mapper.getClient().operate(writePolicy, key, interactor.getOperation());
-
-		return (List<E>)interactor.getResult(record.getList(binName));
+		return getResultsAsListWithDependencies(record, interactor);
 	}
 
 	/**
@@ -814,7 +775,6 @@ public class VirtualList<E> extends BaseVirtualList<E> implements IVirtualList<E
 	 * @param returnResultsOfType Type to return.
 	 * @return A list of the records which have been removed from the database if returnResults is true, null otherwise.
 	 */
-	@SuppressWarnings("unchecked")
 	public List<E> removeByRankRange(WritePolicy writePolicy, int rank, int count, ReturnType returnResultsOfType) {
 		if (writePolicy == null) {
 			writePolicy = new WritePolicy(owningEntry.getWritePolicy());
