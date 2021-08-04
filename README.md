@@ -38,8 +38,8 @@
 
 |`java-object-mapper` Version | Aerospike Client | Aerospike Reactor Client
 | :----------- | :----------- | :-----------
-| 1.2.0 | 5.1.x | 5.0.x
-| 1.1.0 | 5.0.x | 
+| 1.2.x | 5.1.x | 5.0.x
+| 1.1.x | 5.0.x | 
 
 # Motivation and a simple example
 Consider a simple class:
