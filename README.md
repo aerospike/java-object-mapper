@@ -1,10 +1,15 @@
 # Aerospike Java Object Mapper
 [![Build project](https://github.com/aerospike/java-object-mapper/actions/workflows/build.yml/badge.svg)](https://github.com/aerospike/java-object-mapper/actions/workflows/build.yml)
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.aerospike/java-object-mapper/badge.svg)](https://maven-badges.herokuapp.com/maven-central/com.aerospike/java-object-mapper/)
+[![javadoc](https://javadoc.io/badge2/com.aerospike/java-object-mapper/javadoc.svg)](https://javadoc.io/doc/com.aerospike/java-object-mapper)
 
 [Aerospike](https://www.aerospike.com) is one of, if not the fastest, NoSQL database in the world. It presents a Java API which is comprehensive and powerful, but requires a measure of boiler plate code to map the data from Java POJOs to the database. The aim of this repository is to lower the amount of code required when mapping POJOs to Aerospike and back as well as reducing some of the brittleness of the code.
 
-# Table of contents:
+## Documentation
+
+The documentation for this project can be found on [javadoc.io](https://www.javadoc.io/doc/com.aerospike/java-object-mapper).
+
+# Table of contents
 1. [Compatibility with Aerospike Clients](#Compatibility-with-Aerospike-Clients)
 2. [Motivation and a simple example](#Motivation-and-a-simple-example)
 3. [Getting Started](#Getting-Started)
