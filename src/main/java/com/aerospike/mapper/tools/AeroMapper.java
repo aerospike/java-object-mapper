@@ -6,6 +6,7 @@ import java.io.InputStream;
 import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 
 import javax.validation.constraints.NotNull;
@@ -13,6 +14,7 @@ import javax.validation.constraints.NotNull;
 import org.apache.commons.lang3.StringUtils;
 
 import com.aerospike.client.AerospikeException;
+import com.aerospike.client.AerospikeException.ScanTerminated;
 import com.aerospike.client.Bin;
 import com.aerospike.client.IAerospikeClient;
 import com.aerospike.client.Key;
@@ -24,6 +26,7 @@ import com.aerospike.client.policy.QueryPolicy;
 import com.aerospike.client.policy.RecordExistsAction;
 import com.aerospike.client.policy.ScanPolicy;
 import com.aerospike.client.policy.WritePolicy;
+import com.aerospike.client.query.Filter;
 import com.aerospike.client.query.RecordSet;
 import com.aerospike.client.query.Statement;
 import com.aerospike.mapper.tools.ClassCache.PolicyType;
@@ -586,7 +589,7 @@ public class AeroMapper implements IAeroMapper {
      */
     @Override
     public <T> void find(@NotNull Class<T> clazz, Function<T, Boolean> function) throws AerospikeException {
-        ClassCacheEntry<T> entry = MapperUtils.getEntryAndValidateNamespace(clazz, this);
+        ClassCacheEntry<T> entry = MapperUtils.getEntryAndValidateNamespace(clazz, this); 
 
         Statement statement = new Statement();
         statement.setNamespace(entry.getNamespace());
@@ -613,6 +616,105 @@ public class AeroMapper implements IAeroMapper {
         }
     }
 
+    /**
+     * Scan every record in the set associated with the passed class. Each record will be converted to the appropriate class then passed to the
+     * processor. If the processor returns true, more records will be processed and if the processor returns false, the scan is aborted.
+     * <p/>
+     * Depending on the ScanPolicy set up for this class, it is possible for the processor to be called by multiple different
+     * threads concurrently, so the processor should be thread-safe
+     * @param clazz - the class used to determine which set to scan and to convert the returned records to. 
+     * @param processor - the Processor used to process each record
+     */
+    @Override
+    public <T> void scan(@NotNull Class<T> clazz, @NotNull Processor<T> processor) {
+    	scan(null, clazz, processor);
+    }
+    
+    /**
+     * Scan every record in the set associated with the passed class. Each record will be converted to the appropriate class then passed to the
+     * processor. If the processor returns true, more records will be processed and if the processor returns false, the scan is aborted.
+     * <p/>
+     * Depending on the policy passed or set as the ScanPolicy for this class, it is possible for the processor to be called by multiple different
+     * threads concurrently, so the processor should be thread-safe. Note that as a consequence of this, if the processor returns false to abort the
+     * scan there is a chance that records are being concurrently processed in other threads and this processing will not be interrupted. 
+     * <p/>
+     * @param policy - the scan policy to use. If this is null, the default scan policy of the passed class will be used.
+     * @param clazz - the class used to determine which set to scan and to convert the returned records to. 
+     * @param processor - the Processor used to process each record
+     */
+    @Override
+    public <T> void scan(ScanPolicy policy, @NotNull Class<T> clazz, @NotNull Processor<T> processor) {
+        ClassCacheEntry<T> entry = MapperUtils.getEntryAndValidateNamespace(clazz, this);
+        if (policy == null) {
+        	policy = entry.getScanPolicy();
+        }
+    	String namespace = entry.getNamespace();
+    	String setName = entry.getSetName();
+    			
+    	AtomicBoolean userTerminated = new AtomicBoolean(false);
+    	try {
+	    	mClient.scanAll(policy, namespace, setName, (key, record) -> {
+	    		T object = this.getMappingConverter().convertToObject(clazz, record);
+	    		if (!processor.process(object)) {
+	    			userTerminated.set(true);
+	    			throw new AerospikeException.ScanTerminated();
+	    		}
+	    	});
+    	}
+    	catch (ScanTerminated st) {
+    		if (userTerminated.get()) {
+    			// Do nothing, expected.
+    		}
+    		else {
+    			throw st;
+    		}
+    	}
+    }
+    
+    private ScanPolicy scanPolicyFromQueryPolicy(QueryPolicy queryPolicy) {
+    	if (queryPolicy == null) {
+    		return null;
+    	}
+    	ScanPolicy result = new ScanPolicy(queryPolicy);
+    	result.concurrentNodes = queryPolicy.maxConcurrentNodes > 1;
+    	result.maxConcurrentNodes = queryPolicy.maxConcurrentNodes;
+    	result.includeBinData = queryPolicy.includeBinData;
+    	result.maxRecords = 0;
+    	result.recordsPerSecond = 0;
+    	return result;
+    }
+
+    public <T> void query(@NotNull Class<T> clazz, @NotNull Processor<T> processor, Filter filter) {
+    	this.query(null, clazz, processor, filter);
+    }
+    
+    public <T> void query(QueryPolicy policy, @NotNull Class<T> clazz, @NotNull Processor<T> processor, Filter filter) {
+        ClassCacheEntry<T> entry = MapperUtils.getEntryAndValidateNamespace(clazz, this);
+        if (filter == null) {
+        	scan(scanPolicyFromQueryPolicy(policy), clazz, processor);
+        }
+    	if (policy == null) {
+    		policy = entry.getQueryPolicy();
+    	}
+    	Statement statement = new Statement();
+    	statement.setFilter(filter);
+    	statement.setNamespace(entry.getNamespace());
+    	statement.setSetName(entry.getSetName());
+    
+    	RecordSet recordSet = mClient.query(policy, statement);
+    	try {
+    		while (recordSet.next()) {
+    			T object = this.getMappingConverter().convertToObject(clazz, recordSet.getRecord());
+    			if (!processor.process(object)) {
+    				break;
+    			}
+    		}
+    	}
+    	finally {
+    		recordSet.close();
+    	}
+    }
+    
     @Override
     public IAerospikeClient getClient() {
         return this.mClient;

@@ -38,6 +38,8 @@ The documentation for this project can be found on [javadoc.io](https://www.java
         + 10.1.3. [Embed Structure](#Embed-Structure)
         + 10.1.4. [Reference Structure](#Reference-Structure)
 11. [Virtual Lists](#Virtual-Lists)
+12. [Scans](#Scans)
+13. [Queries](#Queries)
 
 # Compatibility with Aerospike Clients
 
@@ -2167,4 +2169,99 @@ public <T> T convertToObject(Class<T> clazz, Record record);
 ```
 
 Note: At the moment not all CDT operations are supported, and if the underlying CDTs are of the wrong type, a different API call may be used. For example, if you invoke `getByKeyRange` on items represented in the database as a list, `getByValueRange` is invoked instead as a list has no key.
+
+## Scans
+Scans can be used to process every record in a set. The scan iterates through every item in the set and invokes a callback for every item in the set. For example:
+
+```java
+mapper.scan(Pseron.class, (person) -> {
+	// ... process person
+	return true;
+});
+```
+
+If the processing method returns true, the scan continues. However if the processing method returns false the scan will abort. Note that if the scan policy calls for multi-threading of the scans, the callback method may be invoked by multiple threads at once and hence must be thread safe. If one thread aborts the scan, other threads already in the processing method will finish processing their records.
+
+Note that if you want to process only some of the records in a set you can attach an Expression on the optional policy passed to the scan. For example, if there is a `Person` class:
+
+```java
+@AerospikeRecord(namespace = "test", set = "testScan")
+public class Person {
+	@AerospikeKey
+	private int id;
+	private String name;
+	private int age;
+	
+	public Person(@ParamFrom("id") int id, @ParamFrom("name") String name, @ParamFrom("age") int age) {
+		super();
+		this.id = id;
+		this.name = name;
+		this.age = age;
+	}
+
+	public int getId() {
+		return id;
+	}
+
+	public String getName() {
+		return name;
+	}
+
+	public int getAge() {
+		return age;
+	}
+}
+```
+ 
+ and then several people are inserted:
+ 
+ ```java
+mapper.save(new Person(1, "Tim", 312),
+			new Person(2, "Bob", 44),
+			new Person(3, "Sue", 56),
+			new Person(4, "Rob", 23),
+			new Person(5, "Jim", 32),
+			new Person(6, "Bob", 78));
+ ```
+
+As a contrived example, let's say we want to count the number of people in the set called "Bob". We can simply do:
+
+```java
+AtomicInteger counter = new AtomicInteger(0);
+ScanPolicy scanPolicy = new ScanPolicy(mapper.getScanPolicy(Person.class));
+scanPolicy.filterExp = Exp.build(Exp.eq(Exp.stringBin("name"), Exp.val("Bob")));
+mapper.scan(scanPolicy, Person.class, (person) -> {
+	counter.incrementAndGet();
+	return true;
+});
+```
+
+Note that when we altered the ScaPolicy, we had to make a copy of it first. If we fail to do this, the ScanPolcy will be altered for all subsequent calls. To clarify, the **wrong** way to set the scan policy is
+
+```java
+ScanPolicy scanPolicy = new ScanPolicy(mapper.getScanPolicy(Person.class));
+scanPolicy.filterExp = Exp.build(Exp.eq(Exp.stringBin("name"), Exp.val("Bob")));
+```
+
+and the **right** way to set an expression is
+
+```java
+ScanPolicy scanPolicy = new ScanPolicy(mapper.getScanPolicy(Person.class));
+scanPolicy.filterExp = Exp.build(Exp.eq(Exp.stringBin("name"), Exp.val("Bob")));
+```
+
+## Queries
+
+Similar to Scans, Queries can processed using the AeroMapper. Syntactically, the only difference between a query and a scan is the addition of a `Filter` on the Query which dictates the criteria of the query. A secondary index must be defined on the Bin referenced in the Filter or an error will be thrown. If no filter is passed, the query will be turned into a scan.
+
+Similar to Scans, returning `false` on the processing method will abort the Query and process no further records, and additional filter criteria can be added using Expressions on the QueryPolicy.
+
+```java
+mapper.query(A.class, (a) -> {
+	System.out.println(a);
+	counter.incrementAndGet();
+	return true;
+}, Filter.range("age", 30, 54));
+
+```
 
