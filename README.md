@@ -2180,9 +2180,9 @@ mapper.scan(Pseron.class, (person) -> {
 });
 ```
 
-If the processing method returns true, the scan continues. However if the processing method returns false the scan will abort. Note that if the scan policy calls for multi-threading of the scans, the callback method may be invoked by multiple threads at once and hence must be thread safe. If one thread aborts the scan, other threads already in the processing method will finish processing their records.
+If the processing method returns true, the scan continues. However, if the processing method returns false the scan will abort. Note that if the scan policy calls for multi-threading of the scans, the callback method may be invoked by multiple threads at once and hence must be thread safe. If one thread aborts the scan, other threads already in the processing method will finish processing their records.
 
-Note that if you want to process only some of the records in a set you can attach an Expression on the optional policy passed to the scan. For example, if there is a `Person` class:
+Note that if you want to process only some records in a set you can attach an Expression on the optional policy passed to the scan. For example, if there is a `Person` class:
 
 ```java
 @AerospikeRecord(namespace = "test", set = "testScan")
@@ -2213,7 +2213,7 @@ public class Person {
 }
 ```
  
- and then several people are inserted:
+and then several people are inserted:
  
  ```java
 mapper.save(new Person(1, "Tim", 312),
@@ -2236,7 +2236,7 @@ mapper.scan(scanPolicy, Person.class, (person) -> {
 });
 ```
 
-Note that when we altered the ScanPolicy, we had to make a copy of it first. If we fail to do this, the ScanPolcy will be altered for all subsequent calls. To clarify, the **wrong** way to set the scan policy is
+Note that when we altered the ScanPolicy, we had to make a copy of it first. If we fail to do this, the ScanPolicy will be altered for all subsequent calls. To clarify, the **wrong** way to set the scan policy is
 
 ```java
 ScanPolicy scanPolicy = new ScanPolicy(mapper.getScanPolicy(Person.class));
