@@ -19,9 +19,9 @@ public class QueryTest extends AeroMapperBaseTest {
 	@AerospikeRecord(namespace = "test", set = "testScan")
 	public static class A {
 		@AerospikeKey
-		private int id;
-		private String name;
-		private int age;
+		private final int id;
+		private final String name;
+		private final int age;
 		
 		public A(@ParamFrom("id") int id, @ParamFrom("name") String name, @ParamFrom("age") int age) {
 			super();
@@ -73,12 +73,12 @@ public class QueryTest extends AeroMapperBaseTest {
 		
 		try {
 			client.createIndex(null, "test", "testScan", "age_idx", "age", IndexType.NUMERIC).waitTillComplete();
-		}
-		catch (AerospikeException ae) {
+		} catch (AerospikeException ae) {
 			// swallow the exception
 		}
 		return mapper;
 	}
+
 	@Test
 	public void queryTest() {
 		AeroMapper mapper = populate();
