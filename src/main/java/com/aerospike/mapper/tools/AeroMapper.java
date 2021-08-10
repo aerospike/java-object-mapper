@@ -589,7 +589,7 @@ public class AeroMapper implements IAeroMapper {
      */
     @Override
     public <T> void find(@NotNull Class<T> clazz, Function<T, Boolean> function) throws AerospikeException {
-        ClassCacheEntry<T> entry = MapperUtils.getEntryAndValidateNamespace(clazz, this); 
+        ClassCacheEntry<T> entry = MapperUtils.getEntryAndValidateNamespace(clazz, this);
 
         Statement statement = new Statement();
         statement.setNamespace(entry.getNamespace());
@@ -660,12 +660,10 @@ public class AeroMapper implements IAeroMapper {
 	    			throw new AerospikeException.ScanTerminated();
 	    		}
 	    	});
-    	}
-    	catch (ScanTerminated st) {
+    	} catch (ScanTerminated st) {
     		if (userTerminated.get()) {
     			// Do nothing, expected.
-    		}
-    		else {
+    		} else {
     			throw st;
     		}
     	}
@@ -709,8 +707,7 @@ public class AeroMapper implements IAeroMapper {
     				break;
     			}
     		}
-    	}
-    	finally {
+    	} finally {
     		recordSet.close();
     	}
     }

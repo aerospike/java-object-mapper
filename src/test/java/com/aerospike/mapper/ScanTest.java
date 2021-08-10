@@ -17,9 +17,9 @@ public class ScanTest extends AeroMapperBaseTest {
 	@AerospikeRecord(namespace = "test", set = "testScan")
 	public static class Person {
 		@AerospikeKey
-		private int id;
-		private String name;
-		private int age;
+		private final int id;
+		private final String name;
+		private final int age;
 		
 		public Person(@ParamFrom("id") int id, @ParamFrom("name") String name, @ParamFrom("age") int age) {
 			super();
@@ -52,6 +52,7 @@ public class ScanTest extends AeroMapperBaseTest {
 					new Person(6, "Bob", 78));
 		return mapper;
 	}
+
 	@Test
 	public void scanTest() {
 		AeroMapper mapper = populate();
