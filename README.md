@@ -2239,7 +2239,7 @@ mapper.scan(scanPolicy, Person.class, (person) -> {
 Note that when we altered the ScaPolicy, we had to make a copy of it first. If we fail to do this, the ScanPolcy will be altered for all subsequent calls. To clarify, the **wrong** way to set the scan policy is
 
 ```java
-ScanPolicy scanPolicy = new ScanPolicy(mapper.getScanPolicy(Person.class));
+ScanPolicy scanPolicy = mapper.getScanPolicy(Person.class);
 scanPolicy.filterExp = Exp.build(Exp.eq(Exp.stringBin("name"), Exp.val("Bob")));
 ```
 
