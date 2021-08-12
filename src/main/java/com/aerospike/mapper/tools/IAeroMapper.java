@@ -57,8 +57,8 @@ public interface IAeroMapper extends IBaseAeroMapper {
     <T> void find(@NotNull Class<T> clazz, Function<T, Boolean> function);
 
     IAerospikeClient getClient();
-    
+
     <T> void scan(@NotNull Class<T> clazz, @NotNull Processor<T> processor);
 
-	<T> void scan(ScanPolicy policy, @NotNull Class<T> clazz, @NotNull Processor<T> processor) throws AerospikeException;
+    <T> void scan(ScanPolicy policy, @NotNull Class<T> clazz, @NotNull Processor<T> processor) throws AerospikeException;
 }
