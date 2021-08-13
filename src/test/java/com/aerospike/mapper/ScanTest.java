@@ -8,7 +8,6 @@ import org.junit.jupiter.api.Test;
 
 import com.aerospike.client.exp.Exp;
 import com.aerospike.client.policy.QueryPolicy;
-import com.aerospike.client.policy.ScanPolicy;
 import com.aerospike.mapper.annotations.AerospikeKey;
 import com.aerospike.mapper.annotations.AerospikeRecord;
 import com.aerospike.mapper.annotations.ParamFrom;

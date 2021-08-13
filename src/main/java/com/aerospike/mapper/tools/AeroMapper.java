@@ -622,62 +622,60 @@ public class AeroMapper implements IAeroMapper {
      * <p/>
      * Depending on the ScanPolicy set up for this class, it is possible for the processor to be called by multiple different
      * threads concurrently, so the processor should be thread-safe
-     * @param clazz - the class used to determine which set to scan and to convert the returned records to. 
+     * @param clazz     - the class used to determine which set to scan and to convert the returned records to.
      * @param processor - the Processor used to process each record
      */
     private <T> void scan(@NotNull Class<T> clazz, @NotNull Processor<T> processor) {
     	scan(null, clazz, processor);
     }
-    
+
     /**
      * Scan every record in the set associated with the passed class. Each record will be converted to the appropriate class then passed to the
      * processor. If the processor returns true, more records will be processed and if the processor returns false, the scan is aborted.
      * <p/>
      * Depending on the policy passed or set as the ScanPolicy for this class, it is possible for the processor to be called by multiple different
      * threads concurrently, so the processor should be thread-safe. Note that as a consequence of this, if the processor returns false to abort the
-     * scan there is a chance that records are being concurrently processed in other threads and this processing will not be interrupted. 
+     * scan there is a chance that records are being concurrently processed in other threads and this processing will not be interrupted.
      * <p/>
-     * @param policy - the scan policy to use. If this is null, the default scan policy of the passed class will be used.
-     * @param clazz - the class used to determine which set to scan and to convert the returned records to. 
+     * @param policy    - the scan policy to use. If this is null, the default scan policy of the passed class will be used.
+     * @param clazz     - the class used to determine which set to scan and to convert the returned records to.
      * @param processor - the Processor used to process each record
      */
     private <T> void scan(ScanPolicy policy, @NotNull Class<T> clazz, @NotNull Processor<T> processor) {
         ClassCacheEntry<T> entry = MapperUtils.getEntryAndValidateNamespace(clazz, this);
         if (policy == null) {
-        	policy = entry.getScanPolicy();
+            policy = entry.getScanPolicy();
         }
-    	String namespace = entry.getNamespace();
-    	String setName = entry.getSetName();
-    			
-    	AtomicBoolean userTerminated = new AtomicBoolean(false);
-    	try {
-	    	mClient.scanAll(policy, namespace, setName, (key, record) -> {
-	    		T object = this.getMappingConverter().convertToObject(clazz, record);
-	    		if (!processor.process(object)) {
-	    			userTerminated.set(true);
-	    			throw new AerospikeException.ScanTerminated();
-	    		}
-	    	});
-    	} catch (ScanTerminated st) {
-    		if (userTerminated.get()) {
-    			// Do nothing, expected.
-    		} else {
-    			throw st;
-    		}
-    	}
+        String namespace = entry.getNamespace();
+        String setName = entry.getSetName();
+
+        AtomicBoolean userTerminated = new AtomicBoolean(false);
+        try {
+            mClient.scanAll(policy, namespace, setName, (key, record) -> {
+                T object = this.getMappingConverter().convertToObject(clazz, record);
+                if (!processor.process(object)) {
+                    userTerminated.set(true);
+                    throw new AerospikeException.ScanTerminated();
+                }
+            });
+        } catch (ScanTerminated st) {
+            if (!userTerminated.get()) {
+                throw st;
+            }
+        }
     }
     
     private ScanPolicy scanPolicyFromQueryPolicy(QueryPolicy queryPolicy) {
-    	if (queryPolicy == null) {
-    		return null;
-    	}
-    	ScanPolicy result = new ScanPolicy(queryPolicy);
-    	result.concurrentNodes = queryPolicy.maxConcurrentNodes > 1;
-    	result.maxConcurrentNodes = queryPolicy.maxConcurrentNodes;
-    	result.includeBinData = queryPolicy.includeBinData;
-    	result.maxRecords = 0;
-    	result.recordsPerSecond = 0;
-    	return result;
+        if (queryPolicy == null) {
+            return null;
+        }
+        ScanPolicy result = new ScanPolicy(queryPolicy);
+        result.concurrentNodes = queryPolicy.maxConcurrentNodes > 1;
+        result.maxConcurrentNodes = queryPolicy.maxConcurrentNodes;
+        result.includeBinData = queryPolicy.includeBinData;
+        result.maxRecords = 0;
+        result.recordsPerSecond = 0;
+        return result;
     }
 
     @Override
