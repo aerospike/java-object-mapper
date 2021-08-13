@@ -625,8 +625,7 @@ public class AeroMapper implements IAeroMapper {
      * @param clazz - the class used to determine which set to scan and to convert the returned records to. 
      * @param processor - the Processor used to process each record
      */
-    @Override
-    public <T> void scan(@NotNull Class<T> clazz, @NotNull Processor<T> processor) {
+    private <T> void scan(@NotNull Class<T> clazz, @NotNull Processor<T> processor) {
     	scan(null, clazz, processor);
     }
     
@@ -642,8 +641,7 @@ public class AeroMapper implements IAeroMapper {
      * @param clazz - the class used to determine which set to scan and to convert the returned records to. 
      * @param processor - the Processor used to process each record
      */
-    @Override
-    public <T> void scan(ScanPolicy policy, @NotNull Class<T> clazz, @NotNull Processor<T> processor) {
+    private <T> void scan(ScanPolicy policy, @NotNull Class<T> clazz, @NotNull Processor<T> processor) {
         ClassCacheEntry<T> entry = MapperUtils.getEntryAndValidateNamespace(clazz, this);
         if (policy == null) {
         	policy = entry.getScanPolicy();
@@ -682,15 +680,45 @@ public class AeroMapper implements IAeroMapper {
     	return result;
     }
 
+    @Override
+    public <T> void query(@NotNull Class<T> clazz, @NotNull Processor<T> processor) {
+    	this.query((QueryPolicy)null, clazz, processor, null);
+    }
+
+    @Override
+    public <T> void query(QueryPolicy policy, @NotNull Class<T> clazz, @NotNull Processor<T> processor) {
+    	this.query(policy, clazz, processor, null);
+    }
+
+    @Override
+    public <T> void query(@NotNull Class<T> clazz, @NotNull Processor<T> processor, int recordsPerSecond) {
+    	this.query(null, clazz, processor, recordsPerSecond);
+    }
+
+	@Override
+    public <T> void query(QueryPolicy policy, @NotNull Class<T> clazz, @NotNull Processor<T> processor, int recordsPerSecond) {
+    	if (recordsPerSecond > 0) {
+    		if (policy == null) {
+    	        ClassCacheEntry<T> entry = MapperUtils.getEntryAndValidateNamespace(clazz, this);
+	    		policy = entry.getQueryPolicy();
+    		}
+    		ScanPolicy scanPolicy = scanPolicyFromQueryPolicy(policy);
+    		scanPolicy.recordsPerSecond = recordsPerSecond;
+    		scan(scanPolicy, clazz, processor);
+    	}
+    	else {
+    		this.query(policy, clazz, processor, null);
+    	}
+    }
+
+    @Override
     public <T> void query(@NotNull Class<T> clazz, @NotNull Processor<T> processor, Filter filter) {
-    	this.query(null, clazz, processor, filter);
+    	this.query((QueryPolicy)null, clazz, processor, filter);
     }
     
+    @Override
     public <T> void query(QueryPolicy policy, @NotNull Class<T> clazz, @NotNull Processor<T> processor, Filter filter) {
         ClassCacheEntry<T> entry = MapperUtils.getEntryAndValidateNamespace(clazz, this);
-        if (filter == null) {
-        	scan(scanPolicyFromQueryPolicy(policy), clazz, processor);
-        }
     	if (policy == null) {
     		policy = entry.getQueryPolicy();
     	}

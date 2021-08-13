@@ -7,6 +7,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Test;
 
 import com.aerospike.client.exp.Exp;
+import com.aerospike.client.policy.QueryPolicy;
 import com.aerospike.client.policy.ScanPolicy;
 import com.aerospike.mapper.annotations.AerospikeKey;
 import com.aerospike.mapper.annotations.AerospikeRecord;
@@ -57,7 +58,7 @@ public class ScanTest extends AeroMapperBaseTest {
 	public void scanTest() {
 		AeroMapper mapper = populate();
 		AtomicInteger counter = new AtomicInteger(0);
-		mapper.scan(Person.class, (a) -> {
+		mapper.query(Person.class, (a) -> {
 			counter.incrementAndGet();
 			return true;
 		});
@@ -68,9 +69,9 @@ public class ScanTest extends AeroMapperBaseTest {
 	public void scanTestWithFilter() {
 		AeroMapper mapper = populate();
 		AtomicInteger counter = new AtomicInteger(0);
-		ScanPolicy scanPolicy = new ScanPolicy(mapper.getScanPolicy(Person.class));
-		scanPolicy.filterExp = Exp.build(Exp.eq(Exp.stringBin("name"), Exp.val("Bob")));
-		mapper.scan(scanPolicy, Person.class, (a) -> {
+		QueryPolicy queryPolicy = new QueryPolicy(mapper.getQueryPolicy(Person.class));
+		queryPolicy.filterExp = Exp.build(Exp.eq(Exp.stringBin("name"), Exp.val("Bob")));
+		mapper.query(queryPolicy, Person.class, (a) -> {
 			counter.incrementAndGet();
 			return true;
 		});
@@ -80,10 +81,10 @@ public class ScanTest extends AeroMapperBaseTest {
 	@Test
 	public void scanTestWithAbort() {
 		AeroMapper mapper = populate();
-		ScanPolicy policy = new ScanPolicy(mapper.getScanPolicy(Person.class));
-		policy.maxConcurrentNodes = 1;
+		QueryPolicy queryPolicy = new QueryPolicy(mapper.getQueryPolicy(Person.class));
+		queryPolicy.maxConcurrentNodes = 1;
 		AtomicInteger counter = new AtomicInteger(0);
-		mapper.scan(policy, Person.class, (a) -> {
+		mapper.query(queryPolicy, Person.class, (a) -> {
 			counter.incrementAndGet();
 			return false;
 		});

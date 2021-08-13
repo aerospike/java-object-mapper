@@ -4,12 +4,12 @@ import java.util.function.Function;
 
 import javax.validation.constraints.NotNull;
 
-import com.aerospike.client.AerospikeException;
 import com.aerospike.client.IAerospikeClient;
 import com.aerospike.client.policy.BatchPolicy;
 import com.aerospike.client.policy.Policy;
-import com.aerospike.client.policy.ScanPolicy;
+import com.aerospike.client.policy.QueryPolicy;
 import com.aerospike.client.policy.WritePolicy;
+import com.aerospike.client.query.Filter;
 import com.aerospike.mapper.tools.virtuallist.VirtualList;
 
 public interface IAeroMapper extends IBaseAeroMapper {
@@ -58,7 +58,15 @@ public interface IAeroMapper extends IBaseAeroMapper {
 
     IAerospikeClient getClient();
     
-    <T> void scan(@NotNull Class<T> clazz, @NotNull Processor<T> processor);
+    <T> void query(@NotNull Class<T> clazz, @NotNull Processor<T> processor);
 
-	<T> void scan(ScanPolicy policy, @NotNull Class<T> clazz, @NotNull Processor<T> processor) throws AerospikeException;
+	<T> void query(QueryPolicy policy, @NotNull Class<T> clazz, @NotNull Processor<T> processor);
+
+    <T> void query(@NotNull Class<T> clazz, @NotNull Processor<T> processor, Filter filter);
+
+	<T> void query(QueryPolicy policy, @NotNull Class<T> clazz, @NotNull Processor<T> processor, Filter filter);
+
+	<T> void query(@NotNull Class<T> clazz, @NotNull Processor<T> processor, int recordsPerSecond);
+
+	<T> void query(QueryPolicy policy, @NotNull Class<T> clazz, @NotNull Processor<T> processor, int recordsPerSecond);
 }

@@ -7,7 +7,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Test;
 
 import com.aerospike.client.AerospikeException;
-import com.aerospike.client.policy.ScanPolicy;
+import com.aerospike.client.policy.QueryPolicy;
 import com.aerospike.client.query.Filter;
 import com.aerospike.client.query.IndexType;
 import com.aerospike.mapper.annotations.AerospikeKey;
@@ -94,10 +94,10 @@ public class QueryTest extends AeroMapperBaseTest {
 	@Test
 	public void queryTestWithAbort() {
 		AeroMapper mapper = populate();
-		ScanPolicy policy = new ScanPolicy(mapper.getScanPolicy(A.class));
+		QueryPolicy policy = new QueryPolicy(mapper.getQueryPolicy(A.class));
 		policy.maxConcurrentNodes = 1;
 		AtomicInteger counter = new AtomicInteger(0);
-		mapper.scan(policy, A.class, (a) -> {
+		mapper.query(policy, A.class, (a) -> {
 			counter.incrementAndGet();
 			return false;
 		});
