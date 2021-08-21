@@ -100,7 +100,7 @@ public class QueryTest extends AeroMapperBaseTest {
 		mapper.query(policy, A.class, (a) -> {
 			counter.incrementAndGet();
 			return false;
-		});
+		}, Filter.range("age", 30, 54));
 		assertEquals(1, counter.get());
 	}
 }

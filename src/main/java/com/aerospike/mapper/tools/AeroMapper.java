@@ -625,7 +625,8 @@ public class AeroMapper implements IAeroMapper {
      * @param clazz     - the class used to determine which set to scan and to convert the returned records to.
      * @param processor - the Processor used to process each record
      */
-    private <T> void scan(@NotNull Class<T> clazz, @NotNull Processor<T> processor) {
+	@Override
+    public <T> void scan(@NotNull Class<T> clazz, @NotNull Processor<T> processor) {
     	scan(null, clazz, processor);
     }
 
@@ -641,7 +642,8 @@ public class AeroMapper implements IAeroMapper {
      * @param clazz     - the class used to determine which set to scan and to convert the returned records to.
      * @param processor - the Processor used to process each record
      */
-    private <T> void scan(ScanPolicy policy, @NotNull Class<T> clazz, @NotNull Processor<T> processor) {
+	@Override
+    public <T> void scan(ScanPolicy policy, @NotNull Class<T> clazz, @NotNull Processor<T> processor) {
         ClassCacheEntry<T> entry = MapperUtils.getEntryAndValidateNamespace(clazz, this);
         if (policy == null) {
             policy = entry.getScanPolicy();
@@ -665,55 +667,51 @@ public class AeroMapper implements IAeroMapper {
         }
     }
     
-    private ScanPolicy scanPolicyFromQueryPolicy(QueryPolicy queryPolicy) {
-        if (queryPolicy == null) {
-            return null;
-        }
-        ScanPolicy result = new ScanPolicy(queryPolicy);
-        result.concurrentNodes = queryPolicy.maxConcurrentNodes > 1;
-        result.maxConcurrentNodes = queryPolicy.maxConcurrentNodes;
-        result.includeBinData = queryPolicy.includeBinData;
-        result.maxRecords = 0;
-        result.recordsPerSecond = 0;
-        return result;
-    }
-
-    @Override
-    public <T> void query(@NotNull Class<T> clazz, @NotNull Processor<T> processor) {
-    	this.query((QueryPolicy)null, clazz, processor, null);
-    }
-
-    @Override
-    public <T> void query(QueryPolicy policy, @NotNull Class<T> clazz, @NotNull Processor<T> processor) {
-    	this.query(policy, clazz, processor, null);
-    }
-
-    @Override
-    public <T> void query(@NotNull Class<T> clazz, @NotNull Processor<T> processor, int recordsPerSecond) {
-    	this.query(null, clazz, processor, recordsPerSecond);
-    }
-
+	/**
+	 * Scan every record in the set associated with the passed class, limiting the throughput to the specified recordsPerSecond. Each record will be converted 
+	 * to the appropriate class then passed to the
+	 * processor. If the processor returns true, more records will be processed and if the processor returns false, the scan is aborted.
+	 * <p/>
+	 * Depending on the ScanPolicy set up for this class, it is possible for the processor to be called by multiple different
+	 * threads concurrently, so the processor should be thread-safe
+	 * @param clazz     - the class used to determine which set to scan and to convert the returned records to.
+	 * @param processor - the Processor used to process each record
+	 * @param recordsPerSecond - the maximum number of records to be processed every second.
+	 */
 	@Override
-    public <T> void query(QueryPolicy policy, @NotNull Class<T> clazz, @NotNull Processor<T> processor, int recordsPerSecond) {
-    	if (recordsPerSecond > 0) {
-    		if (policy == null) {
-    	        ClassCacheEntry<T> entry = MapperUtils.getEntryAndValidateNamespace(clazz, this);
-	    		policy = entry.getQueryPolicy();
-    		}
-    		ScanPolicy scanPolicy = scanPolicyFromQueryPolicy(policy);
-    		scanPolicy.recordsPerSecond = recordsPerSecond;
-    		scan(scanPolicy, clazz, processor);
-    	}
-    	else {
-    		this.query(policy, clazz, processor, null);
-    	}
+    public <T> void scan(@NotNull Class<T> clazz, @NotNull Processor<T> processor, int recordsPerSecond) {
+        ClassCacheEntry<T> entry = MapperUtils.getEntryAndValidateNamespace(clazz, this);
+		ScanPolicy policy = new ScanPolicy(entry.getScanPolicy());
+		policy.recordsPerSecond = recordsPerSecond;
+    	this.scan(policy, clazz, processor);
     }
 
+    /**
+     * Perform a secondary index query with the specified query policy. Each record will be converted 
+	 * to the appropriate class then passed to the processor. If the processor returns false the query is aborted
+	 * whereas if the processor returns true subsequent records (if any) are processed.
+	 * <p/>
+	 * The query policy used will be the one associated with the passed classtype. 
+	 * @param clazz     - the class used to determine which set to scan and to convert the returned records to.
+	 * @param processor - the Processor used to process each record
+	 * @param filter	- the filter used to determine which secondary index to use. If this filter is null, every record in the set
+	 * 		associated with the passed classtype will be scanned, effectively turning the query into a scan
+     */
     @Override
     public <T> void query(@NotNull Class<T> clazz, @NotNull Processor<T> processor, Filter filter) {
     	this.query((QueryPolicy)null, clazz, processor, filter);
     }
-    
+
+    /**
+     * Perform a secondary index query with the specified query policy. Each record will be converted 
+	 * to the appropriate class then passed to the processor. If the processor returns false the query is aborted
+	 * whereas if the processor returns true subsequent records (if any) are processed. 
+	 * @param policy	- The query policy to use. If this parameter is not passed, the query policy associated with the passed classtype will be used
+	 * @param clazz     - the class used to determine which set to scan and to convert the returned records to.
+	 * @param processor - the Processor used to process each record
+	 * @param filter	- the filter used to determine which secondary index to use. If this filter is null, every record in the set
+	 * 		associated with the passed classtype will be scanned, effectively turning the query into a scan
+     */
     @Override
     public <T> void query(QueryPolicy policy, @NotNull Class<T> clazz, @NotNull Processor<T> processor, Filter filter) {
         ClassCacheEntry<T> entry = MapperUtils.getEntryAndValidateNamespace(clazz, this);
