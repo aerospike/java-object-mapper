@@ -2174,7 +2174,7 @@ Note: At the moment not all CDT operations are supported, and if the underlying 
 Scans can be used to process every record in a set. The scan iterates through every item in the set and invokes a callback for every item in the set. For example:
 
 ```java
-mapper.scan(Pseron.class, (person) -> {
+mapper.scan(Person.class, (person) -> {
 	// ... process person
 	return true;
 });
