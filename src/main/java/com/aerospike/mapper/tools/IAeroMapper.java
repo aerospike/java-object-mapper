@@ -121,4 +121,20 @@ public interface IAeroMapper extends IBaseAeroMapper {
 	 * @param recordsPerSecond - the maximum number of records to be processed every second.
 	 */
 	<T> void scan(@NotNull Class<T> clazz, @NotNull Processor<T> processor, int recordsPerSecond);
+
+	/**
+	 * Scan every record in the set associated with the passed class. Each record will be converted to the appropriate class then passed to the
+	 * processor. If the processor returns true, more records will be processed and if the processor returns false, the scan is aborted.
+	 * <p/>
+	 * Depending on the policy passed or set as the ScanPolicy for this class, it is possible for the processor to be called by multiple different
+	 * threads concurrently, so the processor should be thread-safe. Note that as a consequence of this, if the processor returns false to abort the
+	 * scan there is a chance that records are being concurrently processed in other threads and this processing will not be interrupted.
+	 * <p/>
+	 * @param policy    - the scan policy to use. If this is null, the default scan policy of the passed class will be used.
+	 * @param clazz     - the class used to determine which set to scan and to convert the returned records to.
+	 * @param processor - the Processor used to process each record
+	 * @param recordsPerSecond - the number of records to process per second. Set to 0 for unlimited, &gt; 0 for a finite rate, &lt; 0 for no change
+	 * 		(use the value from the passed policy) 
+	 */
+	<T> void scan(ScanPolicy policy, @NotNull Class<T> clazz, @NotNull Processor<T> processor, int recordsPerSecond);
 }
