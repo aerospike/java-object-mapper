@@ -1,8 +1,7 @@
 package com.aerospike.mapper.tools;
 
-import com.aerospike.client.policy.BatchPolicy;
-import com.aerospike.client.policy.Policy;
-import com.aerospike.client.policy.WritePolicy;
+import com.aerospike.client.policy.*;
+import com.aerospike.client.query.Filter;
 import com.aerospike.client.reactor.IAerospikeReactorClient;
 import com.aerospike.mapper.tools.virtuallist.ReactiveVirtualList;
 import reactor.core.publisher.Flux;
@@ -56,4 +55,16 @@ public interface IReactiveAeroMapper extends IBaseAeroMapper {
     <T> Mono<Void> find(@NotNull Class<T> clazz, Function<T, Boolean> function);
 
     IAerospikeReactorClient getReactorClient();
+
+    <T> Flux<T> query(@NotNull Class<T> clazz, @NotNull Processor<T> processor, Filter filter);
+
+    <T> Flux<T> query(QueryPolicy policy, @NotNull Class<T> clazz, @NotNull Processor<T> processor, Filter filter);
+
+    <T> Flux<T> scan(@NotNull Class<T> clazz, @NotNull Processor<T> processor);
+
+    <T> Flux<T> scan(ScanPolicy policy, @NotNull Class<T> clazz, @NotNull Processor<T> processor);
+
+    <T> Flux<T> scan(@NotNull Class<T> clazz, @NotNull Processor<T> processor, int recordsPerSecond);
+
+    <T> Flux<T> scan(ScanPolicy policy, @NotNull Class<T> clazz, @NotNull Processor<T> processor, int recordsPerSecond);
 }
