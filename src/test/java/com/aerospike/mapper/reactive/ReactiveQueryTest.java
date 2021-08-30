@@ -1,7 +1,6 @@
 package com.aerospike.mapper.reactive;
 
 import com.aerospike.client.AerospikeException;
-import com.aerospike.client.policy.QueryPolicy;
 import com.aerospike.client.query.Filter;
 import com.aerospike.client.query.IndexType;
 import com.aerospike.mapper.annotations.AerospikeKey;
@@ -11,7 +10,7 @@ import com.aerospike.mapper.tools.ReactiveAeroMapper;
 import org.junit.jupiter.api.Test;
 import reactor.core.scheduler.Schedulers;
 
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -83,25 +82,8 @@ public class ReactiveQueryTest extends ReactiveAeroMapperBaseTest {
     @Test
     public void queryTest() {
         ReactiveAeroMapper reactiveMapper = populate();
-        AtomicInteger counter = new AtomicInteger(0);
-        reactiveMapper.query(A.class, (a) -> {
-            System.out.println(a);
-            counter.incrementAndGet();
-            return true;
-        }, Filter.range("age", 30, 54)).subscribeOn(Schedulers.parallel()).collectList().block();
-        assertEquals(7, counter.get());
-    }
-
-    @Test
-    public void queryTestWithAbort() {
-        ReactiveAeroMapper reactiveMapper = populate();
-        QueryPolicy policy = new QueryPolicy(reactiveMapper.getQueryPolicy(A.class));
-        policy.maxConcurrentNodes = 1;
-        AtomicInteger counter = new AtomicInteger(0);
-        reactiveMapper.query(policy, A.class, (a) -> {
-            counter.incrementAndGet();
-            return false;
-        }, Filter.range("age", 30, 54)).subscribeOn(Schedulers.parallel()).collectList().block();
-        assertEquals(1, counter.get());
+        List<A> results = reactiveMapper.query(A.class, Filter.range("age", 30, 54)).subscribeOn(Schedulers.parallel()).collectList().block();
+        assert results != null;
+        assertEquals(7, results.size());
     }
 }

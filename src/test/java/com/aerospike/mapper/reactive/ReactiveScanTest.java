@@ -9,7 +9,7 @@ import com.aerospike.mapper.tools.ReactiveAeroMapper;
 import org.junit.jupiter.api.Test;
 import reactor.core.scheduler.Schedulers;
 
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -56,37 +56,18 @@ public class ReactiveScanTest extends ReactiveAeroMapperBaseTest {
     @Test
     public void scanTest() {
         ReactiveAeroMapper reactiveMapper = populate();
-        AtomicInteger counter = new AtomicInteger(0);
-        reactiveMapper.scan(Person.class, (a) -> {
-            counter.incrementAndGet();
-            return true;
-        }).subscribeOn(Schedulers.parallel()).collectList().block();
-        assertEquals(6, counter.get());
+        List<Person> results = reactiveMapper.scan(Person.class).subscribeOn(Schedulers.parallel()).collectList().block();
+        assert results != null;
+        assertEquals(6, results.size());
     }
 
     @Test
     public void scanTestWithFilter() {
         ReactiveAeroMapper reactiveMapper = populate();
-        AtomicInteger counter = new AtomicInteger(0);
         ScanPolicy scanPolicy = new ScanPolicy(reactiveMapper.getScanPolicy(Person.class));
         scanPolicy.filterExp = Exp.build(Exp.eq(Exp.stringBin("name"), Exp.val("Bob")));
-        reactiveMapper.scan(scanPolicy, Person.class, (a) -> {
-            counter.incrementAndGet();
-            return true;
-        }).subscribeOn(Schedulers.parallel()).collectList().block();
-        assertEquals(2, counter.get());
-    }
-
-    @Test
-    public void scanTestWithAbort() {
-        ReactiveAeroMapper reactiveMapper = populate();
-        ScanPolicy scanPolicy = new ScanPolicy(reactiveMapper.getScanPolicy(Person.class));
-        scanPolicy.maxConcurrentNodes = 1;
-        AtomicInteger counter = new AtomicInteger(0);
-        reactiveMapper.scan(scanPolicy, Person.class, (a) -> {
-            counter.incrementAndGet();
-            return false;
-        }).subscribeOn(Schedulers.parallel()).collectList().block();
-        assertEquals(1, counter.get());
+        List<Person> results = reactiveMapper.scan(scanPolicy, Person.class).subscribeOn(Schedulers.parallel()).collectList().block();
+        assert results != null;
+        assertEquals(2, results.size());
     }
 }

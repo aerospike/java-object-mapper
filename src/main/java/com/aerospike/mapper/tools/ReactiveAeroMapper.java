@@ -493,72 +493,48 @@ public class ReactiveAeroMapper implements IReactiveAeroMapper {
     }
 
     /**
-     * Scan every record in the set associated with the passed class. Each record will be converted to the appropriate class then passed to the
-     * processor. If the processor returns true, more records will be processed and if the processor returns false, the scan is aborted.
-     * <p/>
-     * Depending on the ScanPolicy set up for this class, it is possible for the processor to be called by multiple different
-     * threads concurrently, so the processor should be thread-safe
+     * Scan every record in the set associated with the passed class. Each record will be converted to the appropriate class.
      *
-     * @param clazz     - the class used to determine which set to scan and to convert the returned records to.
-     * @param processor - the Processor used to process each record
+     * @param clazz - the class used to determine which set to scan and to convert the returned records to.
      */
     @Override
-    public <T> Flux<T> scan(@NotNull Class<T> clazz, @NotNull Processor<T> processor) {
-        return scan(null, clazz, processor);
+    public <T> Flux<T> scan(@NotNull Class<T> clazz) {
+        return scan(null, clazz);
     }
 
     /**
-     * Scan every record in the set associated with the passed class. Each record will be converted to the appropriate class then passed to the
-     * processor. If the processor returns true, more records will be processed and if the processor returns false, the scan is aborted.
-     * <p/>
-     * Depending on the policy passed or set as the ScanPolicy for this class, it is possible for the processor to be called by multiple different
-     * threads concurrently, so the processor should be thread-safe. Note that as a consequence of this, if the processor returns false to abort the
-     * scan there is a chance that records are being concurrently processed in other threads and this processing will not be interrupted.
-     * <p/>
+     * Scan every record in the set associated with the passed class. Each record will be converted to the appropriate class.
      *
-     * @param policy    - the scan policy to use. If this is null, the default scan policy of the passed class will be used.
-     * @param clazz     - the class used to determine which set to scan and to convert the returned records to.
-     * @param processor - the Processor used to process each record
+     * @param policy - the scan policy to use. If this is null, the default scan policy of the passed class will be used.
+     * @param clazz  - the class used to determine which set to scan and to convert the returned records to.
      */
     @Override
-    public <T> Flux<T> scan(ScanPolicy policy, @NotNull Class<T> clazz, @NotNull Processor<T> processor) {
-        return scan(policy, clazz, processor, -1);
+    public <T> Flux<T> scan(ScanPolicy policy, @NotNull Class<T> clazz) {
+        return scan(policy, clazz, -1);
     }
 
     /**
      * Scan every record in the set associated with the passed class, limiting the throughput to the specified recordsPerSecond. Each record will be converted
-     * to the appropriate class then passed to the
-     * processor. If the processor returns true, more records will be processed and if the processor returns false, the scan is aborted.
-     * <p/>
-     * Depending on the ScanPolicy set up for this class, it is possible for the processor to be called by multiple different
-     * threads concurrently, so the processor should be thread-safe
+     * to the appropriate class.
      *
      * @param clazz            - the class used to determine which set to scan and to convert the returned records to.
-     * @param processor        - the Processor used to process each record
      * @param recordsPerSecond - the maximum number of records to be processed every second.
      */
     @Override
-    public <T> Flux<T> scan(@NotNull Class<T> clazz, @NotNull Processor<T> processor, int recordsPerSecond) {
-        return scan(null, clazz, processor, recordsPerSecond);
+    public <T> Flux<T> scan(@NotNull Class<T> clazz, int recordsPerSecond) {
+        return scan(null, clazz, recordsPerSecond);
     }
 
     /**
-     * Scan every record in the set associated with the passed class. Each record will be converted to the appropriate class then passed to the
-     * processor. If the processor returns true, more records will be processed and if the processor returns false, the scan is aborted.
-     * <p/>
-     * Depending on the policy passed or set as the ScanPolicy for this class, it is possible for the processor to be called by multiple different
-     * threads concurrently, so the processor should be thread-safe. Note that as a consequence of this, if the processor returns false to abort the
-     * scan there is a chance that records are being concurrently processed in other threads and this processing will not be interrupted.
-     * <p/>
+     * Scan every record in the set associated with the passed class. Each record will be converted to the appropriate class.
      *
      * @param policy           - the scan policy to use. If this is null, the default scan policy of the passed class will be used.
      * @param clazz            - the class used to determine which set to scan and to convert the returned records to.
-     * @param processor        - the Processor used to process each record
      * @param recordsPerSecond - the number of records to process per second. Set to 0 for unlimited, &gt; 0 for a finite rate, &lt; 0 for no change
      *                         (use the value from the passed policy)
      */
     @Override
-    public <T> Flux<T> scan(ScanPolicy policy, @NotNull Class<T> clazz, @NotNull Processor<T> processor, int recordsPerSecond) {
+    public <T> Flux<T> scan(ScanPolicy policy, @NotNull Class<T> clazz, int recordsPerSecond) {
         ClassCacheEntry<T> entry = MapperUtils.getEntryAndValidateNamespace(clazz, this);
         if (policy == null) {
             policy = entry.getScanPolicy();
@@ -571,25 +547,8 @@ public class ReactiveAeroMapper implements IReactiveAeroMapper {
         String namespace = entry.getNamespace();
         String setName = entry.getSetName();
 
-        AtomicBoolean userTerminated = new AtomicBoolean(false);
-
         return reactorClient.scanAll(policy, namespace, setName)
-            .map(keyRecord -> {
-                T object = this.getMappingConverter().convertToObject(clazz, keyRecord.record);
-                if (!userTerminated.get()) {
-                    try {
-                        if (!processor.process(object)) {
-                            userTerminated.set(true);
-                            throw new AerospikeException.ScanTerminated();
-                        }
-                    } catch (AerospikeException.ScanTerminated st) {
-                        if (!userTerminated.get()) {
-                            throw st;
-                        }
-                    }
-                }
-                return object;
-            });
+                .map(keyRecord -> this.getMappingConverter().convertToObject(clazz, keyRecord.record));
     }
 
     /**
@@ -599,14 +558,13 @@ public class ReactiveAeroMapper implements IReactiveAeroMapper {
      * <p/>
      * The query policy used will be the one associated with the passed classtype.
      *
-     * @param clazz     - the class used to determine which set to scan and to convert the returned records to.
-     * @param processor - the Processor used to process each record
-     * @param filter    - the filter used to determine which secondary index to use. If this filter is null, every record in the set
-     *                  associated with the passed classtype will be scanned, effectively turning the query into a scan
+     * @param clazz  - the class used to determine which set to scan and to convert the returned records to.
+     * @param filter - the filter used to determine which secondary index to use. If this filter is null, every record in the set
+     *               associated with the passed classtype will be scanned, effectively turning the query into a scan
      */
     @Override
-    public <T> Flux<T> query(@NotNull Class<T> clazz, @NotNull Processor<T> processor, Filter filter) {
-        return query(null, clazz, processor, filter);
+    public <T> Flux<T> query(@NotNull Class<T> clazz, Filter filter) {
+        return query(null, clazz, filter);
     }
 
     /**
@@ -614,14 +572,13 @@ public class ReactiveAeroMapper implements IReactiveAeroMapper {
      * to the appropriate class then passed to the processor. If the processor returns false the query is aborted
      * whereas if the processor returns true subsequent records (if any) are processed.
      *
-     * @param policy    - The query policy to use. If this parameter is not passed, the query policy associated with the passed classtype will be used
-     * @param clazz     - the class used to determine which set to scan and to convert the returned records to.
-     * @param processor - the Processor used to process each record
-     * @param filter    - the filter used to determine which secondary index to use. If this filter is null, every record in the set
-     *                  associated with the passed classtype will be scanned, effectively turning the query into a scan
+     * @param policy - The query policy to use. If this parameter is not passed, the query policy associated with the passed classtype will be used
+     * @param clazz  - the class used to determine which set to scan and to convert the returned records to.
+     * @param filter - the filter used to determine which secondary index to use. If this filter is null, every record in the set
+     *               associated with the passed classtype will be scanned, effectively turning the query into a scan
      */
     @Override
-    public <T> Flux<T> query(QueryPolicy policy, @NotNull Class<T> clazz, @NotNull Processor<T> processor, Filter filter) {
+    public <T> Flux<T> query(QueryPolicy policy, @NotNull Class<T> clazz, Filter filter) {
         ClassCacheEntry<T> entry = MapperUtils.getEntryAndValidateNamespace(clazz, this);
         if (policy == null) {
             policy = entry.getQueryPolicy();
@@ -631,18 +588,8 @@ public class ReactiveAeroMapper implements IReactiveAeroMapper {
         statement.setNamespace(entry.getNamespace());
         statement.setSetName(entry.getSetName());
 
-        AtomicBoolean userTerminated = new AtomicBoolean(false);
-
         return reactorClient.query(policy, statement)
-                .map(keyRecord -> {
-                    T object = this.getMappingConverter().convertToObject(clazz, keyRecord.record);
-                    if (!userTerminated.get()) {
-                        if (!processor.process(object)) {
-                            userTerminated.set(true);
-                        }
-                    }
-                    return object;
-                });
+                .map(keyRecord -> this.getMappingConverter().convertToObject(clazz, keyRecord.record));
     }
 
     @Override

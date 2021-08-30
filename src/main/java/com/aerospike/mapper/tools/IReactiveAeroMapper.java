@@ -56,15 +56,15 @@ public interface IReactiveAeroMapper extends IBaseAeroMapper {
 
     IAerospikeReactorClient getReactorClient();
 
-    <T> Flux<T> query(@NotNull Class<T> clazz, @NotNull Processor<T> processor, Filter filter);
+    <T> Flux<T> query(@NotNull Class<T> clazz, Filter filter);
 
-    <T> Flux<T> query(QueryPolicy policy, @NotNull Class<T> clazz, @NotNull Processor<T> processor, Filter filter);
+    <T> Flux<T> query(QueryPolicy policy, @NotNull Class<T> clazz, Filter filter);
 
-    <T> Flux<T> scan(@NotNull Class<T> clazz, @NotNull Processor<T> processor);
+    <T> Flux<T> scan(@NotNull Class<T> clazz);
 
-    <T> Flux<T> scan(ScanPolicy policy, @NotNull Class<T> clazz, @NotNull Processor<T> processor);
+    <T> Flux<T> scan(ScanPolicy policy, @NotNull Class<T> clazz);
 
-    <T> Flux<T> scan(@NotNull Class<T> clazz, @NotNull Processor<T> processor, int recordsPerSecond);
+    <T> Flux<T> scan(@NotNull Class<T> clazz, int recordsPerSecond);
 
-    <T> Flux<T> scan(ScanPolicy policy, @NotNull Class<T> clazz, @NotNull Processor<T> processor, int recordsPerSecond);
+    <T> Flux<T> scan(ScanPolicy policy, @NotNull Class<T> clazz, int recordsPerSecond);
 }
