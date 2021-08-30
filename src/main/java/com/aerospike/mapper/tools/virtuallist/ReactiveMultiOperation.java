@@ -195,6 +195,7 @@ public class ReactiveMultiOperation<E> {
 
     /**
      * Finish the multi operation and process it.
+     *
      * @return The multi operation result.
      */
     public <T> Mono<T> end() {
@@ -203,9 +204,11 @@ public class ReactiveMultiOperation<E> {
 
     /**
      * Finish the multi operation and process it.
+     *
      * @param resultType The return type for the result.
      * @return The multi operation result with the given result type.
      */
+    @SuppressWarnings("unchecked")
     public <T> Mono<T> end(Class<T> resultType) {
         if (this.interactions.isEmpty()) {
             return null;
@@ -256,6 +259,7 @@ public class ReactiveMultiOperation<E> {
                             Collection<T> collection = (Collection<T>) result;
                             object = collection.isEmpty() ? null : collection.iterator().next();
                         }
+                        assert object != null;
                         reactiveAeroMapper.getMappingConverter().resolveDependencies(ClassCache.getInstance().loadClass(object.getClass(), reactiveAeroMapper));
                     }
                     return result;

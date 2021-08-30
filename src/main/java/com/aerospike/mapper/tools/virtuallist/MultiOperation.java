@@ -205,6 +205,7 @@ public class MultiOperation<E> {
 
     /**
      * Finish the multi operation and process it.
+     *
      * @return The multi operation result.
      */
     public Object end() {
@@ -213,9 +214,11 @@ public class MultiOperation<E> {
 
     /**
      * Finish the multi operation and process it.
+     *
      * @param resultType The return type for the result.
      * @return The multi operation result with the given result type.
      */
+    @SuppressWarnings("unchecked")
     public <T> T end(Class<T> resultType) {
         if (interactions.isEmpty()) {
             return null;
@@ -266,6 +269,7 @@ public class MultiOperation<E> {
                 Collection<T> collection = (Collection<T>)result;
                 object = collection.isEmpty() ? null : collection.iterator().next();
             }
+            assert object != null;
             mapper.getMappingConverter().resolveDependencies(ClassCache.getInstance().loadClass(object.getClass(), mapper));
         }
         return result;
