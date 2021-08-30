@@ -2,6 +2,8 @@ package com.aerospike.mapper.tools;
 
 import com.aerospike.client.*;
 import com.aerospike.client.policy.*;
+import com.aerospike.client.query.Filter;
+import com.aerospike.client.query.Statement;
 import com.aerospike.client.reactor.IAerospikeReactorClient;
 import com.aerospike.mapper.tools.configuration.ClassConfig;
 import com.aerospike.mapper.tools.configuration.Configuration;
@@ -23,6 +25,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 
 public class ReactiveAeroMapper implements IReactiveAeroMapper {
@@ -489,6 +492,106 @@ public class ReactiveAeroMapper implements IReactiveAeroMapper {
         });
     }
 
+    /**
+     * Scan every record in the set associated with the passed class. Each record will be converted to the appropriate class.
+     *
+     * @param clazz - the class used to determine which set to scan and to convert the returned records to.
+     */
+    @Override
+    public <T> Flux<T> scan(@NotNull Class<T> clazz) {
+        return scan(null, clazz);
+    }
+
+    /**
+     * Scan every record in the set associated with the passed class. Each record will be converted to the appropriate class.
+     *
+     * @param policy - the scan policy to use. If this is null, the default scan policy of the passed class will be used.
+     * @param clazz  - the class used to determine which set to scan and to convert the returned records to.
+     */
+    @Override
+    public <T> Flux<T> scan(ScanPolicy policy, @NotNull Class<T> clazz) {
+        return scan(policy, clazz, -1);
+    }
+
+    /**
+     * Scan every record in the set associated with the passed class, limiting the throughput to the specified recordsPerSecond. Each record will be converted
+     * to the appropriate class.
+     *
+     * @param clazz            - the class used to determine which set to scan and to convert the returned records to.
+     * @param recordsPerSecond - the maximum number of records to be processed every second.
+     */
+    @Override
+    public <T> Flux<T> scan(@NotNull Class<T> clazz, int recordsPerSecond) {
+        return scan(null, clazz, recordsPerSecond);
+    }
+
+    /**
+     * Scan every record in the set associated with the passed class. Each record will be converted to the appropriate class.
+     *
+     * @param policy           - the scan policy to use. If this is null, the default scan policy of the passed class will be used.
+     * @param clazz            - the class used to determine which set to scan and to convert the returned records to.
+     * @param recordsPerSecond - the number of records to process per second. Set to 0 for unlimited, &gt; 0 for a finite rate, &lt; 0 for no change
+     *                         (use the value from the passed policy)
+     */
+    @Override
+    public <T> Flux<T> scan(ScanPolicy policy, @NotNull Class<T> clazz, int recordsPerSecond) {
+        ClassCacheEntry<T> entry = MapperUtils.getEntryAndValidateNamespace(clazz, this);
+        if (policy == null) {
+            policy = entry.getScanPolicy();
+        }
+        if (recordsPerSecond >= 0) {
+            // Ensure the underlying rate on the policy does not change
+            policy = new ScanPolicy(policy);
+            policy.recordsPerSecond = recordsPerSecond;
+        }
+        String namespace = entry.getNamespace();
+        String setName = entry.getSetName();
+
+        return reactorClient.scanAll(policy, namespace, setName)
+                .map(keyRecord -> this.getMappingConverter().convertToObject(clazz, keyRecord.record));
+    }
+
+    /**
+     * Perform a secondary index query with the specified query policy. Each record will be converted
+     * to the appropriate class then passed to the processor. If the processor returns false the query is aborted
+     * whereas if the processor returns true subsequent records (if any) are processed.
+     * <p/>
+     * The query policy used will be the one associated with the passed classtype.
+     *
+     * @param clazz  - the class used to determine which set to scan and to convert the returned records to.
+     * @param filter - the filter used to determine which secondary index to use. If this filter is null, every record in the set
+     *               associated with the passed classtype will be scanned, effectively turning the query into a scan
+     */
+    @Override
+    public <T> Flux<T> query(@NotNull Class<T> clazz, Filter filter) {
+        return query(null, clazz, filter);
+    }
+
+    /**
+     * Perform a secondary index query with the specified query policy. Each record will be converted
+     * to the appropriate class then passed to the processor. If the processor returns false the query is aborted
+     * whereas if the processor returns true subsequent records (if any) are processed.
+     *
+     * @param policy - The query policy to use. If this parameter is not passed, the query policy associated with the passed classtype will be used
+     * @param clazz  - the class used to determine which set to scan and to convert the returned records to.
+     * @param filter - the filter used to determine which secondary index to use. If this filter is null, every record in the set
+     *               associated with the passed classtype will be scanned, effectively turning the query into a scan
+     */
+    @Override
+    public <T> Flux<T> query(QueryPolicy policy, @NotNull Class<T> clazz, Filter filter) {
+        ClassCacheEntry<T> entry = MapperUtils.getEntryAndValidateNamespace(clazz, this);
+        if (policy == null) {
+            policy = entry.getQueryPolicy();
+        }
+        Statement statement = new Statement();
+        statement.setFilter(filter);
+        statement.setNamespace(entry.getNamespace());
+        statement.setSetName(entry.getSetName());
+
+        return reactorClient.query(policy, statement)
+                .map(keyRecord -> this.getMappingConverter().convertToObject(clazz, keyRecord.record));
+    }
+
     @Override
     public IAerospikeReactorClient getReactorClient() {
         return this.reactorClient;
@@ -646,7 +749,7 @@ public class ReactiveAeroMapper implements IReactiveAeroMapper {
 
     private Throwable translateError(Throwable e) {
         if (e instanceof AerospikeException) {
-            return translateError((AerospikeException) e);
+            return translateError(e);
         }
         return e;
     }
