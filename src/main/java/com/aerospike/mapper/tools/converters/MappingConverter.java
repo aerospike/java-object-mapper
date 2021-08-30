@@ -37,6 +37,7 @@ public class MappingConverter {
     /**
      * Translate a Java object to an Aerospike format object. Note that this could potentially have performance issues as
      * the type information of the passed object must be determined on every call.
+     *
      * @param obj A given Java object.
      * @return An Aerospike format object.
      */
@@ -51,6 +52,7 @@ public class MappingConverter {
     /**
      * Translate an Aerospike object to a Java object. Note that this could potentially have performance issues as
      * the type information of the passed object must be determined on every call.
+     *
      * @param obj A given Java object.
      * @return An Aerospike format object.
      */
@@ -66,10 +68,12 @@ public class MappingConverter {
     // The following are convenience methods to convert objects to / from lists / maps / records in case
     // it is needed to perform this operation manually. They will not be needed in most use cases.
     // --------------------------------------------------------------------------------------------------
+
     /**
      * Given a record loaded from Aerospike and a class type, attempt to convert the record to
      * an instance of the passed class.
-     * @param clazz The class type to convert the Aerospike record to.
+     *
+     * @param clazz  The class type to convert the Aerospike record to.
      * @param record The Aerospike record to convert.
      * @return A virtual list.
      * @throws AerospikeException an AerospikeException will be thrown in case of an encountering a ReflectiveOperationException.
@@ -85,9 +89,10 @@ public class MappingConverter {
     /**
      * Given a record loaded from Aerospike and a class type, attempt to convert the record to
      * an instance of the passed class.
-     * @param clazz The class type to convert the Aerospike record to.
+     *
+     * @param clazz  The class type to convert the Aerospike record to.
      * @param record The Aerospike record to convert.
-     * @param entry The entry that holds information on how to store the provided class.
+     * @param entry  The entry that holds information on how to store the provided class.
      * @return A virtual list.
      * @throws AerospikeException an AerospikeException will be thrown in case of an encountering a ReflectiveOperationException.
      */
@@ -112,7 +117,8 @@ public class MappingConverter {
     /**
      * Given a list of records loaded from Aerospike and a class type, attempt to convert the records to
      * an instance of the passed class.
-     * @param clazz The class type to convert the Aerospike record to.
+     *
+     * @param clazz  The class type to convert the Aerospike record to.
      * @param record The Aerospike records to convert.
      * @return A virtual list.
      * @throws AerospikeException an AerospikeException will be thrown in case of an encountering a ReflectiveOperationException.
@@ -142,7 +148,8 @@ public class MappingConverter {
     /**
      * Given a map of records loaded from Aerospike and a class type, attempt to convert the records to
      * an instance of the passed class.
-     * @param clazz The class type to convert the Aerospike record to.
+     *
+     * @param clazz  The class type to convert the Aerospike record to.
      * @param record The Aerospike records to convert.
      * @return A virtual list.
      * @throws AerospikeException an AerospikeException will be thrown in case of an encountering a ReflectiveOperationException.
@@ -154,9 +161,11 @@ public class MappingConverter {
 
     /**
      * Given an instance of a class (of any type), convert its properties to a list
+     *
      * @param instance The instance of a class (of any type).
      * @return a List of the properties of the given instance.
      */
+    @SuppressWarnings("unchecked")
     public <T> List<Object> convertToList(@NotNull T instance) {
         ClassCacheEntry<T> entry = (ClassCacheEntry<T>) ClassCache.getInstance().loadClass(instance.getClass(), mapper);
         return entry.getList(instance, false, false);
@@ -165,9 +174,11 @@ public class MappingConverter {
     /**
      * Given an instance of a class (of any type), convert its properties to a map, properties names will use as the
      * key and properties values will be the values.
+     *
      * @param instance The instance of a class (of any type).
      * @return the properties {@link Map} of the given instance.
      */
+    @SuppressWarnings("unchecked")
     public <T> Map<String, Object> convertToMap(@NotNull T instance) {
         ClassCacheEntry<T> entry = (ClassCacheEntry<T>) ClassCache.getInstance().loadClass(instance.getClass(), mapper);
         return entry.getMap(instance, false);
@@ -180,6 +191,7 @@ public class MappingConverter {
             return new Key(entry.getNamespace(), entry.getSetName(), Value.get(entry.translateKeyToAerospikeKey(deferredObject.getKey())));
         }
     }
+
     /**
      * If an object refers to other objects (eg A has a list of B via references), then reading the object will populate the
      * ids. If configured to do so, these objects can be loaded via a batch load and populated back into the references which
@@ -190,6 +202,7 @@ public class MappingConverter {
      * the list of deferred objects is empty. The deferred objects are stored in a <pre>ThreadLocalData<pre> list, so are thread safe
      * @param parentEntity - the ClassCacheEntry of the parent entity. This is used to get the batch policy to use.
      */
+    @SuppressWarnings("unchecked")
     public void resolveDependencies(ClassCacheEntry<?> parentEntity) {
         List<DeferredObjectLoader.DeferredObjectSetter> deferredObjects = DeferredObjectLoader.getAndClear();
 
