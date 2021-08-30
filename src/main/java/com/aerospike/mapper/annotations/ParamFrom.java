@@ -11,8 +11,8 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.PARAMETER)
 public @interface ParamFrom {
-	/**
-	 * The name of the bin to use.
-	 */
-	String value();
+    /**
+     * The name of the bin to use.
+     */
+    String value();
 }

@@ -14,8 +14,8 @@ import java.util.Objects;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class ReactivePartialRecordsTest extends ReactiveAeroMapperBaseTest {
-    @AerospikeRecord(namespace = "test", set="testSet")
-    public static class DataClass{
+    @AerospikeRecord(namespace = "test", set = "testSet")
+    public static class DataClass {
         @AerospikeKey
         int a;
         int b;

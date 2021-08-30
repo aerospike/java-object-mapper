@@ -39,7 +39,7 @@ public class ReactiveKeysViaMethodTest extends ReactiveAeroMapperBaseTest {
         public void setKey(String key, Key recordKey) {
             int index = key.indexOf(":");
             this.name = key.substring(0, index);
-            this.id = Integer.valueOf(key.substring(index+1));
+            this.id = Integer.valueOf(key.substring(index + 1));
         }
     }
 
@@ -47,7 +47,7 @@ public class ReactiveKeysViaMethodTest extends ReactiveAeroMapperBaseTest {
     public static class Container {
         @AerospikeKey
         private int id;
-        @AerospikeEmbed(elementType = AerospikeEmbed.EmbedType.LIST, type= AerospikeEmbed.EmbedType.MAP)
+        @AerospikeEmbed(elementType = AerospikeEmbed.EmbedType.LIST, type = AerospikeEmbed.EmbedType.MAP)
         private List<BasicClass> basicList;
     }
 
@@ -98,7 +98,7 @@ public class ReactiveKeysViaMethodTest extends ReactiveAeroMapperBaseTest {
         @AerospikeKey(setter = true)
         public void setDate(long millisSinceDayStart, Value key) {
             String keyAsString = (String) key.getObject();
-            String daysAsString = keyAsString.substring(keyAsString.lastIndexOf("-")+1);
+            String daysAsString = keyAsString.substring(keyAsString.lastIndexOf("-") + 1);
             long epochDays = Long.parseLong(daysAsString);
             long millis = epochTime + epochDays * TimeUnit.MILLISECONDS.convert(1, TimeUnit.DAYS) + millisSinceDayStart;
             this.date = new Date(millis);
@@ -111,7 +111,7 @@ public class ReactiveKeysViaMethodTest extends ReactiveAeroMapperBaseTest {
         private String accountName;
 
         @AerospikeBin
-        @AerospikeEmbed(elementType = AerospikeEmbed.EmbedType.LIST, type= AerospikeEmbed.EmbedType.MAP)
+        @AerospikeEmbed(elementType = AerospikeEmbed.EmbedType.LIST, type = AerospikeEmbed.EmbedType.MAP)
         private final List<Transaction> txnList;
 
         public AccountTxnContainer() {
@@ -120,7 +120,7 @@ public class ReactiveKeysViaMethodTest extends ReactiveAeroMapperBaseTest {
 
         @AerospikeKey
         public String getKey() {
-            return accountName + "-" +daySinceEpoch;
+            return accountName + "-" + daySinceEpoch;
         }
     }
 
@@ -130,9 +130,9 @@ public class ReactiveKeysViaMethodTest extends ReactiveAeroMapperBaseTest {
         account.daySinceEpoch = 1;
         account.accountName = "Tim";
 
-        account.txnList.add(new Transaction(new Date(epochTime + account.daySinceEpoch * TimeUnit.MILLISECONDS.convert(1, TimeUnit.DAYS) +10000), 1111, "Test Transaction 1"));
-        account.txnList.add(new Transaction(new Date(epochTime + account.daySinceEpoch * TimeUnit.MILLISECONDS.convert(1, TimeUnit.DAYS) +75000), 2222, "Test Transaction 2"));
-        account.txnList.add(new Transaction(new Date(epochTime + account.daySinceEpoch * TimeUnit.MILLISECONDS.convert(1, TimeUnit.DAYS) +13 * 60* 60* 1000), 3333, "Test Transaction"));
+        account.txnList.add(new Transaction(new Date(epochTime + account.daySinceEpoch * TimeUnit.MILLISECONDS.convert(1, TimeUnit.DAYS) + 10000), 1111, "Test Transaction 1"));
+        account.txnList.add(new Transaction(new Date(epochTime + account.daySinceEpoch * TimeUnit.MILLISECONDS.convert(1, TimeUnit.DAYS) + 75000), 2222, "Test Transaction 2"));
+        account.txnList.add(new Transaction(new Date(epochTime + account.daySinceEpoch * TimeUnit.MILLISECONDS.convert(1, TimeUnit.DAYS) + 13 * 60 * 60 * 1000), 3333, "Test Transaction"));
 
         ReactiveAeroMapper reactiveMapper = new ReactiveAeroMapper.Builder(reactorClient).build();
         reactiveMapper.save(account).subscribeOn(Schedulers.parallel()).block();

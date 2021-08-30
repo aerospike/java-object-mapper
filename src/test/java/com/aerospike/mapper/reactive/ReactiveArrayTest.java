@@ -18,7 +18,8 @@ public class ReactiveArrayTest extends ReactiveAeroMapperBaseTest {
         @AerospikeKey
         public int id;
 
-        A() {}
+        A() {
+        }
 
         public A(String name, int age, int id) {
             super();
@@ -57,9 +58,9 @@ public class ReactiveArrayTest extends ReactiveAeroMapperBaseTest {
 
         B b = new B();
         b.id = 1;
-        b.lazyAs = new A[] {a1,a2,a3};
-        b.batchAs = new A[] {a1,a2,a3,a4,a5,a6,a7,a8,a9};
-        b.normalAs = new A[] {a3,a4};
+        b.lazyAs = new A[]{a1, a2, a3};
+        b.batchAs = new A[]{a1, a2, a3, a4, a5, a6, a7, a8, a9};
+        b.normalAs = new A[]{a3, a4};
         b.a1 = a1;
         b.a2 = a2;
         b.a3 = a3;

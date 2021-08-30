@@ -20,7 +20,8 @@ public class ReactiveAeroMapperObjectTransformTest extends ReactiveAeroMapperBas
         @AerospikeKey
         public long time;
 
-        public Transaction() {}
+        public Transaction() {
+        }
 
         public Transaction(String name, int value, long time) {
             super();

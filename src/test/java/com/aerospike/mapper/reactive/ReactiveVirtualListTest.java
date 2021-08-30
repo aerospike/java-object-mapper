@@ -19,6 +19,7 @@ public class ReactiveVirtualListTest extends ReactiveAeroMapperBaseTest {
         @AerospikeKey
         public int a;
         public String b;
+
         public C(@ParamFrom("a") int a, @ParamFrom("b") String b) {
             this.a = a;
             this.b = b;
@@ -31,11 +32,12 @@ public class ReactiveVirtualListTest extends ReactiveAeroMapperBaseTest {
 
         @Override
         public boolean equals(Object obj) {
-            return obj != null && a == ((C)obj).a && b.equals(((C)obj).b);
+            return obj != null && a == ((C) obj).a && b.equals(((C) obj).b);
         }
+
         @Override
         public int hashCode() {
-            return 17*a + (b == null ? 0 : b.hashCode());
+            return 17 * a + (b == null ? 0 : b.hashCode());
         }
     }
 
@@ -81,19 +83,22 @@ public class ReactiveVirtualListTest extends ReactiveAeroMapperBaseTest {
         public long getDate() {
             return date;
         }
+
         public List<C> getCs() {
             return Cs;
         }
+
         public C getThisC() {
             return thisC;
         }
+
         public void setThisC(C thisC) {
             this.thisC = thisC;
         }
 
         @Override
         public String toString() {
-            return String.format("{id=%d, name=%s, date=%d, thisC=%s, listC=%s}",  id, name, date, thisC, Cs);
+            return String.format("{id=%d, name=%s, date=%d, thisC=%s, listC=%s}", id, name, date, thisC, Cs);
         }
 
         private boolean compare(Object a, Object b) {
@@ -111,7 +116,7 @@ public class ReactiveVirtualListTest extends ReactiveAeroMapperBaseTest {
             if ((!(obj instanceof B))) {
                 return false;
             }
-            B b2 = (B)obj;
+            B b2 = (B) obj;
             if (id != b2.id || date != b2.date) {
                 return false;
             }
@@ -168,7 +173,7 @@ public class ReactiveVirtualListTest extends ReactiveAeroMapperBaseTest {
 
         ReactiveAeroMapper reactiveMapper = new ReactiveAeroMapper.Builder(reactorClient).build();
         reactiveMapper.save(collection).subscribeOn(Schedulers.parallel()).block();
-        reactiveMapper.save(a,b,c,d,e,f,g,h,i,j).subscribeOn(Schedulers.parallel()).collectList().block();
+        reactiveMapper.save(a, b, c, d, e, f, g, h, i, j).subscribeOn(Schedulers.parallel()).collectList().block();
 
         ReactiveVirtualList<B> list = reactiveMapper.asBackedList(collection, "elements", B.class);
         List<B> results = (List<B>) list.beginMultiOperation()

@@ -11,56 +11,56 @@ import com.aerospike.mapper.examples.model.Property;
 // Loan account rolls up under the Account
 @AerospikeRecord
 public class LoanAccount extends Account {
-	
-	@AerospikeBin(name = "prop")
-	private Property securityProperty;
-	@AerospikeBin(name = "intType")
-	private InterestType interestType;
-	@AerospikeBin(name="orig")
-	private final Date originationDate;
-	@AerospikeBin(name="exp")
-	private final Date expirationDate;
-	private final float rate;
-	
-	public LoanAccount(
-			@ParamFrom("id") String accountId, 
-			@ParamFrom("custId") String customerId, 
-			@ParamFrom("title") String title, 
-			@ParamFrom("type") AccountType type,
-			@ParamFrom("orig") Date originationDate,
-			@ParamFrom("exp") Date expirationDate,
-			@ParamFrom("rate") float rate) {
-		super(accountId, customerId, title, type);
-		this.rate = rate;
-		this.expirationDate = expirationDate;
-		this.originationDate = originationDate;
-	}
 
-	public Property getSecurityProperty() {
-		return securityProperty;
-	}
+    @AerospikeBin(name = "prop")
+    private Property securityProperty;
+    @AerospikeBin(name = "intType")
+    private InterestType interestType;
+    @AerospikeBin(name = "orig")
+    private final Date originationDate;
+    @AerospikeBin(name = "exp")
+    private final Date expirationDate;
+    private final float rate;
 
-	public void setSecurityProperty(Property securityProperty) {
-		this.securityProperty = securityProperty;
-	}
+    public LoanAccount(
+            @ParamFrom("id") String accountId,
+            @ParamFrom("custId") String customerId,
+            @ParamFrom("title") String title,
+            @ParamFrom("type") AccountType type,
+            @ParamFrom("orig") Date originationDate,
+            @ParamFrom("exp") Date expirationDate,
+            @ParamFrom("rate") float rate) {
+        super(accountId, customerId, title, type);
+        this.rate = rate;
+        this.expirationDate = expirationDate;
+        this.originationDate = originationDate;
+    }
 
-	public InterestType getInterestType() {
-		return interestType;
-	}
+    public Property getSecurityProperty() {
+        return securityProperty;
+    }
 
-	public void setInterestType(InterestType interestType) {
-		this.interestType = interestType;
-	}
+    public void setSecurityProperty(Property securityProperty) {
+        this.securityProperty = securityProperty;
+    }
 
-	public Date getOriginationDate() {
-		return originationDate;
-	}
+    public InterestType getInterestType() {
+        return interestType;
+    }
 
-	public Date getExpirationDate() {
-		return expirationDate;
-	}
+    public void setInterestType(InterestType interestType) {
+        this.interestType = interestType;
+    }
 
-	public float getRate() {
-		return rate;
-	}
+    public Date getOriginationDate() {
+        return originationDate;
+    }
+
+    public Date getExpirationDate() {
+        return expirationDate;
+    }
+
+    public float getRate() {
+        return rate;
+    }
 }

@@ -212,7 +212,7 @@ public class ReactiveAeroMapperListTest extends ReactiveAeroMapperBaseTest {
         assertEquals(2, container2.value.d);
         assertEquals(0, container2.value.e);
         assertEquals(3, container2.value.f);
-         assertEquals(4, container2.value.g);
+        assertEquals(4, container2.value.g);
     }
 
     @Test

@@ -32,13 +32,16 @@ public class ReactiveAeroMapperListOfObjectTransformTest extends ReactiveAeroMap
         public int id;
         @AerospikeKey
         public Date date;
+
         public OwnedClass(String name, int id, Date date) {
             super();
             this.name = name;
             this.id = id;
             this.date = date;
         }
-        public OwnedClass() {}
+
+        public OwnedClass() {
+        }
     }
 
     private ReactiveAeroMapper reactiveMapper;

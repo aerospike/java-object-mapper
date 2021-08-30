@@ -64,7 +64,7 @@ public class ReactiveInheritanceTest extends ReactiveAeroMapperBaseTest {
         a.cAsAb = c;
         a.dAsAb = d;
 
-        reactiveMapper.save(a,b,c,d).subscribeOn(Schedulers.parallel()).collectList().block();
+        reactiveMapper.save(a, b, c, d).subscribeOn(Schedulers.parallel()).collectList().block();
         A a2 = reactiveMapper.read(A.class, a.id).subscribeOn(Schedulers.parallel()).block();
         compare(a, a2);
     }

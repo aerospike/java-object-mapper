@@ -66,10 +66,10 @@ public class ReactiveAnonymousReferencesTest extends ReactiveAeroMapperBaseTest 
         assert a2 != null;
         assertEquals(a.id, a2.id);
         assertEquals(a.unnamedB.size(), a2.unnamedB.size());
-        assertEquals(((B)a.unnamedB.get(0)).id, ((B)a2.unnamedB.get(0)).id);
-        assertEquals(((B)a.unnamedB.get(0)).name, ((B)a2.unnamedB.get(0)).name);
-        assertEquals(((B)a.unnamedB.get(1)).id, ((B)a2.unnamedB.get(1)).id);
-        assertEquals(((B)a.unnamedB.get(1)).name, ((B)a2.unnamedB.get(1)).name);
+        assertEquals(((B) a.unnamedB.get(0)).id, ((B) a2.unnamedB.get(0)).id);
+        assertEquals(((B) a.unnamedB.get(0)).name, ((B) a2.unnamedB.get(0)).name);
+        assertEquals(((B) a.unnamedB.get(1)).id, ((B) a2.unnamedB.get(1)).id);
+        assertEquals(((B) a.unnamedB.get(1)).name, ((B) a2.unnamedB.get(1)).name);
 
         assertEquals(a.namedB.size(), a2.namedB.size());
         assertEquals(a.namedB.get(0).id, a2.namedB.get(0).id);
@@ -78,7 +78,7 @@ public class ReactiveAnonymousReferencesTest extends ReactiveAeroMapperBaseTest 
         assertEquals(a.namedB.get(1).name, a2.namedB.get(1).name);
 
         assertEquals(a.nonB.size(), a2.nonB.size());
-        assertEquals(((List)a.nonB.get(0)).get(0), ((List)a2.nonB.get(0)).get(0));
-        assertEquals(((List)a.nonB.get(0)).get(1), ((List)a2.nonB.get(0)).get(1));
+        assertEquals(((List) a.nonB.get(0)).get(0), ((List) a2.nonB.get(0)).get(0));
+        assertEquals(((List) a.nonB.get(0)).get(1), ((List) a2.nonB.get(0)).get(1));
     }
 }

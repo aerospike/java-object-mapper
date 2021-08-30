@@ -21,6 +21,7 @@ public class ReactiveMultipleParameterSetterTest extends ReactiveAeroMapperBaseT
         public String getKey() {
             return key;
         }
+
         @AerospikeKey(setter = true)
         public void setKey(String key) {
             this.key = key;
@@ -30,6 +31,7 @@ public class ReactiveMultipleParameterSetterTest extends ReactiveAeroMapperBaseT
         public String getValue1() {
             return value1;
         }
+
         @AerospikeSetter(name = "v1")
         public void setValue1(String value1, Value owningKey) {
             assertEquals("B-1", owningKey.getObject());

@@ -13,275 +13,280 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class VirtualListTest extends AeroMapperBaseTest {
-	
-	@AerospikeRecord(namespace = "test", set = "C")
-	public static class C {
-		@AerospikeKey
-		public int a;
-		public String b;
-		public C(@ParamFrom("a") int a, @ParamFrom("b") String b) {
-			this.a = a;
-			this.b = b;
-		}
-		
-		@Override
-		public String toString() {
-			return String.format("{%d,\"%s\"}", a, b);
-		}
-		
-		@Override
-		public boolean equals(Object obj) {
-			return obj != null && a == ((C)obj).a && b.equals(((C)obj).b);
-		}
-		@Override
-		public int hashCode() {
-			return 17*a + (b == null ? 0 : b.hashCode());
-		}
-	}
 
-	@AerospikeRecord
-	public static class B {
-		@AerospikeKey
-		public int id;
-		public String name;
-		public long date;
-		public C thisC;
-		public List<C> Cs;
-		public List<C> otherCs;
-		public C anonC;
-		
-		@AerospikeConstructor
-		public B(@ParamFrom("id") int id, @ParamFrom("name") String name, @ParamFrom("date") long date) {
-			super();
-			this.id = id;
-			this.name = name;
-			this.date = date;
-			this.Cs = new ArrayList<>();
-			this.otherCs = new ArrayList<>();
-		}
+    @AerospikeRecord(namespace = "test", set = "C")
+    public static class C {
+        @AerospikeKey
+        public int a;
+        public String b;
 
-		public B(int id, String name, long date, C thisC, C... listCs) {
-			this(id, name, date);
-			this.thisC = thisC;
-			this.anonC = thisC;
-			for (C aC : listCs) {
-				this.Cs.add(aC);
-				this.otherCs.add(aC);
-			}
-		}
+        public C(@ParamFrom("a") int a, @ParamFrom("b") String b) {
+            this.a = a;
+            this.b = b;
+        }
 
-		public int getId() {
-			return id;
-		}
+        @Override
+        public String toString() {
+            return String.format("{%d,\"%s\"}", a, b);
+        }
 
-		public String getName() {
-			return name;
-		}
+        @Override
+        public boolean equals(Object obj) {
+            return obj != null && a == ((C) obj).a && b.equals(((C) obj).b);
+        }
 
-		public long getDate() {
-			return date;
-		}
-		public List<C> getCs() {
-			return Cs;
-		}
-		public C getThisC() {
-			return thisC;
-		}
-		public void setThisC(C thisC) {
-			this.thisC = thisC;
-		}
-		
-		@Override
-		public String toString() {
-			return String.format("{id=%d, name=%s, date=%d, thisC=%s, listC=%s}",  id, name, date, thisC, Cs);
-		}
-		
-		private boolean compare(Object a, Object b) {
-			if (a == null && b == null) {
-				return true;
-			}
-			if ((a != null && b == null) || (a == null && b != null)) {
-				return false;
-			}
-			return a.equals(b);
-		}
-		
-		@Override
-		public boolean equals(Object obj) {
-			if ((!(obj instanceof B))) {
-				return false;
-			}
-			B b2 = (B)obj;
-			if (id != b2.id || date != b2.date) {
-				return false;
-			}
-			return compare(name, b2.name) && compare(thisC, b2.thisC) && compare(Cs, b2.Cs) && compare(otherCs, b2.otherCs) && compare(anonC, b2.anonC);
-		}
-	}
-	
-	@AerospikeRecord(namespace = "test", set = "A")
-	public static class A {
-		@AerospikeEmbed(type = EmbedType.MAP, elementType = EmbedType.MAP)
-		public List<B> elements;
-		
-		@AerospikeKey 
-		public int id;
+        @Override
+        public int hashCode() {
+            return 17 * a + (b == null ? 0 : b.hashCode());
+        }
+    }
 
-		public A() {
-			elements = new ArrayList<>();
-		}
-	}
+    @AerospikeRecord
+    public static class B {
+        @AerospikeKey
+        public int id;
+        public String name;
+        public long date;
+        public C thisC;
+        public List<C> Cs;
+        public List<C> otherCs;
+        public C anonC;
 
-	@AerospikeRecord(namespace = "test", set = "D")
-	public static class D {
-		@AerospikeEmbed(type = EmbedType.LIST)
-		public List<Long> elements2;
+        @AerospikeConstructor
+        public B(@ParamFrom("id") int id, @ParamFrom("name") String name, @ParamFrom("date") long date) {
+            super();
+            this.id = id;
+            this.name = name;
+            this.date = date;
+            this.Cs = new ArrayList<>();
+            this.otherCs = new ArrayList<>();
+        }
 
-		@AerospikeKey
-		public int id;
+        public B(int id, String name, long date, C thisC, C... listCs) {
+            this(id, name, date);
+            this.thisC = thisC;
+            this.anonC = thisC;
+            for (C aC : listCs) {
+                this.Cs.add(aC);
+                this.otherCs.add(aC);
+            }
+        }
 
-		public D() {
-			elements2 = new ArrayList<>();
-		}
-	}
-	
-	@Test
-	@SuppressWarnings("unchecked")
-	public void testVirtualList() {
-		C a = new C(1, "a");
-		C b = new C(2, "b");
-		C c = new C(3, "c");
-		C d = new C(4, "d");
-		C e = new C(5, "e");
-		C f = new C(6, "f");
-		C g = new C(7, "g");
-		C h = new C(8, "h");
-		C i = new C(9, "i");
-		C j = new C(10, "j");
+        public int getId() {
+            return id;
+        }
 
-		A collection = new A();
-		collection.id = 1;
+        public String getName() {
+            return name;
+        }
 
-		collection.elements.add(new B(102, "bob", 12345, a, b, c));
-		collection.elements.add(new B(101, "joe", 23456, b, d, e, f));
-		collection.elements.add(new B(100, "sue", 34567, c));
+        public long getDate() {
+            return date;
+        }
 
-		AeroMapper mapper = new AeroMapper.Builder(client).build();
-		mapper.save(collection);
-		mapper.save(a,b,c,d,e,f,g,h,i,j);
-		
-		VirtualList<B> list = mapper.asBackedList(collection, "elements", B.class);
+        public List<C> getCs() {
+            return Cs;
+        }
 
-		List<B> results = (List<B>) list.beginMultiOperation()
-				.append(new B(104, "tim", 22222, i, e, f))
-				.append(new B(103, "tom", 45678, h, g, g))
-				.append(new B(105, "sam", 33333, j, a, b))
-				.append(new B(106, "rob", 44444, j, g))
-				.getByKeyRange(101, 105)
-			.end();
-		
-		assertEquals(4, results.size());
-		// Note that the results will be sorted by the id as we're using a K_ORDERED map
-		assertEquals(101, results.get(0).id);
-		assertEquals("joe", results.get(0).name);
-		assertEquals(23456, results.get(0).date);
-		assertEquals(b, results.get(0).thisC);
-		assertEquals(d, results.get(0).Cs.get(0));
-		assertEquals(e, results.get(0).Cs.get(1));
-		assertEquals(f, results.get(0).Cs.get(2));
+        public C getThisC() {
+            return thisC;
+        }
 
-		assertEquals(102, results.get(1).id);
-		assertEquals(103, results.get(2).id);
-		assertEquals(104, results.get(3).id);
-		
-		A result = mapper.read(A.class, collection.id);
-		assertEquals(collection.id, result.id);
-		assertEquals(7, result.elements.size());
+        public void setThisC(C thisC) {
+            this.thisC = thisC;
+        }
 
-		// Note that the returned results will be sorted, the inputs will not be.
-		for (int x = 0; x < collection.elements.size(); x++) {
-			boolean found = false;
-			for (int y = 0; y < result.elements.size(); y++) {
-				if (collection.elements.get(x).id == result.elements.get(y).id) {
-					assertEquals(collection.elements.get(x), result.elements.get(y));
-					found = true;
-					break;
-				}
-			}
-			assertTrue(found);
-		}
+        @Override
+        public String toString() {
+            return String.format("{id=%d, name=%s, date=%d, thisC=%s, listC=%s}", id, name, date, thisC, Cs);
+        }
 
-		// reset
-		list.clear();
-		assertEquals(0, list.size(null));
-		mapper.save(collection);
-		list = mapper.asBackedList(collection, "elements", B.class);
+        private boolean compare(Object a, Object b) {
+            if (a == null && b == null) {
+                return true;
+            }
+            if ((a != null && b == null) || (a == null && b != null)) {
+                return false;
+            }
+            return a.equals(b);
+        }
 
-		results = (List<B>) list.beginMultiOperation()
-				.removeByIndex(0) // Remove the first element
-				.removeByKey(102) // Remove item with id = 102
-				.getByIndexRange(0) // Get all elements starting at index 0
-				.end();
+        @Override
+        public boolean equals(Object obj) {
+            if ((!(obj instanceof B))) {
+                return false;
+            }
+            B b2 = (B) obj;
+            if (id != b2.id || date != b2.date) {
+                return false;
+            }
+            return compare(name, b2.name) && compare(thisC, b2.thisC) && compare(Cs, b2.Cs) && compare(otherCs, b2.otherCs) && compare(anonC, b2.anonC);
+        }
+    }
 
-		assertEquals(1, results.size());
-		assertEquals(101, results.get(0).id);
+    @AerospikeRecord(namespace = "test", set = "A")
+    public static class A {
+        @AerospikeEmbed(type = EmbedType.MAP, elementType = EmbedType.MAP)
+        public List<B> elements;
 
-		// reset
-		list.clear();
-		assertEquals(0, list.size(null));
-		mapper.save(collection);
-		list = mapper.asBackedList(collection, "elements", B.class);
+        @AerospikeKey
+        public int id;
 
-		results = list.getByKey(102, ReturnType.DEFAULT);
-		assertEquals(3, list.size(null));
-		assertEquals(1, results.size());
-		assertEquals(12345, results.get(0).getDate());
-		assertEquals("bob", results.get(0).getName());
+        public A() {
+            elements = new ArrayList<>();
+        }
+    }
 
-		// reset
-		list.clear();
-		assertEquals(0, list.size(null));
-		mapper.save(collection);
-		list = mapper.asBackedList(collection, "elements", B.class);
+    @AerospikeRecord(namespace = "test", set = "D")
+    public static class D {
+        @AerospikeEmbed(type = EmbedType.LIST)
+        public List<Long> elements2;
 
-		results = (List<B>) list.beginMultiOperation()
-				.removeByRank(0)
-				.getByRankRange(1)
-				.end();
-		assertEquals(2, list.size(null));
-		assertEquals(1, results.size());
-		assertEquals(101, results.get(0).getId());
-		assertEquals("joe", results.get(0).getName());
+        @AerospikeKey
+        public int id;
 
-		// reset
-		list.clear();
-		assertEquals(0, list.size(null));
+        public D() {
+            elements2 = new ArrayList<>();
+        }
+    }
 
-		D collection2 = new D();
-		collection2.id = 1;
+    @Test
+    @SuppressWarnings("unchecked")
+    public void testVirtualList() {
+        C a = new C(1, "a");
+        C b = new C(2, "b");
+        C c = new C(3, "c");
+        C d = new C(4, "d");
+        C e = new C(5, "e");
+        C f = new C(6, "f");
+        C g = new C(7, "g");
+        C h = new C(8, "h");
+        C i = new C(9, "i");
+        C j = new C(10, "j");
 
-		collection2.elements2.add(12345L);
-		collection2.elements2.add(23456L);
-		collection2.elements2.add(34567L);
-		collection2.elements2.add(44444L);
-		collection2.elements2.add(55555L);
+        A collection = new A();
+        collection.id = 1;
 
-		mapper.save(collection2);
-		VirtualList<Long> list2 = mapper.asBackedList(collection2, "elements2", Long.class);
+        collection.elements.add(new B(102, "bob", 12345, a, b, c));
+        collection.elements.add(new B(101, "joe", 23456, b, d, e, f));
+        collection.elements.add(new B(100, "sue", 34567, c));
 
-		List<Object> valueList = new ArrayList<>();
-		valueList.add(12345L);
-		valueList.add(34567L);
-		valueList.add(55555L);
+        AeroMapper mapper = new AeroMapper.Builder(client).build();
+        mapper.save(collection);
+        mapper.save(a, b, c, d, e, f, g, h, i, j);
 
-		List<Long> results2 = (List<Long>) list2.beginMultiOperation()
-				.removeByValue(23456L)
-				.getByValueList(valueList)
-				.end();
+        VirtualList<B> list = mapper.asBackedList(collection, "elements", B.class);
 
-		assertEquals(4, list2.size(null));
-		assertEquals(3, results2.size());
-		assertTrue(results2.containsAll(valueList));
-		assertFalse(results2.contains(44444L));
-	}
+        List<B> results = (List<B>) list.beginMultiOperation()
+                .append(new B(104, "tim", 22222, i, e, f))
+                .append(new B(103, "tom", 45678, h, g, g))
+                .append(new B(105, "sam", 33333, j, a, b))
+                .append(new B(106, "rob", 44444, j, g))
+                .getByKeyRange(101, 105)
+                .end();
+
+        assertEquals(4, results.size());
+        // Note that the results will be sorted by the id as we're using a K_ORDERED map
+        assertEquals(101, results.get(0).id);
+        assertEquals("joe", results.get(0).name);
+        assertEquals(23456, results.get(0).date);
+        assertEquals(b, results.get(0).thisC);
+        assertEquals(d, results.get(0).Cs.get(0));
+        assertEquals(e, results.get(0).Cs.get(1));
+        assertEquals(f, results.get(0).Cs.get(2));
+
+        assertEquals(102, results.get(1).id);
+        assertEquals(103, results.get(2).id);
+        assertEquals(104, results.get(3).id);
+
+        A result = mapper.read(A.class, collection.id);
+        assertEquals(collection.id, result.id);
+        assertEquals(7, result.elements.size());
+
+        // Note that the returned results will be sorted, the inputs will not be.
+        for (int x = 0; x < collection.elements.size(); x++) {
+            boolean found = false;
+            for (int y = 0; y < result.elements.size(); y++) {
+                if (collection.elements.get(x).id == result.elements.get(y).id) {
+                    assertEquals(collection.elements.get(x), result.elements.get(y));
+                    found = true;
+                    break;
+                }
+            }
+            assertTrue(found);
+        }
+
+        // reset
+        list.clear();
+        assertEquals(0, list.size(null));
+        mapper.save(collection);
+        list = mapper.asBackedList(collection, "elements", B.class);
+
+        results = (List<B>) list.beginMultiOperation()
+                .removeByIndex(0) // Remove the first element
+                .removeByKey(102) // Remove item with id = 102
+                .getByIndexRange(0) // Get all elements starting at index 0
+                .end();
+
+        assertEquals(1, results.size());
+        assertEquals(101, results.get(0).id);
+
+        // reset
+        list.clear();
+        assertEquals(0, list.size(null));
+        mapper.save(collection);
+        list = mapper.asBackedList(collection, "elements", B.class);
+
+        results = list.getByKey(102, ReturnType.DEFAULT);
+        assertEquals(3, list.size(null));
+        assertEquals(1, results.size());
+        assertEquals(12345, results.get(0).getDate());
+        assertEquals("bob", results.get(0).getName());
+
+        // reset
+        list.clear();
+        assertEquals(0, list.size(null));
+        mapper.save(collection);
+        list = mapper.asBackedList(collection, "elements", B.class);
+
+        results = (List<B>) list.beginMultiOperation()
+                .removeByRank(0)
+                .getByRankRange(1)
+                .end();
+        assertEquals(2, list.size(null));
+        assertEquals(1, results.size());
+        assertEquals(101, results.get(0).getId());
+        assertEquals("joe", results.get(0).getName());
+
+        // reset
+        list.clear();
+        assertEquals(0, list.size(null));
+
+        D collection2 = new D();
+        collection2.id = 1;
+
+        collection2.elements2.add(12345L);
+        collection2.elements2.add(23456L);
+        collection2.elements2.add(34567L);
+        collection2.elements2.add(44444L);
+        collection2.elements2.add(55555L);
+
+        mapper.save(collection2);
+        VirtualList<Long> list2 = mapper.asBackedList(collection2, "elements2", Long.class);
+
+        List<Object> valueList = new ArrayList<>();
+        valueList.add(12345L);
+        valueList.add(34567L);
+        valueList.add(55555L);
+
+        List<Long> results2 = (List<Long>) list2.beginMultiOperation()
+                .removeByValue(23456L)
+                .getByValueList(valueList)
+                .end();
+
+        assertEquals(4, list2.size(null));
+        assertEquals(3, results2.size());
+        assertTrue(results2.containsAll(valueList));
+        assertFalse(results2.contains(44444L));
+    }
 }

@@ -75,8 +75,7 @@ public class ReactiveCompetingAnnotationsTest extends ReactiveAeroMapperBaseTest
         try {
             reactiveMapper.save(b).subscribeOn(Schedulers.parallel()).block();
             fail();
-        }
-        catch (AerospikeException ae) {
+        } catch (AerospikeException ae) {
             assertTrue(true);
         }
     }
@@ -91,8 +90,7 @@ public class ReactiveCompetingAnnotationsTest extends ReactiveAeroMapperBaseTest
         try {
             reactiveMapper.save(b).subscribeOn(Schedulers.parallel()).block();
             fail();
-        }
-        catch (AerospikeException ae) {
+        } catch (AerospikeException ae) {
             assertTrue(true);
         }
     }
@@ -106,8 +104,7 @@ public class ReactiveCompetingAnnotationsTest extends ReactiveAeroMapperBaseTest
         try {
             reactiveMapper.save(b).subscribeOn(Schedulers.parallel()).block();
             fail();
-        }
-        catch (AerospikeException ae) {
+        } catch (AerospikeException ae) {
             assertTrue(true);
         }
     }
@@ -122,8 +119,7 @@ public class ReactiveCompetingAnnotationsTest extends ReactiveAeroMapperBaseTest
         try {
             reactiveMapper.save(b).subscribeOn(Schedulers.parallel()).block();
             fail();
-        }
-        catch (AerospikeException ae) {
+        } catch (AerospikeException ae) {
             assertTrue(true);
         }
     }
