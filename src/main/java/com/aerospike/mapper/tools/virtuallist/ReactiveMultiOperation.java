@@ -182,11 +182,9 @@ public class ReactiveMultiOperation<E> {
     public ReactiveMultiOperation<E> asResultOfType(ReturnType type) {
         if (interactions.isEmpty()) {
             throw new AerospikeException("asResult() cannot mark an item as the function result if there are no items to process");
-        }
-        else if (this.indexToReturn >= 0) {
+        } else if (this.indexToReturn >= 0) {
             throw new AerospikeException("asResult() can only be called once in a multi operation");
-        }
-        else {
+        } else {
             this.indexToReturn = this.interactions.size() - 1;
             this.interactions.get(indexToReturn).setNeedsResultOfType(type);
         }
@@ -219,7 +217,7 @@ public class ReactiveMultiOperation<E> {
         int listSize = this.interactions.size();
         if (this.indexToReturn < 0) {
             // Mark the last get operation to return it's value, or the last value if there are no get operations
-            for (int i = listSize-1; i >= 0; i--) {
+            for (int i = listSize - 1; i >= 0; i--) {
                 if (!this.interactions.get(i).isWriteOperation()) {
                     this.indexToReturn = i;
                     this.interactions.get(indexToReturn).setNeedsResultOfType(ReturnType.DEFAULT);
@@ -237,21 +235,21 @@ public class ReactiveMultiOperation<E> {
                 .operate(writePolicy, key, operations)
                 .map(keyRecord -> {
                     T result;
-                    if(finalCount == 1) {
-                        result = (T)this.interactions.get(0).getResult(keyRecord.record.getValue(binName));
+                    if (finalCount == 1) {
+                        result = (T) this.interactions.get(0).getResult(keyRecord.record.getValue(binName));
                     } else {
                         List<?> resultList = keyRecord.record.getList(binName);
                         if (indexToReturn < 0) {
-                            indexToReturn = listSize-1;
+                            indexToReturn = listSize - 1;
                             // Determine the last GET operation
-                            for (int i = listSize-1; i >= 0; i--) {
+                            for (int i = listSize - 1; i >= 0; i--) {
                                 if (!this.interactions.get(i).isWriteOperation()) {
                                     indexToReturn = i;
                                     break;
                                 }
                             }
                         }
-                        result = (T)this.interactions.get(indexToReturn).getResult(resultList.get(indexToReturn));
+                        result = (T) this.interactions.get(indexToReturn).getResult(resultList.get(indexToReturn));
                     }
                     if (result != null) {
                         Object object = result;

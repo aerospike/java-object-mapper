@@ -56,6 +56,7 @@ public class AeroMapper implements IAeroMapper {
 
         /**
          * Add in a custom type converter. The converter must have methods which implement the ToAerospike and FromAerospike annotation.
+         *
          * @param converter The custom converter
          * @return this object
          */
@@ -75,105 +76,109 @@ public class AeroMapper implements IAeroMapper {
         }
 
         public Builder withConfigurationFile(File file) throws IOException {
-        	return this.withConfigurationFile(file, false);
+            return this.withConfigurationFile(file, false);
         }
 
         public Builder withConfigurationFile(File file, boolean allowsInvalid) throws IOException {
-        	ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory());
-        	Configuration configuration = objectMapper.readValue(file, Configuration.class);
-        	this.loadConfiguration(configuration, allowsInvalid);
-        	return this;
+            ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory());
+            Configuration configuration = objectMapper.readValue(file, Configuration.class);
+            this.loadConfiguration(configuration, allowsInvalid);
+            return this;
         }
 
         public Builder withConfigurationFile(InputStream ios) throws IOException {
-        	return this.withConfigurationFile(ios, false);
+            return this.withConfigurationFile(ios, false);
         }
 
         public Builder withConfigurationFile(InputStream ios, boolean allowsInvalid) throws IOException {
-        	ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory());
-        	Configuration configuration = objectMapper.readValue(ios, Configuration.class);
-        	this.loadConfiguration(configuration, allowsInvalid);
-        	return this;
+            ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory());
+            Configuration configuration = objectMapper.readValue(ios, Configuration.class);
+            this.loadConfiguration(configuration, allowsInvalid);
+            return this;
         }
 
         public Builder withConfiguration(String configurationYaml) throws JsonProcessingException {
-        	return this.withConfiguration(configurationYaml, false);
+            return this.withConfiguration(configurationYaml, false);
         }
 
         public Builder withConfiguration(String configurationYaml, boolean allowsInvalid) throws JsonProcessingException {
-        	ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory());
-        	Configuration configuration = objectMapper.readValue(configurationYaml, Configuration.class);
-        	this.loadConfiguration(configuration, allowsInvalid);
-        	return this;
+            ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory());
+            Configuration configuration = objectMapper.readValue(configurationYaml, Configuration.class);
+            this.loadConfiguration(configuration, allowsInvalid);
+            return this;
         }
 
         private void loadConfiguration(@NotNull Configuration configuration, boolean allowsInvalid) {
-        	for (ClassConfig config : configuration.getClasses()) {
-        		try {
-	        		String name = config.getClassName();
-	        		if (StringUtils.isBlank(name)) {
-	        			throw new AerospikeException("Class with blank name in configuration file");
-	        		}
-	        		else {
-	        			try {
-	        				Class.forName(config.getClassName());
-						} catch (ClassNotFoundException e) {
-							throw new AerospikeException("Cannot find a class with name " + name);
-						}
-	        		}
-        		}
-        		catch (RuntimeException re) {
-        			if (allowsInvalid) {
-        				System.err.println("Ignoring issue with configuration: " + re.getMessage());
-        			}
-        			else {
-        				throw re;
-        			}
-        		}
-        	}
-        	ClassCache.getInstance().addConfiguration(configuration);
+            for (ClassConfig config : configuration.getClasses()) {
+                try {
+                    String name = config.getClassName();
+                    if (StringUtils.isBlank(name)) {
+                        throw new AerospikeException("Class with blank name in configuration file");
+                    } else {
+                        try {
+                            Class.forName(config.getClassName());
+                        } catch (ClassNotFoundException e) {
+                            throw new AerospikeException("Cannot find a class with name " + name);
+                        }
+                    }
+                } catch (RuntimeException re) {
+                    if (allowsInvalid) {
+                        System.err.println("Ignoring issue with configuration: " + re.getMessage());
+                    } else {
+                        throw re;
+                    }
+                }
+            }
+            ClassCache.getInstance().addConfiguration(configuration);
         }
 
         public static class AeroPolicyMapper {
-        	private final Builder builder;
-        	private final Policy policy;
-        	private final PolicyType policyType;
+            private final Builder builder;
+            private final Policy policy;
+            private final PolicyType policyType;
 
-        	public AeroPolicyMapper(Builder builder, PolicyType policyType, Policy policy) {
-        		this.builder = builder;
-        		this.policyType = policyType;
-        		this.policy = policy;
-			}
-        	public Builder forClasses(Class<?>... classes) {
-        		for (Class<?> thisClass : classes) {
-        			ClassCache.getInstance().setSpecificPolicy(policyType, thisClass, policy);
-        		}
-        		return builder;
-        	}
-        	public Builder forThisOrChildrenOf(Class<?> clazz) {
-        		ClassCache.getInstance().setChildrenPolicy(this.policyType, clazz, this.policy);
-        		return builder;
-        	}
-        	public Builder forAll() {
-        		ClassCache.getInstance().setDefaultPolicy(policyType, policy);
-        		return builder;
-        	}
+            public AeroPolicyMapper(Builder builder, PolicyType policyType, Policy policy) {
+                this.builder = builder;
+                this.policyType = policyType;
+                this.policy = policy;
+            }
+
+            public Builder forClasses(Class<?>... classes) {
+                for (Class<?> thisClass : classes) {
+                    ClassCache.getInstance().setSpecificPolicy(policyType, thisClass, policy);
+                }
+                return builder;
+            }
+
+            public Builder forThisOrChildrenOf(Class<?> clazz) {
+                ClassCache.getInstance().setChildrenPolicy(this.policyType, clazz, this.policy);
+                return builder;
+            }
+
+            public Builder forAll() {
+                ClassCache.getInstance().setDefaultPolicy(policyType, policy);
+                return builder;
+            }
         }
 
         public AeroPolicyMapper withReadPolicy(Policy policy) {
-        	return new AeroPolicyMapper(this, PolicyType.READ, policy);
+            return new AeroPolicyMapper(this, PolicyType.READ, policy);
         }
+
         public AeroPolicyMapper withWritePolicy(Policy policy) {
-        	return new AeroPolicyMapper(this, PolicyType.WRITE, policy);
+            return new AeroPolicyMapper(this, PolicyType.WRITE, policy);
         }
+
         public AeroPolicyMapper withBatchPolicy(BatchPolicy policy) {
-        	return new AeroPolicyMapper(this, PolicyType.BATCH, policy);
+            return new AeroPolicyMapper(this, PolicyType.BATCH, policy);
         }
+
         public AeroPolicyMapper withScanPolicy(ScanPolicy policy) {
-        	return new AeroPolicyMapper(this, PolicyType.SCAN, policy);
+            return new AeroPolicyMapper(this, PolicyType.SCAN, policy);
         }
+
         public AeroPolicyMapper withQueryPolicy(QueryPolicy policy) {
-        	return new AeroPolicyMapper(this, PolicyType.QUERY, policy);
+            return new AeroPolicyMapper(this, PolicyType.QUERY, policy);
         }
 
         public AeroMapper build() {
@@ -193,9 +198,9 @@ public class AeroMapper implements IAeroMapper {
 
     @Override
     public void save(@NotNull Object... objects) throws AerospikeException {
-    	for (Object thisObject : objects) {
-    		this.save(thisObject);
-    	}
+        for (Object thisObject : objects) {
+            this.save(thisObject);
+        }
     }
 
     @Override
@@ -259,7 +264,7 @@ public class AeroMapper implements IAeroMapper {
 
     @Override
     public <T> T readFromDigest(Policy readPolicy, @NotNull Class<T> clazz, @NotNull byte[] digest) throws AerospikeException {
-    	return this.readFromDigest(readPolicy, clazz, digest, true);
+        return this.readFromDigest(readPolicy, clazz, digest, true);
     }
 
     @Override
@@ -284,7 +289,7 @@ public class AeroMapper implements IAeroMapper {
 
     @Override
     public <T> T read(Policy readPolicy, @NotNull Class<T> clazz, @NotNull Object userKey) throws AerospikeException {
-    	return this.read(readPolicy, clazz, userKey, true);
+        return this.read(readPolicy, clazz, userKey, true);
     }
 
     @Override
@@ -297,7 +302,7 @@ public class AeroMapper implements IAeroMapper {
 
     @Override
     public <T> T[] read(@NotNull Class<T> clazz, @NotNull Object... userKeys) throws AerospikeException {
-    	return this.read(null, clazz, userKeys);
+        return this.read(null, clazz, userKeys);
     }
 
     @Override
@@ -306,23 +311,22 @@ public class AeroMapper implements IAeroMapper {
         String set = entry.getSetName();
         Key[] keys = new Key[userKeys.length];
         for (int i = 0; i < userKeys.length; i++) {
-        	if (userKeys[i] == null) {
-        		throw new AerospikeException("Cannot pass null to object " + i + " in multi-read call");
-        	}
-        	else {
-        		keys[i] = new Key(entry.getNamespace(), set, Value.get(entry.translateKeyToAerospikeKey(userKeys[i])));
-        	}
+            if (userKeys[i] == null) {
+                throw new AerospikeException("Cannot pass null to object " + i + " in multi-read call");
+            } else {
+                keys[i] = new Key(entry.getNamespace(), set, Value.get(entry.translateKeyToAerospikeKey(userKeys[i])));
+            }
         }
 
-    	return readBatch(batchPolicy, clazz, keys, entry);
+        return readBatch(batchPolicy, clazz, keys, entry);
     }
 
     @SuppressWarnings("unchecked")
     private <T> T read(Policy readPolicy, @NotNull Class<T> clazz, @NotNull Key key, @NotNull ClassCacheEntry<T> entry, boolean resolveDependencies) {
-    	Object objectForKey = LoadedObjectResolver.get(key);
-    	if (objectForKey != null) {
-    		return (T)objectForKey;
-    	}
+        Object objectForKey = LoadedObjectResolver.get(key);
+        if (objectForKey != null) {
+            return (T) objectForKey;
+        }
         if (readPolicy == null) {
             readPolicy = entry.getReadPolicy();
         }
@@ -337,8 +341,7 @@ public class AeroMapper implements IAeroMapper {
                 return mappingConverter.convertToObject(clazz, record, entry, resolveDependencies);
             } catch (ReflectiveOperationException e) {
                 throw new AerospikeException(e);
-            }
-            finally {
+            } finally {
                 LoadedObjectResolver.end();
                 ThreadLocalKeySaver.clear();
             }
@@ -347,27 +350,25 @@ public class AeroMapper implements IAeroMapper {
 
     @SuppressWarnings("unchecked")
     private <T> T[] readBatch(BatchPolicy batchPolicy, @NotNull Class<T> clazz, @NotNull Key[] keys, @NotNull ClassCacheEntry<T> entry) {
-    	if (batchPolicy == null) {
-    		batchPolicy = entry.getBatchPolicy();
-    	}
+        if (batchPolicy == null) {
+            batchPolicy = entry.getBatchPolicy();
+        }
         Record[] records = mClient.get(batchPolicy, keys);
-        T[] results = (T[])Array.newInstance(clazz, records.length);
+        T[] results = (T[]) Array.newInstance(clazz, records.length);
         for (int i = 0; i < records.length; i++) {
-        	if (records[i] == null) {
-        		results[i] = null;
-        	}
-        	else {
+            if (records[i] == null) {
+                results[i] = null;
+            } else {
                 try {
-                	ThreadLocalKeySaver.save(keys[i]);
+                    ThreadLocalKeySaver.save(keys[i]);
                     T result = mappingConverter.convertToObject(clazz, records[i], entry, false);
                     results[i] = result;
                 } catch (ReflectiveOperationException e) {
                     throw new AerospikeException(e);
+                } finally {
+                    ThreadLocalKeySaver.clear();
                 }
-                finally {
-                	ThreadLocalKeySaver.clear();
-                }
-        	}
+            }
         }
         mappingConverter.resolveDependencies(entry);
         return results;
@@ -375,7 +376,7 @@ public class AeroMapper implements IAeroMapper {
 
     @Override
     public <T> boolean delete(@NotNull Class<T> clazz, @NotNull Object userKey) throws AerospikeException {
-    	return this.delete(null, clazz, userKey);
+        return this.delete(null, clazz, userKey);
     }
 
     @Override
@@ -386,11 +387,11 @@ public class AeroMapper implements IAeroMapper {
         if (writePolicy == null) {
             writePolicy = entry.getWritePolicy();
             if (entry.getDurableDelete() != null) {
-            	// Clone the write policy so we're not changing the original one
+                // Clone the write policy so we're not changing the original one
                 writePolicy = new WritePolicy(writePolicy);
                 writePolicy.durableDelete = entry.getDurableDelete();
             }
-    	}
+        }
         Key key = new Key(entry.getNamespace(), entry.getSetName(), Value.get(asKey));
 
         return mClient.delete(writePolicy, key);
@@ -398,7 +399,7 @@ public class AeroMapper implements IAeroMapper {
 
     @Override
     public boolean delete(@NotNull Object object) throws AerospikeException {
-    	return this.delete((WritePolicy)null, object);
+        return this.delete((WritePolicy) null, object);
     }
 
     @Override
@@ -407,11 +408,11 @@ public class AeroMapper implements IAeroMapper {
         Key key = new Key(entry.getNamespace(), entry.getSetName(), Value.get(entry.getKey(object)));
 
         if (writePolicy == null) {
-	        writePolicy = entry.getWritePolicy();
-	        if (entry.getDurableDelete() != null) {
-	            writePolicy = new WritePolicy(writePolicy);
-	            writePolicy.durableDelete = entry.getDurableDelete();
-	        }
+            writePolicy = entry.getWritePolicy();
+            if (entry.getDurableDelete() != null) {
+                writePolicy = new WritePolicy(writePolicy);
+                writePolicy.durableDelete = entry.getDurableDelete();
+            }
         }
         return mClient.delete(writePolicy, key);
     }
@@ -426,7 +427,7 @@ public class AeroMapper implements IAeroMapper {
 
         RecordSet recordSet = null;
         try {
-        	// TODO: set the policy (If this statement is thought to be useful, which is dubious)
+            // TODO: set the policy (If this statement is thought to be useful, which is dubious)
             recordSet = mClient.query(null, statement);
             T result;
             while (recordSet.next()) {
@@ -573,12 +574,18 @@ public class AeroMapper implements IAeroMapper {
         ClassCacheEntry<?> entry = ClassCache.getInstance().loadClass(clazz, this);
 
         switch (policyType) {
-            case READ: return entry == null ? mClient.getReadPolicyDefault() : entry.getReadPolicy();
-            case WRITE: return entry == null ? mClient.getWritePolicyDefault() : entry.getWritePolicy();
-            case BATCH: return entry == null ? mClient.getBatchPolicyDefault() : entry.getBatchPolicy();
-            case SCAN: return entry == null ? mClient.getScanPolicyDefault() : entry.getScanPolicy();
-            case QUERY: return entry == null ? mClient.getQueryPolicyDefault() : entry.getQueryPolicy();
-            default: throw new UnsupportedOperationException("Provided unsupported policy.");
+            case READ:
+                return entry == null ? mClient.getReadPolicyDefault() : entry.getReadPolicy();
+            case WRITE:
+                return entry == null ? mClient.getWritePolicyDefault() : entry.getWritePolicy();
+            case BATCH:
+                return entry == null ? mClient.getBatchPolicyDefault() : entry.getBatchPolicy();
+            case SCAN:
+                return entry == null ? mClient.getScanPolicyDefault() : entry.getScanPolicy();
+            case QUERY:
+                return entry == null ? mClient.getQueryPolicyDefault() : entry.getQueryPolicy();
+            default:
+                throw new UnsupportedOperationException("Provided unsupported policy.");
         }
     }
 }

@@ -21,6 +21,7 @@ public class ReactiveListOfReferencesTest extends ReactiveAeroMapperBaseTest {
         private int id;
         private Date due;
         private String desc;
+
         public Item(int id, Date due, String desc) {
             super();
             this.id = id;

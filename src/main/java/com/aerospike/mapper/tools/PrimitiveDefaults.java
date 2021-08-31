@@ -26,7 +26,7 @@ public class PrimitiveDefaults {
         } else if (clazz.equals(double.class)) {
             return DEFAULT_DOUBLE;
         } else {
-        	return null;
+            return null;
         }
     }
 }

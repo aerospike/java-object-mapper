@@ -185,7 +185,7 @@ public class AeroMapperMapTest extends AeroMapperBaseTest {
         assertEquals(3, container2.value.f);
         assertEquals(4, container2.value.g);
     }
-    
+
     @Test
     public void testConvenienceMethods() {
         TestV1 value = new TestV1();
@@ -193,17 +193,17 @@ public class AeroMapperMapTest extends AeroMapperBaseTest {
         value.b = 2;
         value.c = 3;
         value.d = 4;
-    	Map<String, Object> map = mapper.getMappingConverter().convertToMap(value);
-    	assertEquals(4, map.size());
-    	assertEquals(1, map.get("a"));
-    	assertEquals(2, map.get("b"));
-    	assertEquals(3, map.get("c"));
-    	assertEquals(4, map.get("d"));
-    	
-    	TestV1 value2 = mapper.getMappingConverter().convertToObject(TestV1.class, map);
-    	assertEquals(value.a, value2.a);
-    	assertEquals(value.b, value2.b);
-    	assertEquals(value.c, value2.c);
-    	assertEquals(value.d, value2.d);
+        Map<String, Object> map = mapper.getMappingConverter().convertToMap(value);
+        assertEquals(4, map.size());
+        assertEquals(1, map.get("a"));
+        assertEquals(2, map.get("b"));
+        assertEquals(3, map.get("c"));
+        assertEquals(4, map.get("d"));
+
+        TestV1 value2 = mapper.getMappingConverter().convertToObject(TestV1.class, map);
+        assertEquals(value.a, value2.a);
+        assertEquals(value.b, value2.b);
+        assertEquals(value.c, value2.c);
+        assertEquals(value.d, value2.d);
     }
 }

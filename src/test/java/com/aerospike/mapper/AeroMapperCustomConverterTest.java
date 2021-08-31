@@ -35,7 +35,9 @@ public class AeroMapperCustomConverterTest extends AeroMapperBaseTest {
         public char rank;
         public Suit suit;
 
-        public Card() {}
+        public Card() {
+        }
+
         public Card(char rank, Suit suit) {
             super();
             this.rank = rank;
@@ -58,19 +60,19 @@ public class AeroMapperCustomConverterTest extends AeroMapperBaseTest {
         public String id;
 
         public PokerHand(String id, Card playerCard1, Card playerCard2, List<Card> tableCards) {
-			super();
-			this.playerCard1 = playerCard1;
-			this.playerCard2 = playerCard2;
-			this.tableCards = tableCards;
-			this.id = id;
-		}
-        
+            super();
+            this.playerCard1 = playerCard1;
+            this.playerCard2 = playerCard2;
+            this.tableCards = tableCards;
+            this.id = id;
+        }
+
         public PokerHand() {
-		}
+        }
 
         @Override
         public boolean equals(Object obj) {
-        	PokerHand hand = (PokerHand) obj;
+            PokerHand hand = (PokerHand) obj;
             if (!this.playerCard1.equals(hand.playerCard1)) {
                 return false;
             }
@@ -101,10 +103,14 @@ public class AeroMapperCustomConverterTest extends AeroMapperBaseTest {
 
             char rank = card.charAt(0);
             switch (card.charAt(1)) {
-                case 'C': return new Card(rank, Suit.CLUBS);
-                case 'D': return new Card(rank, Suit.DIAMONDS);
-                case 'H': return new Card(rank, Suit.HEARTS);
-                case 'S': return new Card(rank, Suit.SPADES);
+                case 'C':
+                    return new Card(rank, Suit.CLUBS);
+                case 'D':
+                    return new Card(rank, Suit.DIAMONDS);
+                case 'H':
+                    return new Card(rank, Suit.HEARTS);
+                case 'S':
+                    return new Card(rank, Suit.SPADES);
                 default:
                     throw new AerospikeException("unknown suit: " + card);
             }
@@ -113,12 +119,12 @@ public class AeroMapperCustomConverterTest extends AeroMapperBaseTest {
 
     @Test
     public void testSave() {
-    	PokerHand blackjackHand = new PokerHand(
+        PokerHand blackjackHand = new PokerHand(
                 "1",
                 new Card('6', Suit.SPADES),
                 new Card('9', Suit.HEARTS),
                 Arrays.asList(new Card('4', Suit.CLUBS), new Card('A', Suit.HEARTS)));
-    	
+
         mapper = new AeroMapper.Builder(client)
                 .addConverter(new CardConverter())
                 .build();
@@ -131,7 +137,7 @@ public class AeroMapperCustomConverterTest extends AeroMapperBaseTest {
         Record record = client.get(null, new Key(NAMESPACE, "poker", "1"));
         assertEquals("6S", record.getString("playerCard1"));
         assertEquals("9H", record.getString("playerCard2"));
-        assertEquals(2,record.getList("tableCards").size());
+        assertEquals(2, record.getList("tableCards").size());
         assertEquals("4C", record.getList("tableCards").get(0));
         assertEquals("AH", record.getList("tableCards").get(1));
     }

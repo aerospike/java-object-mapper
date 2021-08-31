@@ -192,11 +192,9 @@ public class MultiOperation<E> {
     public MultiOperation<E> asResultOfType(ReturnType type) {
         if (interactions.isEmpty()) {
             throw new AerospikeException("asResult() cannot mark an item as the function result if there are no items to process");
-        }
-        else if (this.indexToReturn >= 0) {
+        } else if (this.indexToReturn >= 0) {
             throw new AerospikeException("asResult() can only be called once in a multi operation");
-        }
-        else {
+        } else {
             this.indexToReturn = this.interactions.size() - 1;
             this.interactions.get(indexToReturn).setNeedsResultOfType(type);
         }
@@ -229,7 +227,7 @@ public class MultiOperation<E> {
         int listSize = interactions.size();
         if (this.indexToReturn < 0) {
             // Mark the last get operation to return it's value, or the last value if there are no get operations
-            for (int i = listSize-1; i >= 0; i--) {
+            for (int i = listSize - 1; i >= 0; i--) {
                 if (!interactions.get(i).isWriteOperation()) {
                     indexToReturn = i;
                     interactions.get(indexToReturn).setNeedsResultOfType(ReturnType.DEFAULT);
@@ -247,26 +245,25 @@ public class MultiOperation<E> {
         T result;
         if (count == 1) {
             Object resultObj = record.getValue(binName);
-            result = (T)interactions.get(0).getResult(resultObj);
-        }
-        else {
+            result = (T) interactions.get(0).getResult(resultObj);
+        } else {
             List<?> resultList = record.getList(binName);
             if (indexToReturn < 0) {
-                indexToReturn = listSize-1;
+                indexToReturn = listSize - 1;
                 // Determine the last GET operation
-                for (int i = listSize-1; i >= 0; i--) {
+                for (int i = listSize - 1; i >= 0; i--) {
                     if (!interactions.get(i).isWriteOperation()) {
                         indexToReturn = i;
                         break;
                     }
                 }
             }
-            result = (T)interactions.get(indexToReturn).getResult(resultList.get(indexToReturn));
+            result = (T) interactions.get(indexToReturn).getResult(resultList.get(indexToReturn));
         }
         if (result != null) {
             Object object = result;
             if (result instanceof Collection) {
-                Collection<T> collection = (Collection<T>)result;
+                Collection<T> collection = (Collection<T>) result;
                 object = collection.isEmpty() ? null : collection.iterator().next();
             }
             assert object != null;

@@ -24,6 +24,7 @@ public class ReactiveSubclassMapTest extends ReactiveAeroMapperBaseTest {
     @AerospikeRecord(namespace = "test", set = "account", shortName = "PF")
     public static class Portfolio extends Account {
         public List<String> subAccounts;
+
         public Portfolio() {
             subAccounts = new ArrayList<>();
         }
@@ -74,16 +75,16 @@ public class ReactiveSubclassMapTest extends ReactiveAeroMapperBaseTest {
         assertEquals(container.id, object.id);
         assertEquals(container.account.id, object.account.id);
         assertEquals(container.account.name, object.account.name);
-        assertEquals(((Portfolio)container.account).subAccounts.get(0), ((Portfolio)object.account).subAccounts.get(0));
-        assertEquals(((Portfolio)container.account).subAccounts.get(1), ((Portfolio)object.account).subAccounts.get(1));
+        assertEquals(((Portfolio) container.account).subAccounts.get(0), ((Portfolio) object.account).subAccounts.get(0));
+        assertEquals(((Portfolio) container.account).subAccounts.get(1), ((Portfolio) object.account).subAccounts.get(1));
 
         assertEquals(container.accounts.get(0).id, object.accounts.get(0).id);
         assertEquals(container.accounts.get(0).name, object.accounts.get(0).name);
-        assertEquals(((Portfolio)container.accounts.get(0)).subAccounts.get(0), ((Portfolio)object.accounts.get(0)).subAccounts.get(0));
-        assertEquals(((Portfolio)container.accounts.get(0)).subAccounts.get(1), ((Portfolio)object.accounts.get(0)).subAccounts.get(1));
+        assertEquals(((Portfolio) container.accounts.get(0)).subAccounts.get(0), ((Portfolio) object.accounts.get(0)).subAccounts.get(0));
+        assertEquals(((Portfolio) container.accounts.get(0)).subAccounts.get(1), ((Portfolio) object.accounts.get(0)).subAccounts.get(1));
 
         assertEquals(container.accounts.get(1).id, object.accounts.get(1).id);
         assertEquals(container.accounts.get(1).name, object.accounts.get(1).name);
-        assertEquals(((Savings)container.accounts.get(1)).balance, ((Savings)object.accounts.get(1)).balance);
+        assertEquals(((Savings) container.accounts.get(1)).balance, ((Savings) object.accounts.get(1)).balance);
     }
 }

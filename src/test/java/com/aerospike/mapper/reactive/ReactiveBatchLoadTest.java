@@ -42,7 +42,8 @@ public class ReactiveBatchLoadTest extends ReactiveAeroMapperBaseTest {
             data = bees;
         }
 
-        public A() {}
+        public A() {
+        }
     }
 
     // TODO: Test fails due to ThreadLocal usage with reactivity in getAndClear() method (DeferrredObjectLoader class)

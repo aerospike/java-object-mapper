@@ -13,108 +13,108 @@ import com.aerospike.mapper.examples.model.accounts.Account;
 
 @AerospikeRecord(namespace = "test", set = "customer")
 public class Customer {
-	@AerospikeKey
-	@AerospikeBin(name = "id")
-	private final String customerId;
-	
-	private String firstName;
-	private String lastName;
-	
-	@AerospikeEmbed
-	@AerospikeBin(name = "mail")
-	private Address mailingAddress;
-	
-	private List<Account> accounts;
-	
-	@AerospikeBin(name = "dob")
-	private Date dateOfBirth;
-	private String phone;
-	private Date joinedBank;
-	private boolean vip;
-	@AerospikeBin(name = "greet")
-	private String preferredSalutation;
+    @AerospikeKey
+    @AerospikeBin(name = "id")
+    private final String customerId;
 
-	public Customer(@ParamFrom("id") String customerId, @ParamFrom("firstName") String firstName, @ParamFrom("lastName") String lastName) {
-		super();
-		this.customerId = customerId;
-		this.firstName = firstName;
-		this.lastName = lastName;
-		this.accounts = new ArrayList<>();
-	}
+    private String firstName;
+    private String lastName;
 
-	public String getFirstName() {
-		return firstName;
-	}
+    @AerospikeEmbed
+    @AerospikeBin(name = "mail")
+    private Address mailingAddress;
 
-	public void setFirstName(String firstName) {
-		this.firstName = firstName;
-	}
+    private List<Account> accounts;
 
-	public String getLastName() {
-		return lastName;
-	}
+    @AerospikeBin(name = "dob")
+    private Date dateOfBirth;
+    private String phone;
+    private Date joinedBank;
+    private boolean vip;
+    @AerospikeBin(name = "greet")
+    private String preferredSalutation;
 
-	public void setLastName(String lastName) {
-		this.lastName = lastName;
-	}
+    public Customer(@ParamFrom("id") String customerId, @ParamFrom("firstName") String firstName, @ParamFrom("lastName") String lastName) {
+        super();
+        this.customerId = customerId;
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.accounts = new ArrayList<>();
+    }
 
-	public Address getMailingAddress() {
-		return mailingAddress;
-	}
+    public String getFirstName() {
+        return firstName;
+    }
 
-	public void setMailingAddress(Address mailingAddress) {
-		this.mailingAddress = mailingAddress;
-	}
+    public void setFirstName(String firstName) {
+        this.firstName = firstName;
+    }
 
-	public List<Account> getAccounts() {
-		return accounts;
-	}
+    public String getLastName() {
+        return lastName;
+    }
 
-	public void setAccounts(List<Account> accounts) {
-		this.accounts = accounts;
-	}
+    public void setLastName(String lastName) {
+        this.lastName = lastName;
+    }
 
-	public String getCustomerId() {
-		return customerId;
-	}
+    public Address getMailingAddress() {
+        return mailingAddress;
+    }
 
-	public Date getDateOfBirth() {
-		return dateOfBirth;
-	}
+    public void setMailingAddress(Address mailingAddress) {
+        this.mailingAddress = mailingAddress;
+    }
 
-	public void setDateOfBirth(Date dateOfBirth) {
-		this.dateOfBirth = dateOfBirth;
-	}
+    public List<Account> getAccounts() {
+        return accounts;
+    }
 
-	public String getPhone() {
-		return phone;
-	}
+    public void setAccounts(List<Account> accounts) {
+        this.accounts = accounts;
+    }
 
-	public void setPhone(String phone) {
-		this.phone = phone;
-	}
+    public String getCustomerId() {
+        return customerId;
+    }
 
-	public Date getJoinedBank() {
-		return joinedBank;
-	}
+    public Date getDateOfBirth() {
+        return dateOfBirth;
+    }
 
-	public void setJoinedBank(Date joinedBank) {
-		this.joinedBank = joinedBank;
-	}
+    public void setDateOfBirth(Date dateOfBirth) {
+        this.dateOfBirth = dateOfBirth;
+    }
 
-	public boolean isVip() {
-		return vip;
-	}
+    public String getPhone() {
+        return phone;
+    }
 
-	public void setVip(boolean vip) {
-		this.vip = vip;
-	}
+    public void setPhone(String phone) {
+        this.phone = phone;
+    }
 
-	public String getPreferredSalutation() {
-		return preferredSalutation;
-	}
+    public Date getJoinedBank() {
+        return joinedBank;
+    }
 
-	public void setPreferredSalutation(String preferredSalutation) {
-		this.preferredSalutation = preferredSalutation;
-	}
+    public void setJoinedBank(Date joinedBank) {
+        this.joinedBank = joinedBank;
+    }
+
+    public boolean isVip() {
+        return vip;
+    }
+
+    public void setVip(boolean vip) {
+        this.vip = vip;
+    }
+
+    public String getPreferredSalutation() {
+        return preferredSalutation;
+    }
+
+    public void setPreferredSalutation(String preferredSalutation) {
+        this.preferredSalutation = preferredSalutation;
+    }
 }

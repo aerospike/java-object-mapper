@@ -38,7 +38,7 @@ public class VirtualListInteractors {
                 switch (operationParams.getNeedsResultOfType()) {
                     case DEFAULT:
                     case ELEMENTS:
-                        return new ResultsUnpacker[] { new ResultsUnpacker.ArrayUnpacker(instanceMapper) };
+                        return new ResultsUnpacker[]{new ResultsUnpacker.ArrayUnpacker(instanceMapper)};
                     default:
                         return new ResultsUnpacker[0];
                 }
@@ -71,7 +71,7 @@ public class VirtualListInteractors {
                 switch (operationParams.getNeedsResultOfType()) {
                     case DEFAULT:
                     case ELEMENTS:
-                        return new ResultsUnpacker[] { new ResultsUnpacker.ArrayUnpacker(instanceMapper) };
+                        return new ResultsUnpacker[]{new ResultsUnpacker.ArrayUnpacker(instanceMapper)};
                     default:
                         return new ResultsUnpacker[0];
                 }
@@ -104,7 +104,7 @@ public class VirtualListInteractors {
                 switch (operationParams.getNeedsResultOfType()) {
                     case DEFAULT:
                     case ELEMENTS:
-                        return new ResultsUnpacker[] { new ResultsUnpacker.ArrayUnpacker(instanceMapper) };
+                        return new ResultsUnpacker[]{new ResultsUnpacker.ArrayUnpacker(instanceMapper)};
                     default:
                         return new ResultsUnpacker[0];
                 }
@@ -140,7 +140,7 @@ public class VirtualListInteractors {
                 switch (operationParams.getNeedsResultOfType()) {
                     case DEFAULT:
                     case ELEMENTS:
-                        return new ResultsUnpacker[] { new ResultsUnpacker.ArrayUnpacker(instanceMapper) };
+                        return new ResultsUnpacker[]{new ResultsUnpacker.ArrayUnpacker(instanceMapper)};
                     default:
                         return new ResultsUnpacker[0];
                 }
@@ -173,7 +173,7 @@ public class VirtualListInteractors {
                 switch (operationParams.getNeedsResultOfType()) {
                     case DEFAULT:
                     case ELEMENTS:
-                        return new ResultsUnpacker[] { new ResultsUnpacker.ArrayUnpacker(instanceMapper) };
+                        return new ResultsUnpacker[]{new ResultsUnpacker.ArrayUnpacker(instanceMapper)};
                     default:
                         return new ResultsUnpacker[0];
                 }
@@ -206,7 +206,7 @@ public class VirtualListInteractors {
                 switch (operationParams.getNeedsResultOfType()) {
                     case DEFAULT:
                     case ELEMENTS:
-                        return new ResultsUnpacker[] { new ResultsUnpacker.ArrayUnpacker(instanceMapper) };
+                        return new ResultsUnpacker[]{new ResultsUnpacker.ArrayUnpacker(instanceMapper)};
                     default:
                         return new ResultsUnpacker[0];
                 }
@@ -239,7 +239,7 @@ public class VirtualListInteractors {
                 switch (operationParams.getNeedsResultOfType()) {
                     case DEFAULT:
                     case ELEMENTS:
-                        return new ResultsUnpacker[] { new ResultsUnpacker.ArrayUnpacker(instanceMapper) };
+                        return new ResultsUnpacker[]{new ResultsUnpacker.ArrayUnpacker(instanceMapper)};
                     default:
                         return new ResultsUnpacker[0];
                 }
@@ -272,7 +272,7 @@ public class VirtualListInteractors {
                 switch (operationParams.getNeedsResultOfType()) {
                     case DEFAULT:
                     case ELEMENTS:
-                        return new ResultsUnpacker[] { new ResultsUnpacker.ArrayUnpacker(instanceMapper) };
+                        return new ResultsUnpacker[]{new ResultsUnpacker.ArrayUnpacker(instanceMapper)};
                     default:
                         return new ResultsUnpacker[0];
                 }
@@ -305,7 +305,7 @@ public class VirtualListInteractors {
                 switch (operationParams.getNeedsResultOfType()) {
                     case DEFAULT:
                     case ELEMENTS:
-                        return new ResultsUnpacker[] { new ResultsUnpacker.ArrayUnpacker(instanceMapper) };
+                        return new ResultsUnpacker[]{new ResultsUnpacker.ArrayUnpacker(instanceMapper)};
                     default:
                         return new ResultsUnpacker[0];
                 }
@@ -338,7 +338,7 @@ public class VirtualListInteractors {
                 switch (operationParams.getNeedsResultOfType()) {
                     case DEFAULT:
                     case ELEMENTS:
-                        return new ResultsUnpacker[] { new ResultsUnpacker.ArrayUnpacker(instanceMapper) };
+                        return new ResultsUnpacker[]{new ResultsUnpacker.ArrayUnpacker(instanceMapper)};
                     default:
                         return new ResultsUnpacker[0];
                 }
@@ -371,7 +371,7 @@ public class VirtualListInteractors {
                 switch (operationParams.getNeedsResultOfType()) {
                     case DEFAULT:
                     case ELEMENTS:
-                        return new ResultsUnpacker[] { new ResultsUnpacker.ArrayUnpacker(instanceMapper) };
+                        return new ResultsUnpacker[]{new ResultsUnpacker.ArrayUnpacker(instanceMapper)};
                     default:
                         return new ResultsUnpacker[0];
                 }
@@ -404,7 +404,7 @@ public class VirtualListInteractors {
                 switch (operationParams.getNeedsResultOfType()) {
                     case DEFAULT:
                     case ELEMENTS:
-                        return new ResultsUnpacker[] { new ResultsUnpacker.ArrayUnpacker(instanceMapper) };
+                        return new ResultsUnpacker[]{new ResultsUnpacker.ArrayUnpacker(instanceMapper)};
                     default:
                         return new ResultsUnpacker[0];
                 }
@@ -437,7 +437,7 @@ public class VirtualListInteractors {
                 switch (operationParams.getNeedsResultOfType()) {
                     case DEFAULT:
                     case ELEMENTS:
-                        return new ResultsUnpacker[] { new ResultsUnpacker.ArrayUnpacker(instanceMapper) };
+                        return new ResultsUnpacker[]{new ResultsUnpacker.ArrayUnpacker(instanceMapper)};
                     default:
                         return new ResultsUnpacker[0];
                 }
@@ -470,7 +470,7 @@ public class VirtualListInteractors {
                 switch (operationParams.getNeedsResultOfType()) {
                     case DEFAULT:
                     case ELEMENTS:
-                        return new ResultsUnpacker[] { new ResultsUnpacker.ArrayUnpacker(instanceMapper) };
+                        return new ResultsUnpacker[]{new ResultsUnpacker.ArrayUnpacker(instanceMapper)};
                     default:
                         return new ResultsUnpacker[0];
                 }
@@ -503,7 +503,7 @@ public class VirtualListInteractors {
                 switch (operationParams.getNeedsResultOfType()) {
                     case DEFAULT:
                     case ELEMENTS:
-                        return new ResultsUnpacker[] { new ResultsUnpacker.ArrayUnpacker(instanceMapper) };
+                        return new ResultsUnpacker[]{new ResultsUnpacker.ArrayUnpacker(instanceMapper)};
                     default:
                         return new ResultsUnpacker[0];
                 }
@@ -536,7 +536,7 @@ public class VirtualListInteractors {
                 switch (operationParams.getNeedsResultOfType()) {
                     case DEFAULT:
                     case ELEMENTS:
-                        return new ResultsUnpacker[] { new ResultsUnpacker.ArrayUnpacker(instanceMapper) };
+                        return new ResultsUnpacker[]{new ResultsUnpacker.ArrayUnpacker(instanceMapper)};
                     default:
                         return new ResultsUnpacker[0];
                 }
@@ -572,7 +572,7 @@ public class VirtualListInteractors {
                 switch (operationParams.getNeedsResultOfType()) {
                     case DEFAULT:
                     case ELEMENTS:
-                        return new ResultsUnpacker[] { new ResultsUnpacker.ArrayUnpacker(instanceMapper) };
+                        return new ResultsUnpacker[]{new ResultsUnpacker.ArrayUnpacker(instanceMapper)};
                     default:
                         return new ResultsUnpacker[0];
                 }
@@ -605,7 +605,7 @@ public class VirtualListInteractors {
                 switch (operationParams.getNeedsResultOfType()) {
                     case DEFAULT:
                     case ELEMENTS:
-                        return new ResultsUnpacker[] { new ResultsUnpacker.ArrayUnpacker(instanceMapper) };
+                        return new ResultsUnpacker[]{new ResultsUnpacker.ArrayUnpacker(instanceMapper)};
                     default:
                         return new ResultsUnpacker[0];
                 }
@@ -638,7 +638,7 @@ public class VirtualListInteractors {
                 switch (operationParams.getNeedsResultOfType()) {
                     case DEFAULT:
                     case ELEMENTS:
-                        return new ResultsUnpacker[] { new ResultsUnpacker.ArrayUnpacker(instanceMapper) };
+                        return new ResultsUnpacker[]{new ResultsUnpacker.ArrayUnpacker(instanceMapper)};
                     default:
                         return new ResultsUnpacker[0];
                 }
@@ -671,7 +671,7 @@ public class VirtualListInteractors {
                 switch (operationParams.getNeedsResultOfType()) {
                     case DEFAULT:
                     case ELEMENTS:
-                        return new ResultsUnpacker[] { new ResultsUnpacker.ArrayUnpacker(instanceMapper) };
+                        return new ResultsUnpacker[]{new ResultsUnpacker.ArrayUnpacker(instanceMapper)};
                     default:
                         return new ResultsUnpacker[0];
                 }
@@ -704,7 +704,7 @@ public class VirtualListInteractors {
                 switch (operationParams.getNeedsResultOfType()) {
                     case DEFAULT:
                     case ELEMENTS:
-                        return new ResultsUnpacker[] { new ResultsUnpacker.ArrayUnpacker(instanceMapper) };
+                        return new ResultsUnpacker[]{new ResultsUnpacker.ArrayUnpacker(instanceMapper)};
                     default:
                         return new ResultsUnpacker[0];
                 }
@@ -737,7 +737,7 @@ public class VirtualListInteractors {
                 switch (operationParams.getNeedsResultOfType()) {
                     case DEFAULT:
                     case ELEMENTS:
-                        return new ResultsUnpacker[] { new ResultsUnpacker.ArrayUnpacker(instanceMapper) };
+                        return new ResultsUnpacker[]{new ResultsUnpacker.ArrayUnpacker(instanceMapper)};
                     default:
                         return new ResultsUnpacker[0];
                 }
@@ -770,7 +770,7 @@ public class VirtualListInteractors {
                 switch (operationParams.getNeedsResultOfType()) {
                     case DEFAULT:
                     case ELEMENTS:
-                        return new ResultsUnpacker[] { new ResultsUnpacker.ArrayUnpacker(instanceMapper) };
+                        return new ResultsUnpacker[]{new ResultsUnpacker.ArrayUnpacker(instanceMapper)};
                     default:
                         return new ResultsUnpacker[0];
                 }
@@ -803,7 +803,7 @@ public class VirtualListInteractors {
                 switch (operationParams.getNeedsResultOfType()) {
                     case DEFAULT:
                     case ELEMENTS:
-                        return new ResultsUnpacker[] { new ResultsUnpacker.ArrayUnpacker(instanceMapper) };
+                        return new ResultsUnpacker[]{new ResultsUnpacker.ArrayUnpacker(instanceMapper)};
                     default:
                         return new ResultsUnpacker[0];
                 }
@@ -836,7 +836,7 @@ public class VirtualListInteractors {
                 switch (operationParams.getNeedsResultOfType()) {
                     case DEFAULT:
                     case ELEMENTS:
-                        return new ResultsUnpacker[] { new ResultsUnpacker.ArrayUnpacker(instanceMapper) };
+                        return new ResultsUnpacker[]{new ResultsUnpacker.ArrayUnpacker(instanceMapper)};
                     default:
                         return new ResultsUnpacker[0];
                 }

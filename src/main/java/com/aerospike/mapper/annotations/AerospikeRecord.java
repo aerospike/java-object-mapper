@@ -8,19 +8,26 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
 public @interface AerospikeRecord {
-	String namespace() default "";
-	String set() default "";
-	String shortName() default "";
-		
-	int ttl() default 0;
-	/**
-	 * Determine whether to add all the bins or not. If true, all bins will be added without having to map them via @AerospikeBin
-	 */
-	boolean mapAll() default true;
-	int version() default 1;
-	boolean sendKey() default false;
-	boolean durableDelete() default false;
-	
-	String factoryClass() default "";
-	String factoryMethod() default "";
+    String namespace() default "";
+
+    String set() default "";
+
+    String shortName() default "";
+
+    int ttl() default 0;
+
+    /**
+     * Determine whether to add all the bins or not. If true, all bins will be added without having to map them via @AerospikeBin
+     */
+    boolean mapAll() default true;
+
+    int version() default 1;
+
+    boolean sendKey() default false;
+
+    boolean durableDelete() default false;
+
+    String factoryClass() default "";
+
+    String factoryMethod() default "";
 }

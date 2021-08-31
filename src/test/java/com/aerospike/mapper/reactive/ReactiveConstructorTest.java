@@ -20,7 +20,7 @@ public class ReactiveConstructorTest extends ReactiveAeroMapperBaseTest {
         public String name;
 
         public NoArgConstructorClass() {
-            this.name ="";
+            this.name = "";
             this.id = 0;
         }
 
@@ -39,7 +39,7 @@ public class ReactiveConstructorTest extends ReactiveAeroMapperBaseTest {
         public final String name;
         public final Date date;
 
-        public ConstructedClass(@ParamFrom("id") int id, @ParamFrom("age") int age, @ParamFrom("name") String name, @ParamFrom("date")Date date) {
+        public ConstructedClass(@ParamFrom("id") int id, @ParamFrom("age") int age, @ParamFrom("name") String name, @ParamFrom("date") Date date) {
             super();
             this.id = id;
             this.age = age;

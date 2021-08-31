@@ -32,7 +32,7 @@ public class Person {
 
     @AerospikeEmbed(elementType = AerospikeEmbed.EmbedType.MAP)
     private Account[] accountArray;
-    
+
     private List<String> stringList;
     private String[] stringArray;
 

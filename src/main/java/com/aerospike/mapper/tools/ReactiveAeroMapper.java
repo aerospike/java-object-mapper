@@ -44,6 +44,7 @@ public class ReactiveAeroMapper implements IReactiveAeroMapper {
 
         /**
          * Add in a custom type converter. The converter must have methods which implement the ToAerospike and FromAerospike annotation.
+         *
          * @param converter The custom converter
          * @return this object
          */
@@ -90,20 +91,17 @@ public class ReactiveAeroMapper implements IReactiveAeroMapper {
                     String name = config.getClassName();
                     if (StringUtils.isBlank(name)) {
                         throw new AerospikeException("Class with blank name in configuration file");
-                    }
-                    else {
+                    } else {
                         try {
                             Class.forName(config.getClassName());
                         } catch (ClassNotFoundException e) {
                             throw new AerospikeException("Cannot find a class with name " + name);
                         }
                     }
-                }
-                catch (RuntimeException re) {
+                } catch (RuntimeException re) {
                     if (allowsInvalid) {
                         System.err.println("Ignoring issue with configuration: " + re.getMessage());
-                    }
-                    else {
+                    } else {
                         throw re;
                     }
                 }
@@ -121,16 +119,19 @@ public class ReactiveAeroMapper implements IReactiveAeroMapper {
                 this.policyType = policyType;
                 this.policy = policy;
             }
+
             public ReactiveAeroMapper.Builder forClasses(Class<?>... classes) {
                 for (Class<?> thisClass : classes) {
                     ClassCache.getInstance().setSpecificPolicy(policyType, thisClass, policy);
                 }
                 return builder;
             }
+
             public ReactiveAeroMapper.Builder forThisOrChildrenOf(Class<?> clazz) {
                 ClassCache.getInstance().setChildrenPolicy(this.policyType, clazz, this.policy);
                 return builder;
             }
+
             public ReactiveAeroMapper.Builder forAll() {
                 ClassCache.getInstance().setDefaultPolicy(policyType, policy);
                 return builder;
@@ -140,15 +141,19 @@ public class ReactiveAeroMapper implements IReactiveAeroMapper {
         public ReactiveAeroPolicyMapper withReadPolicy(Policy policy) {
             return new ReactiveAeroPolicyMapper(this, ClassCache.PolicyType.READ, policy);
         }
+
         public ReactiveAeroPolicyMapper withWritePolicy(Policy policy) {
             return new ReactiveAeroPolicyMapper(this, ClassCache.PolicyType.WRITE, policy);
         }
+
         public ReactiveAeroPolicyMapper withBatchPolicy(BatchPolicy policy) {
             return new ReactiveAeroPolicyMapper(this, ClassCache.PolicyType.BATCH, policy);
         }
+
         public ReactiveAeroPolicyMapper withScanPolicy(ScanPolicy policy) {
             return new ReactiveAeroPolicyMapper(this, ClassCache.PolicyType.SCAN, policy);
         }
+
         public ReactiveAeroPolicyMapper withQueryPolicy(QueryPolicy policy) {
             return new ReactiveAeroPolicyMapper(this, ClassCache.PolicyType.QUERY, policy);
         }
@@ -289,8 +294,7 @@ public class ReactiveAeroMapper implements IReactiveAeroMapper {
         for (int i = 0; i < userKeys.length; i++) {
             if (userKeys[i] == null) {
                 throw new AerospikeException("Cannot pass null to object " + i + " in multi-read call");
-            }
-            else {
+            } else {
                 keys[i] = new Key(entry.getNamespace(), set, Value.get(entry.translateKeyToAerospikeKey(userKeys[i])));
             }
         }
@@ -368,7 +372,7 @@ public class ReactiveAeroMapper implements IReactiveAeroMapper {
 
     @Override
     public Mono<Boolean> delete(@NotNull Object object) {
-        return this.delete((WritePolicy)null, object);
+        return this.delete((WritePolicy) null, object);
     }
 
     @Override
@@ -503,12 +507,18 @@ public class ReactiveAeroMapper implements IReactiveAeroMapper {
         ClassCacheEntry<?> entry = ClassCache.getInstance().loadClass(clazz, this);
 
         switch (policyType) {
-            case READ: return entry == null ? reactorClient.getReadPolicyDefault() : entry.getReadPolicy();
-            case WRITE: return entry == null ? reactorClient.getWritePolicyDefault() : entry.getWritePolicy();
-            case BATCH: return entry == null ? reactorClient.getBatchPolicyDefault() : entry.getBatchPolicy();
-            case SCAN: return entry == null ? reactorClient.getScanPolicyDefault() : entry.getScanPolicy();
-            case QUERY: return entry == null ? reactorClient.getQueryPolicyDefault() : entry.getQueryPolicy();
-            default: throw new UnsupportedOperationException("Provided unsupported policy.");
+            case READ:
+                return entry == null ? reactorClient.getReadPolicyDefault() : entry.getReadPolicy();
+            case WRITE:
+                return entry == null ? reactorClient.getWritePolicyDefault() : entry.getWritePolicy();
+            case BATCH:
+                return entry == null ? reactorClient.getBatchPolicyDefault() : entry.getBatchPolicy();
+            case SCAN:
+                return entry == null ? reactorClient.getScanPolicyDefault() : entry.getScanPolicy();
+            case QUERY:
+                return entry == null ? reactorClient.getQueryPolicyDefault() : entry.getQueryPolicy();
+            default:
+                throw new UnsupportedOperationException("Provided unsupported policy.");
         }
     }
 

@@ -30,7 +30,9 @@ public class ReactiveAeroMapperComplexClassTest extends ReactiveAeroMapperBaseTe
         private List<Character> charFields;
         private List<String> strFields;
         private boolean testData = false;
-        public ComplexClass() {}
+
+        public ComplexClass() {
+        }
     }
 
     private ReactiveAeroMapper reactiveMapper;
@@ -38,7 +40,7 @@ public class ReactiveAeroMapperComplexClassTest extends ReactiveAeroMapperBaseTe
     @BeforeEach
     public void setup() {
         reactiveMapper = new ReactiveAeroMapper.Builder(reactorClient).build();
-        reactorClient.getAerospikeClient().truncate(null, "test", "testSet",null);
+        reactorClient.getAerospikeClient().truncate(null, "test", "testSet", null);
     }
 
     @Test
@@ -50,24 +52,24 @@ public class ReactiveAeroMapperComplexClassTest extends ReactiveAeroMapperBaseTe
         complex.cnid = "CN19";
         complex.res = "result";
         complex.meid = "ME11";
-        complex.byte4Fields = Arrays.asList(1,2,3,4,5);
-        complex.byte2Fields = Arrays.asList(new Short[] {1,2,3,4,5,6,7});
-        complex.byte1Fields = Arrays.asList(new Byte[] {1,2,3,-1,-2,127,-128,0});
-        complex.charFields = Arrays.asList(new Character[] {9,8,7,6,0,255,245,128,127});
+        complex.byte4Fields = Arrays.asList(1, 2, 3, 4, 5);
+        complex.byte2Fields = Arrays.asList(new Short[]{1, 2, 3, 4, 5, 6, 7});
+        complex.byte1Fields = Arrays.asList(new Byte[]{1, 2, 3, -1, -2, 127, -128, 0});
+        complex.charFields = Arrays.asList(new Character[]{9, 8, 7, 6, 0, 255, 245, 128, 127});
         reactiveMapper.save(complex).subscribeOn(Schedulers.parallel()).block();
 
         ComplexClass complex2 = reactiveMapper.read(ComplexClass.class, complex.trts).subscribeOn(Schedulers.parallel()).block();
         assert complex2 != null;
-        for (int i= 0; i < complex.charFields.size(); i++) {
+        for (int i = 0; i < complex.charFields.size(); i++) {
             assertEquals(complex.charFields.get(i), complex2.charFields.get(i));
         }
-        for (int i= 0; i < complex.byte1Fields.size(); i++) {
+        for (int i = 0; i < complex.byte1Fields.size(); i++) {
             assertEquals(complex.byte1Fields.get(i), complex2.byte1Fields.get(i));
         }
-        for (int i= 0; i < complex.byte2Fields.size(); i++) {
+        for (int i = 0; i < complex.byte2Fields.size(); i++) {
             assertEquals(complex.byte2Fields.get(i), complex2.byte2Fields.get(i));
         }
-        for (int i= 0; i < complex.byte4Fields.size(); i++) {
+        for (int i = 0; i < complex.byte4Fields.size(); i++) {
             assertEquals(complex.byte4Fields.get(i), complex2.byte4Fields.get(i));
         }
         assertEquals(complex.trts, complex2.trts);

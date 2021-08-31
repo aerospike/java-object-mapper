@@ -19,7 +19,8 @@ public class ReactiveMapTest extends ReactiveAeroMapperBaseTest {
         @AerospikeKey
         public int id;
 
-        A() {}
+        A() {
+        }
 
         public A(String name, int age, int id) {
             super();

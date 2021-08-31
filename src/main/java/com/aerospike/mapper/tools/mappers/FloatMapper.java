@@ -4,16 +4,16 @@ import com.aerospike.mapper.tools.TypeMapper;
 
 public class FloatMapper extends TypeMapper {
 
-	@Override
-	public Object toAerospikeFormat(Object value) {
-		return value;
-	}
+    @Override
+    public Object toAerospikeFormat(Object value) {
+        return value;
+    }
 
-	@Override
-	public Object fromAerospikeFormat(Object value) {
-		if (value == null) {
-			return Float.valueOf(0f);
-		}
-		return Float.valueOf(((Number)value).floatValue());
-	}
+    @Override
+    public Object fromAerospikeFormat(Object value) {
+        if (value == null) {
+            return Float.valueOf(0f);
+        }
+        return Float.valueOf(((Number) value).floatValue());
+    }
 }

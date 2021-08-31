@@ -69,7 +69,7 @@ public class ReactiveVirtualListReferenceTest extends ReactiveAeroMapperBaseTest
         ReactiveAeroMapper reactiveMapper = new ReactiveAeroMapper.Builder(reactorClient).build();
         reactiveMapper.save(a, b, c1, c2).subscribeOn(Schedulers.parallel()).collectList().block();
         ReactiveVirtualList<B> list = reactiveMapper.asBackedList(a, "refs", B.class);
-        List<B> results = (List<B>)list.getByKeyRange(b.id, b.id+1, ReturnType.ELEMENTS).subscribeOn(Schedulers.parallel()).block();
+        List<B> results = (List<B>) list.getByKeyRange(b.id, b.id + 1, ReturnType.ELEMENTS).subscribeOn(Schedulers.parallel()).block();
         assert results != null;
         assertEquals(a.refs.get(0).id, results.get(0).id);
         assertEquals(a.refs.get(0).name, results.get(0).name);
@@ -80,7 +80,7 @@ public class ReactiveVirtualListReferenceTest extends ReactiveAeroMapperBaseTest
         assertEquals(a.refs.get(0).cs.get(1).id, results.get(0).cs.get(1).id);
         assertEquals(a.refs.get(0).cs.get(1).name, results.get(0).cs.get(1).name);
 
-        List<B> results2 = (List<B>)list.beginMultiOperation().getByKeyRange(b.id, b.id+1).end().subscribeOn(Schedulers.parallel()).block();
+        List<B> results2 = (List<B>) list.beginMultiOperation().getByKeyRange(b.id, b.id + 1).end().subscribeOn(Schedulers.parallel()).block();
         assert results2 != null;
         assertEquals(a.refs.get(0).id, results2.get(0).id);
         assertEquals(a.refs.get(0).name, results2.get(0).name);

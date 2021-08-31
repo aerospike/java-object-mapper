@@ -4,13 +4,13 @@ import com.aerospike.mapper.tools.TypeMapper;
 
 public class DefaultMapper extends TypeMapper {
 
-	@Override
-	public Object toAerospikeFormat(Object value) {
-		return value;
-	}
+    @Override
+    public Object toAerospikeFormat(Object value) {
+        return value;
+    }
 
-	@Override
-	public Object fromAerospikeFormat(Object value) {
-		return value;
-	}
+    @Override
+    public Object fromAerospikeFormat(Object value) {
+        return value;
+    }
 }

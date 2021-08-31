@@ -37,7 +37,7 @@ public class ReactiveDateCustomConverterTest extends ReactiveAeroMapperBaseTest 
         }
     }
 
-    @AerospikeRecord(namespace = "test", set="dateFormat")
+    @AerospikeRecord(namespace = "test", set = "dateFormat")
     public static class DateContainer {
         @AerospikeKey
         public long key;

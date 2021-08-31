@@ -36,7 +36,9 @@ public class ReactiveAeroMapperCustomConverterTest extends ReactiveAeroMapperBas
         public char rank;
         public Suit suit;
 
-        public Card() {}
+        public Card() {
+        }
+
         public Card(char rank, Suit suit) {
             super();
             this.rank = rank;
@@ -102,10 +104,14 @@ public class ReactiveAeroMapperCustomConverterTest extends ReactiveAeroMapperBas
 
             char rank = card.charAt(0);
             switch (card.charAt(1)) {
-                case 'C': return new Card(rank, Suit.CLUBS);
-                case 'D': return new Card(rank, Suit.DIAMONDS);
-                case 'H': return new Card(rank, Suit.HEARTS);
-                case 'S': return new Card(rank, Suit.SPADES);
+                case 'C':
+                    return new Card(rank, Suit.CLUBS);
+                case 'D':
+                    return new Card(rank, Suit.DIAMONDS);
+                case 'H':
+                    return new Card(rank, Suit.HEARTS);
+                case 'S':
+                    return new Card(rank, Suit.SPADES);
                 default:
                     throw new AerospikeException("unknown suit: " + card);
             }

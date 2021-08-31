@@ -42,11 +42,12 @@ public class AeroMapperEnumTest extends AeroMapperBaseTest {
         public int age;
         public Status status;
         public Country country;
-        @AerospikeEnum(enumField ="countryCode")
+        @AerospikeEnum(enumField = "countryCode")
         public Country countryAnno;
 
 
-        public A() {}
+        public A() {
+        }
 
         public A(int id, String name, int age, Status status, Country country, Country countryAnno) {
             super();

@@ -11,8 +11,8 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)
 public @interface AerospikeGetter {
-	/**
-	 * The name of the bin to use.
-	 */
-	String name();
+    /**
+     * The name of the bin to use.
+     */
+    String name();
 }
