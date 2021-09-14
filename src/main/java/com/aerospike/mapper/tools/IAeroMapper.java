@@ -1,5 +1,6 @@
 package com.aerospike.mapper.tools;
 
+import java.util.List;
 import java.util.function.Function;
 
 import javax.validation.constraints.NotNull;
@@ -276,6 +277,31 @@ public interface IAeroMapper extends IBaseAeroMapper {
      *                  associated with the passed classtype will be scanned, effectively turning the query into a scan
      */
     <T> void query(QueryPolicy policy, @NotNull Class<T> clazz, @NotNull Processor<T> processor, Filter filter);
+
+    /**
+     * Perform a secondary index query with the specified query policy
+     * and returns the list of records converted to the appropriate class.
+     * <p/>
+     * The query policy used will be the one associated with the passed classtype.
+     *
+     * @param clazz     - the class used to determine which set to scan and to convert the returned records to.
+     * @param filter    - the filter used to determine which secondary index to use. If this filter is null, every record in the set
+     *                  associated with the passed classtype will be scanned, effectively turning the query into a scan
+     * @return List of records converted to the appropriate class
+     */
+    <T> List<T> query(@NotNull Class<T> clazz, Filter filter);
+
+    /**
+     * Perform a secondary index query with the specified query policy
+     * and returns the list of records converted to the appropriate class.
+     *
+     * @param policy    - The query policy to use. If this parameter is not passed, the query policy associated with the passed classtype will be used
+     * @param clazz     - the class used to determine which set to scan and to convert the returned records to.
+     * @param filter    - the filter used to determine which secondary index to use. If this filter is null, every record in the set
+     *                  associated with the passed classtype will be scanned, effectively turning the query into a scan
+     * @return List of records converted to the appropriate class
+     */
+    <T> List<T> query(QueryPolicy policy, @NotNull Class<T> clazz, Filter filter);
 
     /**
      * Create a virtual list against an attribute on a class. The list does all operations to the database and does not affect the underlying

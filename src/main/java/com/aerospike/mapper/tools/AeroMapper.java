@@ -521,6 +521,22 @@ public class AeroMapper implements IAeroMapper {
     }
 
     @Override
+    public <T> List<T> query(Class<T> clazz, Filter filter) {
+        return query(null, clazz, filter);
+    }
+
+    @Override
+    public <T> List<T> query(QueryPolicy policy, Class<T> clazz, Filter filter) {
+        List<T> result = new ArrayList<>();
+        Processor<T> resultProcessor = record -> {
+            result.add(record);
+            return true;
+        };
+        query(policy, clazz, resultProcessor, filter);
+        return result;
+    }
+
+    @Override
     public <T> VirtualList<T> asBackedList(@NotNull Object object, @NotNull String binName, Class<T> elementClazz) {
         return new VirtualList<>(this, object, binName, elementClazz);
     }
