@@ -71,7 +71,7 @@ public class QueryTest extends AeroMapperBaseTest {
         }
     }
 
-    private List<A> data = new ArrayList<A>() {{
+    private final List<A> data = new ArrayList<A>() {{
         add(new A(1, "Tim", 312));
         add(new A(2, "Bob", 44));
         add(new A(3, "Sue", 56));
