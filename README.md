@@ -45,7 +45,7 @@ The documentation for this project can be found on [javadoc.io](https://www.java
 
 | Java Object Mapper Version | Aerospike Client | Aerospike Reactor Client
 | :----------- | :----------- | :-----------
-| 1.2.x, 1.3.x | 5.1.x | 5.0.x
+| 1.2.x, 1.3.x, 1.4.x | 5.1.x | 5.0.x
 | 1.1.x | 5.0.x | 
 
 # Motivation and a simple example
