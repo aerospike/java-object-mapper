@@ -252,6 +252,23 @@ public interface IAeroMapper extends IBaseAeroMapper {
     <T> void scan(ScanPolicy policy, @NotNull Class<T> clazz, @NotNull Processor<T> processor, int recordsPerSecond);
 
     /**
+     * Scan every record in the set associated with the passed class
+     * and returns the list of records converted to the appropriate class.
+     *
+     * @param clazz - the class used to determine which set to scan and to convert the returned records to.
+     */
+    <T> List<T> scan(@NotNull Class<T> clazz);
+
+    /**
+     * Scan every record in the set associated with the passed class using a provided ScanPolicy
+     * and returns the list of records converted to the appropriate class.
+     *
+     * @param policy - the scan policy to use. If this is null, the default scan policy of the passed class will be used.
+     * @param clazz  - the class used to determine which set to scan and to convert the returned records to.
+     */
+    <T> List<T> scan(ScanPolicy policy, @NotNull Class<T> clazz);
+
+    /**
      * Perform a secondary index query with the specified query policy. Each record will be converted
      * to the appropriate class then passed to the processor. If the processor returns false the query is aborted
      * whereas if the processor returns true subsequent records (if any) are processed.

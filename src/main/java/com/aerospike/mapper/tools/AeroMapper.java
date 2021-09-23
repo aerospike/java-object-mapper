@@ -492,6 +492,22 @@ public class AeroMapper implements IAeroMapper {
     }
 
     @Override
+    public <T> List<T> scan(@NotNull Class<T> clazz) {
+        return scan(null, clazz);
+    }
+
+    @Override
+    public <T> List<T> scan(ScanPolicy policy, @NotNull Class<T> clazz) {
+        List<T> result = new ArrayList<>();
+        Processor<T> resultProcessor = record -> {
+            result.add(record);
+            return true;
+        };
+        scan(policy, clazz, resultProcessor);
+        return result;
+    }
+
+    @Override
     public <T> void query(@NotNull Class<T> clazz, @NotNull Processor<T> processor, Filter filter) {
         query(null, clazz, processor, filter);
     }

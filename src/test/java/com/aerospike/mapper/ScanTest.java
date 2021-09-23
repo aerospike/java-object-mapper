@@ -1,7 +1,12 @@
 package com.aerospike.mapper;
 
+import static java.util.Comparator.comparing;
+import static java.util.stream.Collectors.toList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.jupiter.api.Test;
@@ -39,17 +44,43 @@ public class ScanTest extends AeroMapperBaseTest {
         public int getAge() {
             return age;
         }
+
+        @Override
+        public String toString() {
+            return String.format("id:%d, name:%s, age:%d", id, name, age);
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            Person person = (Person) o;
+            return id == person.id && age == person.age && Objects.equals(name, person.name);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(id, name, age);
+        }
     }
+
+    private final List<Person> data = new ArrayList<Person>() {{
+        add(new Person(1, "Tim", 312));
+        add(new Person(2, "Bob", 44));
+        add(new Person(3, "Sue", 56));
+        add(new Person(4, "Rob", 23));
+        add(new Person(5, "Jim", 32));
+        add(new Person(6, "Bob", 78));
+    }};
 
     private AeroMapper populate() {
         client.truncate(null, "test", "testScan", null);
         AeroMapper mapper = new AeroMapper.Builder(client).build();
-        mapper.save(new Person(1, "Tim", 312),
-                new Person(2, "Bob", 44),
-                new Person(3, "Sue", 56),
-                new Person(4, "Rob", 23),
-                new Person(5, "Jim", 32),
-                new Person(6, "Bob", 78));
+        mapper.save(data.toArray());
         return mapper;
     }
 
@@ -88,5 +119,34 @@ public class ScanTest extends AeroMapperBaseTest {
             return false;
         });
         assertEquals(1, counter.get());
+    }
+
+    @Test
+    public void scanTestReturnsList() {
+        AeroMapper mapper = populate();
+
+        List<Person> result = mapper.scan(Person.class);
+
+        List<Person> expected = data.stream()
+                .sorted(comparing(Person::getId))
+                .collect(toList());
+        assertEquals(6, result.size());
+        assertEquals(expected, result.stream().sorted(comparing(Person::getId)).collect(toList()));
+    }
+
+    @Test
+    public void scanWithScanPolicyTestReturnsList() {
+        AeroMapper mapper = populate();
+        ScanPolicy scanPolicy = new ScanPolicy();
+        scanPolicy.filterExp = Exp.build(Exp.eq(Exp.stringBin("name"), Exp.val("Bob")));
+
+        List<Person> result = mapper.scan(scanPolicy, Person.class);
+
+        List<Person> expected = data.stream()
+                .filter(d -> d.name.equals("Bob"))
+                .sorted(comparing(Person::getId))
+                .collect(toList());
+        assertEquals(2, result.size());
+        assertEquals(expected, result.stream().sorted(comparing(Person::getId)).collect(toList()));
     }
 }
