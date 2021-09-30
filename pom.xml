@@ -5,7 +5,7 @@
 
 	<groupId>com.aerospike</groupId>
 	<artifactId>java-object-mapper</artifactId>
-	<version>1.4.0</version>
+	<version>1.4.1</version>
 	<packaging>jar</packaging>
 	
 	<name>Aerospike Object Mapper</name>
@@ -35,7 +35,7 @@
 		<lombok.version>1.18.20</lombok.version>
 		<reactor-test.version>3.4.10</reactor-test.version>
 		<blockhound.version>1.0.6.RELEASE</blockhound.version>
-		<junit-jupiter.version>5.8.0</junit-jupiter.version>
+		<junit-jupiter.version>5.8.1</junit-jupiter.version>
 	</properties>
 
 	<licenses>
