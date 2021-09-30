@@ -1,18 +1,5 @@
 package com.aerospike.mapper.tools;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.lang.reflect.Array;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Function;
-
-import javax.validation.constraints.NotNull;
-
-import org.apache.commons.lang3.StringUtils;
-
 import com.aerospike.client.AerospikeException;
 import com.aerospike.client.AerospikeException.ScanTerminated;
 import com.aerospike.client.Bin;
@@ -39,6 +26,17 @@ import com.aerospike.mapper.tools.virtuallist.VirtualList;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import org.apache.commons.lang3.StringUtils;
+
+import javax.validation.constraints.NotNull;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.lang.reflect.Array;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Function;
 
 public class AeroMapper implements IAeroMapper {
 
@@ -321,11 +319,13 @@ public class AeroMapper implements IAeroMapper {
         return readBatch(batchPolicy, clazz, keys, entry);
     }
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({"deprecation", "unchecked"})
     private <T> T read(Policy readPolicy, @NotNull Class<T> clazz, @NotNull Key key, @NotNull ClassCacheEntry<T> entry, boolean resolveDependencies) {
-        Object objectForKey = LoadedObjectResolver.get(key);
-        if (objectForKey != null) {
-            return (T) objectForKey;
+        if (readPolicy == null || (readPolicy.filterExp == null && readPolicy.predExp == null)) {
+            Object objectForKey = LoadedObjectResolver.get(key);
+            if (objectForKey != null) {
+                return (T) objectForKey;
+            }
         }
         if (readPolicy == null) {
             readPolicy = entry.getReadPolicy();
