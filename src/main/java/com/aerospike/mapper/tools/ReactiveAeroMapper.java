@@ -282,8 +282,7 @@ public class ReactiveAeroMapper implements IReactiveAeroMapper {
 
     @Override
     public <T> Flux<T> read(@NotNull Class<T> clazz, @NotNull Object... userKeys) {
-        throw new UnsupportedOperationException("Batch reading is not supported in ReactiveAeroMapper yet.");
-        //return this.read(null, clazz, userKeys);
+        return this.read(null, clazz, userKeys);
     }
 
     @Override
@@ -327,22 +326,19 @@ public class ReactiveAeroMapper implements IReactiveAeroMapper {
             batchPolicy = entry.getBatchPolicy();
         }
 
-        Flux<T> results = reactorClient
+        return reactorClient
                 .getFlux(batchPolicy, keys)
                 .filter(keyRecord -> Objects.nonNull(keyRecord.record))
                 .map(keyRecord -> {
                     try {
                         ThreadLocalKeySaver.save(keyRecord.key);
-                        return mappingConverter.convertToObject(clazz, keyRecord.record, entry, false);
+                        return mappingConverter.convertToObject(clazz, keyRecord.record, entry, true);
                     } catch (ReflectiveOperationException e) {
                         throw new AerospikeException(e);
                     } finally {
                         ThreadLocalKeySaver.clear();
                     }
                 });
-
-        mappingConverter.resolveDependencies(entry);
-        return results;
     }
 
     @Override

@@ -46,8 +46,6 @@ public class ReactiveBatchLoadTest extends ReactiveAeroMapperBaseTest {
         }
     }
 
-    // TODO: Test fails due to ThreadLocal usage with reactivity in getAndClear() method (DeferrredObjectLoader class)
-    /*
     @Test
     public void testBatchLoad() {
         ReactiveAeroMapper reactiveMapper = new ReactiveAeroMapper.Builder(reactorClient).build();
@@ -64,8 +62,8 @@ public class ReactiveBatchLoadTest extends ReactiveAeroMapperBaseTest {
                     Arrays.copyOfRange(bees, i * 10, (i + 1) * 10)));
         }
 
-        reactiveMapper.save((Object[])bees).subscribeOn(Schedulers.parallel()).collectList().block();
-        reactiveMapper.save((Object[])as).subscribeOn(Schedulers.parallel()).collectList().block();;
+        reactiveMapper.save((Object[]) bees).subscribeOn(Schedulers.parallel()).collectList().block();
+        reactiveMapper.save((Object[]) as).subscribeOn(Schedulers.parallel()).collectList().block();
 
         System.out.println("--- Reading single object (bees[1]) ---");
         B resultB = reactiveMapper.read(B.class, bees[1].id).subscribeOn(Schedulers.parallel()).block();
@@ -80,6 +78,7 @@ public class ReactiveBatchLoadTest extends ReactiveAeroMapperBaseTest {
         List<A> resultsObjects = reactiveMapper.read(A.class, as[4].id, as[7].id, as[5].id, as[0].id, as[1].id, 3000)
                 .subscribeOn(Schedulers.parallel()).collectList().block();
 
+        assert resultsObjects != null;
         results = resultsObjects.toArray(results);
         compare(results[0], as[4]);
         compare(results[1], as[7]);
@@ -88,5 +87,4 @@ public class ReactiveBatchLoadTest extends ReactiveAeroMapperBaseTest {
         compare(results[4], as[1]);
         compare(results[5], null);
     }
-     */
 }
