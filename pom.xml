@@ -29,7 +29,7 @@
 		<maven-surefire-plugin.version>3.0.0-M5</maven-surefire-plugin.version>
 		<javax.validation-api.version>2.0.1.Final</javax.validation-api.version>
 		<aerospike-client.version>5.1.8</aerospike-client.version>
-		<aerospike-reactor.version>5.0.7</aerospike-reactor.version>
+		<aerospike-reactor.version>5.1.8</aerospike-reactor.version>
 		<commons-lang3.version>3.12.0</commons-lang3.version>
 		<jackson-dataformat-yaml.version>2.12.5</jackson-dataformat-yaml.version>
 		<lombok.version>1.18.20</lombok.version>
