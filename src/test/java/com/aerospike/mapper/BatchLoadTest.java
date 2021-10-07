@@ -69,8 +69,8 @@ public class BatchLoadTest extends AeroMapperBaseTest {
     }
 
     private AeroMapper populate() {
-        client.truncate(null, "test", "a", null);
-        client.truncate(null, "test", "b", null);
+        client.truncate(null, "test", "A", null);
+        client.truncate(null, "test", "B", null);
 
         AeroMapper mapper = new AeroMapper.Builder(client).build();
 

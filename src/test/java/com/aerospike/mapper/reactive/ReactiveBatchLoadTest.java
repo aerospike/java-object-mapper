@@ -70,8 +70,8 @@ public class ReactiveBatchLoadTest extends ReactiveAeroMapperBaseTest {
     }
 
     private ReactiveAeroMapper populate() {
-        client.truncate(null, "test", "a", null);
-        client.truncate(null, "test", "b", null);
+        client.truncate(null, "test", "A", null);
+        client.truncate(null, "test", "B", null);
 
         ReactiveAeroMapper reactiveMapper = new ReactiveAeroMapper.Builder(reactorClient).build();
 
