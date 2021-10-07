@@ -7,20 +7,16 @@ import com.aerospike.mapper.annotations.AerospikeKey;
 import com.aerospike.mapper.annotations.AerospikeRecord;
 import com.aerospike.mapper.annotations.ParamFrom;
 import com.aerospike.mapper.tools.AeroMapper;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class BatchLoadTest extends AeroMapperBaseTest {
 
     private static final String DATA_BIN = "data";
-    private final B[] bees = new B[100];
-    private final A[] as = new A[10];
+    private final TestData testData = populateTestData();
 
     @AerospikeRecord(namespace = "test", set = "B")
     public static class B {
@@ -55,8 +51,20 @@ public class BatchLoadTest extends AeroMapperBaseTest {
         }
     }
 
-    @BeforeAll
-    public void populateStaticData() {
+    private static class TestData {
+        public B[] bees;
+        public A[] as;
+
+        public TestData(B[] bees, A[] as) {
+            this.bees = bees;
+            this.as = as;
+        }
+    }
+
+    private TestData populateTestData() {
+        B[] bees = new B[100];
+        A[] as = new A[10];
+
         for (int i = 0; i < 100; i++) {
             bees[i] = new B(i, "B-" + i);
         }
@@ -66,6 +74,8 @@ public class BatchLoadTest extends AeroMapperBaseTest {
             as[i].setBList(Arrays.asList(
                     Arrays.copyOfRange(bees, i * 10, (i + 1) * 10)));
         }
+
+        return new TestData(bees, as);
     }
 
     private AeroMapper populate() {
@@ -74,8 +84,8 @@ public class BatchLoadTest extends AeroMapperBaseTest {
 
         AeroMapper mapper = new AeroMapper.Builder(client).build();
 
-        mapper.save((Object[]) bees);
-        mapper.save((Object[]) as);
+        mapper.save((Object[]) testData.bees);
+        mapper.save((Object[]) testData.as);
 
         return mapper;
     }
@@ -84,26 +94,26 @@ public class BatchLoadTest extends AeroMapperBaseTest {
     public void testBatchLoad() {
         AeroMapper mapper = populate();
 
-        B resultB = mapper.read(B.class, bees[1].id);
-        compare(bees[1], resultB);
+        B resultB = mapper.read(B.class, testData.bees[1].id);
+        compare(testData.bees[1], resultB);
 
-        A resultA = mapper.read(A.class, as[1].id);
-        compare(as[1], resultA);
+        A resultA = mapper.read(A.class, testData.as[1].id);
+        compare(testData.as[1], resultA);
 
         Integer[] ids = new Integer[6];
-        ids[0] = as[4].id;
-        ids[1] = as[7].id;
-        ids[2] = as[5].id;
-        ids[3] = as[0].id;
-        ids[4] = as[1].id;
+        ids[0] = testData.as[4].id;
+        ids[1] = testData.as[7].id;
+        ids[2] = testData.as[5].id;
+        ids[3] = testData.as[0].id;
+        ids[4] = testData.as[1].id;
         ids[5] = 3000;
 
         A[] results = mapper.read(A.class, ids);
-        compare(results[0], as[4]);
-        compare(results[1], as[7]);
-        compare(results[2], as[5]);
-        compare(results[3], as[0]);
-        compare(results[4], as[1]);
+        compare(results[0], testData.as[4]);
+        compare(results[1], testData.as[7]);
+        compare(results[2], testData.as[5]);
+        compare(results[3], testData.as[0]);
+        compare(results[4], testData.as[1]);
         compare(results[5], null);
     }
 
@@ -111,18 +121,18 @@ public class BatchLoadTest extends AeroMapperBaseTest {
     public void testBatchLoadWithOperations() {
         AeroMapper mapper = populate();
 
-        B resultB = mapper.read(B.class, bees[1].id);
-        compare(bees[1], resultB);
+        B resultB = mapper.read(B.class, testData.bees[1].id);
+        compare(testData.bees[1], resultB);
 
-        A resultA = mapper.read(A.class, as[1].id);
-        compare(as[1], resultA);
+        A resultA = mapper.read(A.class, testData.as[1].id);
+        compare(testData.as[1], resultA);
 
         Integer[] userKeys = new Integer[6];
-        userKeys[0] = as[4].id;
-        userKeys[1] = as[7].id;
-        userKeys[2] = as[5].id;
-        userKeys[3] = as[0].id;
-        userKeys[4] = as[1].id;
+        userKeys[0] = testData.as[4].id;
+        userKeys[1] = testData.as[7].id;
+        userKeys[2] = testData.as[5].id;
+        userKeys[3] = testData.as[0].id;
+        userKeys[4] = testData.as[1].id;
         userKeys[5] = 3000;
 
         Operation[] ops = new Operation[2];
@@ -131,15 +141,15 @@ public class BatchLoadTest extends AeroMapperBaseTest {
 
         A[] results = mapper.read(A.class, userKeys, ops);
         compare(results[0].data.get(0).id, 10);
-        compare(results[0].data.get(1).id, as[4].data.get(as[4].data.size() - 1).id);
+        compare(results[0].data.get(1).id, testData.as[4].data.get(testData.as[4].data.size() - 1).id);
         compare(results[1].data.get(0).id, 10);
-        compare(results[1].data.get(1).id, as[7].data.get(as[7].data.size() - 1).id);
+        compare(results[1].data.get(1).id, testData.as[7].data.get(testData.as[7].data.size() - 1).id);
         compare(results[2].data.get(0).id, 10);
-        compare(results[2].data.get(1).id, as[5].data.get(as[5].data.size() - 1).id);
+        compare(results[2].data.get(1).id, testData.as[5].data.get(testData.as[5].data.size() - 1).id);
         compare(results[3].data.get(0).id, 10);
-        compare(results[3].data.get(1).id, as[0].data.get(as[0].data.size() - 1).id);
+        compare(results[3].data.get(1).id, testData.as[0].data.get(testData.as[0].data.size() - 1).id);
         compare(results[4].data.get(0).id, 10);
-        compare(results[4].data.get(1).id, as[1].data.get(as[1].data.size() - 1).id);
+        compare(results[4].data.get(1).id, testData.as[1].data.get(testData.as[1].data.size() - 1).id);
         compare(results[5], null);
     }
 }
