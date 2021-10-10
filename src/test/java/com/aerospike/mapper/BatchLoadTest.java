@@ -7,6 +7,7 @@ import com.aerospike.mapper.annotations.AerospikeKey;
 import com.aerospike.mapper.annotations.AerospikeRecord;
 import com.aerospike.mapper.annotations.ParamFrom;
 import com.aerospike.mapper.tools.AeroMapper;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
@@ -66,6 +67,12 @@ public class BatchLoadTest extends AeroMapperBaseTest {
             as[i].setBList(Arrays.asList(
                     Arrays.copyOfRange(bees, i * 10, (i + 1) * 10)));
         }
+    }
+
+    @AfterAll
+    public void clear() {
+        client.truncate(null, "test", "A", null);
+        client.truncate(null, "test", "B", null);
     }
 
     private AeroMapper populate() {
