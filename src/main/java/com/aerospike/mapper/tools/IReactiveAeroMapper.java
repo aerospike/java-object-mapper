@@ -1,6 +1,7 @@
 package com.aerospike.mapper.tools;
 
 import com.aerospike.client.AerospikeException;
+import com.aerospike.client.Operation;
 import com.aerospike.client.policy.*;
 import com.aerospike.client.query.Filter;
 import com.aerospike.client.reactor.IAerospikeReactorClient;
@@ -127,7 +128,7 @@ public interface IReactiveAeroMapper extends IBaseAeroMapper {
      * @return The returned mapped records.
      * @throws AerospikeException an AerospikeException will be thrown in case of an error.
      */
-    <T> Flux<T> read(@NotNull Class<T> clazz, @NotNull Object... userKeys);
+    <T> Flux<T> read(@NotNull Class<T> clazz, @NotNull Object[] userKeys);
 
     /**
      * Read a batch of records from the repository and map them to an instance of the passed class.
@@ -138,7 +139,30 @@ public interface IReactiveAeroMapper extends IBaseAeroMapper {
      * @return The returned mapped records.
      * @throws AerospikeException an AerospikeException will be thrown in case of an error.
      */
-    <T> Flux<T> read(BatchPolicy batchPolicy, @NotNull Class<T> clazz, @NotNull Object... userKeys);
+    <T> Flux<T> read(BatchPolicy batchPolicy, @NotNull Class<T> clazz, @NotNull Object[] userKeys);
+
+    /**
+     * Read a batch of records from the repository using read operations in one batch call and map them to an instance of the passed class.
+     *
+     * @param clazz      - The type of the record.
+     * @param userKeys   - The keys of the record. The namespace and set will be derived from the values specified on the passed class.
+     * @param operations - array of read operations on record.
+     * @return The returned mapped records.
+     * @throws AerospikeException an AerospikeException will be thrown in case of an error.
+     */
+    <T> Flux<T> read(@NotNull Class<T> clazz, @NotNull Object[] userKeys, Operation... operations);
+
+    /**
+     * Read a batch of records from the repository using read operations in one batch call and map them to an instance of the passed class.
+     *
+     * @param batchPolicy A given batch policy.
+     * @param clazz       - The type of the record.
+     * @param userKeys    - The keys of the record. The namespace and set will be derived from the values specified on the passed class.
+     * @param operations  - array of read operations on record.
+     * @return The returned mapped records.
+     * @throws AerospikeException an AerospikeException will be thrown in case of an error.
+     */
+    <T> Flux<T> read(BatchPolicy batchPolicy, @NotNull Class<T> clazz, @NotNull Object[] userKeys, Operation... operations);
 
     /**
      * Delete a record by specifying a class and a user key.

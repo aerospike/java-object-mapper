@@ -3,6 +3,7 @@ package com.aerospike.mapper.tools;
 import com.aerospike.client.*;
 import com.aerospike.client.policy.*;
 import com.aerospike.client.query.Filter;
+import com.aerospike.client.query.KeyRecord;
 import com.aerospike.client.query.Statement;
 import com.aerospike.client.reactor.IAerospikeReactorClient;
 import com.aerospike.mapper.tools.configuration.ClassConfig;
@@ -281,13 +282,22 @@ public class ReactiveAeroMapper implements IReactiveAeroMapper {
     }
 
     @Override
-    public <T> Flux<T> read(@NotNull Class<T> clazz, @NotNull Object... userKeys) {
-        throw new UnsupportedOperationException("Batch reading is not supported in ReactiveAeroMapper yet.");
-        //return this.read(null, clazz, userKeys);
+    public <T> Flux<T> read(@NotNull Class<T> clazz, @NotNull Object[] userKeys) {
+        return read(null, clazz, userKeys);
     }
 
     @Override
-    public <T> Flux<T> read(BatchPolicy batchPolicy, @NotNull Class<T> clazz, @NotNull Object... userKeys) {
+    public <T> Flux<T> read(BatchPolicy batchPolicy, @NotNull Class<T> clazz, @NotNull Object[] userKeys) {
+        return read(null, clazz, userKeys, (Operation[]) null);
+    }
+
+    @Override
+    public <T> Flux<T> read(@NotNull Class<T> clazz, @NotNull Object[] userKeys, Operation... operations) {
+        return read(null, clazz, userKeys, operations);
+    }
+
+    @Override
+    public <T> Flux<T> read(BatchPolicy batchPolicy, @NotNull Class<T> clazz, @NotNull Object[] userKeys, Operation... operations) {
         ClassCacheEntry<T> entry = MapperUtils.getEntryAndValidateNamespace(clazz, this);
         String set = entry.getSetName();
         Key[] keys = new Key[userKeys.length];
@@ -299,7 +309,7 @@ public class ReactiveAeroMapper implements IReactiveAeroMapper {
             }
         }
 
-        return readBatch(batchPolicy, clazz, keys, entry);
+        return readBatch(batchPolicy, clazz, keys, entry, operations);
     }
 
     private <T> Mono<T> read(Policy readPolicy, @NotNull Class<T> clazz, @NotNull Key key, @NotNull ClassCacheEntry<T> entry, boolean resolveDependencies) {
@@ -322,32 +332,38 @@ public class ReactiveAeroMapper implements IReactiveAeroMapper {
                 });
     }
 
-    private <T> Flux<T> readBatch(BatchPolicy batchPolicy, @NotNull Class<T> clazz, @NotNull Key[] keys, @NotNull ClassCacheEntry<T> entry) {
+    private <T> Flux<T> readBatch(BatchPolicy batchPolicy, @NotNull Class<T> clazz, @NotNull Key[] keys,
+                                  @NotNull ClassCacheEntry<T> entry, Operation... operations) {
         if (batchPolicy == null) {
             batchPolicy = entry.getBatchPolicy();
         }
 
-        Flux<T> results = reactorClient
-                .getFlux(batchPolicy, keys)
-                .filter(keyRecord -> Objects.nonNull(keyRecord.record))
+        Flux<KeyRecord> keyRecordFlux;
+
+        if (operations != null && operations.length > 0) {
+            keyRecordFlux = reactorClient
+                    .getFlux(batchPolicy, keys, operations);
+        } else {
+            keyRecordFlux = reactorClient
+                    .getFlux(batchPolicy, keys);
+        }
+
+        return keyRecordFlux.filter(keyRecord -> Objects.nonNull(keyRecord.record))
                 .map(keyRecord -> {
                     try {
                         ThreadLocalKeySaver.save(keyRecord.key);
-                        return mappingConverter.convertToObject(clazz, keyRecord.record, entry, false);
+                        return mappingConverter.convertToObject(clazz, keyRecord.record, entry, true);
                     } catch (ReflectiveOperationException e) {
                         throw new AerospikeException(e);
                     } finally {
                         ThreadLocalKeySaver.clear();
                     }
                 });
-
-        mappingConverter.resolveDependencies(entry);
-        return results;
     }
 
     @Override
     public <T> Mono<Boolean> delete(@NotNull Class<T> clazz, @NotNull Object userKey) {
-        return this.delete(null, clazz, userKey);
+        return delete(null, clazz, userKey);
     }
 
     @Override
@@ -430,7 +446,7 @@ public class ReactiveAeroMapper implements IReactiveAeroMapper {
         String setName = entry.getSetName();
 
         return reactorClient.scanAll(policy, namespace, setName)
-                .map(keyRecord -> this.getMappingConverter().convertToObject(clazz, keyRecord.record));
+                .map(keyRecord -> getMappingConverter().convertToObject(clazz, keyRecord.record));
     }
 
     @Override
@@ -450,7 +466,7 @@ public class ReactiveAeroMapper implements IReactiveAeroMapper {
         statement.setSetName(entry.getSetName());
 
         return reactorClient.query(policy, statement)
-                .map(keyRecord -> this.getMappingConverter().convertToObject(clazz, keyRecord.record));
+                .map(keyRecord -> getMappingConverter().convertToObject(clazz, keyRecord.record));
     }
 
     @Override
@@ -465,12 +481,12 @@ public class ReactiveAeroMapper implements IReactiveAeroMapper {
 
     @Override
     public IAerospikeReactorClient getReactorClient() {
-        return this.reactorClient;
+        return reactorClient;
     }
 
     @Override
     public MappingConverter getMappingConverter() {
-        return this.mappingConverter;
+        return mappingConverter;
     }
 
     @Override

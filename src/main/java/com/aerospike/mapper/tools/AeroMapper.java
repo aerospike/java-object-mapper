@@ -1,12 +1,8 @@
 package com.aerospike.mapper.tools;
 
-import com.aerospike.client.AerospikeException;
+import com.aerospike.client.*;
 import com.aerospike.client.AerospikeException.ScanTerminated;
-import com.aerospike.client.Bin;
-import com.aerospike.client.IAerospikeClient;
-import com.aerospike.client.Key;
 import com.aerospike.client.Record;
-import com.aerospike.client.Value;
 import com.aerospike.client.policy.BatchPolicy;
 import com.aerospike.client.policy.Policy;
 import com.aerospike.client.policy.QueryPolicy;
@@ -299,12 +295,22 @@ public class AeroMapper implements IAeroMapper {
     }
 
     @Override
-    public <T> T[] read(@NotNull Class<T> clazz, @NotNull Object... userKeys) throws AerospikeException {
-        return this.read(null, clazz, userKeys);
+    public <T> T[] read(@NotNull Class<T> clazz, @NotNull Object[] userKeys) throws AerospikeException {
+        return read(null, clazz, userKeys);
     }
 
     @Override
-    public <T> T[] read(BatchPolicy batchPolicy, @NotNull Class<T> clazz, @NotNull Object... userKeys) throws AerospikeException {
+    public <T> T[] read(BatchPolicy batchPolicy, @NotNull Class<T> clazz, @NotNull Object[] userKeys) throws AerospikeException {
+        return read(batchPolicy, clazz, userKeys, (Operation[]) null);
+    }
+
+    @Override
+    public <T> T[] read(@NotNull Class<T> clazz, @NotNull Object[] userKeys, Operation... operations) {
+        return read(null, clazz, userKeys, operations);
+    }
+
+    @Override
+    public <T> T[] read(BatchPolicy batchPolicy, @NotNull Class<T> clazz, @NotNull Object[] userKeys, Operation... operations) {
         ClassCacheEntry<T> entry = MapperUtils.getEntryAndValidateNamespace(clazz, this);
         String set = entry.getSetName();
         Key[] keys = new Key[userKeys.length];
@@ -316,7 +322,7 @@ public class AeroMapper implements IAeroMapper {
             }
         }
 
-        return readBatch(batchPolicy, clazz, keys, entry);
+        return readBatch(batchPolicy, clazz, keys, entry, operations);
     }
 
     @SuppressWarnings({"deprecation", "unchecked"})
@@ -349,11 +355,19 @@ public class AeroMapper implements IAeroMapper {
     }
 
     @SuppressWarnings("unchecked")
-    private <T> T[] readBatch(BatchPolicy batchPolicy, @NotNull Class<T> clazz, @NotNull Key[] keys, @NotNull ClassCacheEntry<T> entry) {
+    private <T> T[] readBatch(BatchPolicy batchPolicy, @NotNull Class<T> clazz, @NotNull Key[] keys,
+                              @NotNull ClassCacheEntry<T> entry, Operation... operations) {
         if (batchPolicy == null) {
             batchPolicy = entry.getBatchPolicy();
         }
-        Record[] records = mClient.get(batchPolicy, keys);
+
+        Record[] records;
+        if (operations != null && operations.length > 0) {
+            records = mClient.get(batchPolicy, keys, operations);
+        } else {
+            records = mClient.get(batchPolicy, keys);
+        }
+
         T[] results = (T[]) Array.newInstance(clazz, records.length);
         for (int i = 0; i < records.length; i++) {
             if (records[i] == null) {
