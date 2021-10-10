@@ -24,7 +24,7 @@ public class ReactiveBatchLoadTest extends ReactiveAeroMapperBaseTest {
     private final B[] bees = new B[100];
     private final A[] as = new A[10];
 
-    @AerospikeRecord(namespace = "test", set = "B")
+    @AerospikeRecord(namespace = "test", set = "batchB")
     public static class B {
         @AerospikeKey
         public int id;
@@ -36,7 +36,7 @@ public class ReactiveBatchLoadTest extends ReactiveAeroMapperBaseTest {
         }
     }
 
-    @AerospikeRecord(namespace = "test", set = "A")
+    @AerospikeRecord(namespace = "test", set = "batchA")
     public static class A {
         @AerospikeKey
         public int id;
@@ -72,13 +72,13 @@ public class ReactiveBatchLoadTest extends ReactiveAeroMapperBaseTest {
 
     @AfterAll
     public void clear() {
-        client.truncate(null, "test", "A", null);
-        client.truncate(null, "test", "B", null);
+        client.truncate(null, "test", "batchA", null);
+        client.truncate(null, "test", "batchB", null);
     }
 
     private ReactiveAeroMapper populate() {
-        client.truncate(null, "test", "A", null);
-        client.truncate(null, "test", "B", null);
+        client.truncate(null, "test", "batchA", null);
+        client.truncate(null, "test", "batchB", null);
 
         ReactiveAeroMapper reactiveMapper = new ReactiveAeroMapper.Builder(reactorClient).build();
 
