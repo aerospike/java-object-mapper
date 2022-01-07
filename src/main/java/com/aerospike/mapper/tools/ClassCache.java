@@ -1,10 +1,5 @@
 package com.aerospike.mapper.tools;
 
-import java.util.HashMap;
-import java.util.Map;
-
-import javax.validation.constraints.NotNull;
-
 import com.aerospike.client.AerospikeException;
 import com.aerospike.client.IAerospikeClient;
 import com.aerospike.client.policy.BatchPolicy;
@@ -17,6 +12,10 @@ import com.aerospike.mapper.exceptions.NotAnnotatedClass;
 import com.aerospike.mapper.tools.configuration.ClassConfig;
 import com.aerospike.mapper.tools.configuration.Configuration;
 import com.aerospike.mapper.tools.utils.TypeUtils;
+
+import javax.validation.constraints.NotNull;
+import java.util.HashMap;
+import java.util.Map;
 
 public class ClassCache {
     private static final ClassCache instance = new ClassCache();
@@ -33,12 +32,14 @@ public class ClassCache {
         QUERY
     }
 
-    private final Map<Class<?>, ClassCacheEntry> cacheMap = new HashMap<>();
+    private final Map<Class<?>, ClassCacheEntry<?>> cacheMap = new HashMap<>();
     private final Map<String, ClassConfig> classesConfig = new HashMap<>();
     private final Map<PolicyType, Policy> defaultPolicies = new HashMap<>();
-    private final Map<String, ClassCacheEntry> storedNameToCacheEntry = new HashMap<>();
+    private final Map<String, ClassCacheEntry<?>> storedNameToCacheEntry = new HashMap<>();
     private final Map<PolicyType, Map<Class<?>, Policy>> childrenPolicies = new HashMap<>();
     private final Map<PolicyType, Map<Class<?>, Policy>> specificPolicies = new HashMap<>();
+
+    private final Object lock = new Object();
 
     private ClassCache() {
         for (PolicyType thisType : PolicyType.values()) {
@@ -47,35 +48,45 @@ public class ClassCache {
         }
     }
 
+    @SuppressWarnings("unchecked")
     public <T> ClassCacheEntry<T> loadClass(@NotNull Class<T> clazz, IBaseAeroMapper mapper) {
-        if (clazz.isPrimitive() || clazz.equals(Object.class) || clazz.equals(String.class) || clazz.equals(Character.class) || Number.class.isAssignableFrom(clazz)) {
+        if (clazz.isPrimitive() || clazz.equals(Object.class) || clazz.equals(String.class)
+                || clazz.equals(Character.class) || Number.class.isAssignableFrom(clazz)) {
             return null;
         }
-        ClassCacheEntry<T> entry = cacheMap.get(clazz);
+
+        ClassCacheEntry<T> entry = (ClassCacheEntry<T>) cacheMap.get(clazz);
         if (entry == null) {
-            try {
-                // Construct a class cache entry. This must be done in 2 steps, one creating the entry and the other finalizing construction of
-                // it. This is to cater for classes  which recursively refer to themselves, such as
-                // 	public static class A {
-                //      @AerospikeKey
-                //      public int id;
-                //      public A a;
-                //  }
-                entry = new ClassCacheEntry<>(clazz, mapper, getClassConfig(clazz),
-                        determinePolicy(clazz, PolicyType.READ),
-                        (WritePolicy) determinePolicy(clazz, PolicyType.WRITE),
-                        (BatchPolicy) determinePolicy(clazz, PolicyType.BATCH),
-                        (QueryPolicy) determinePolicy(clazz, PolicyType.QUERY),
-                        (ScanPolicy) determinePolicy(clazz, PolicyType.SCAN));
-            } catch (NotAnnotatedClass nae) {
-                return null;
-            }
-            cacheMap.put(clazz, entry);
-            try {
-                entry.construct();
-            } catch (IllegalArgumentException iae) {
-                cacheMap.remove(clazz);
-                return null;
+            synchronized (lock) {
+                entry = (ClassCacheEntry<T>) cacheMap.get(clazz);
+                if (entry == null) {
+                    try {
+                        // Construct a class cache entry. This must be done in 2 steps, one creating the entry
+                        // and the other finalizing construction of it.
+                        // This is to cater for classes  which recursively refer to themselves, such as
+                        // 	public static class A {
+                        //      @AerospikeKey
+                        //      public int id;
+                        //      public A a;
+                        //  }
+                        entry = new ClassCacheEntry<>(clazz, mapper, getClassConfig(clazz),
+                                determinePolicy(clazz, PolicyType.READ),
+                                (WritePolicy) determinePolicy(clazz, PolicyType.WRITE),
+                                (BatchPolicy) determinePolicy(clazz, PolicyType.BATCH),
+                                (QueryPolicy) determinePolicy(clazz, PolicyType.QUERY),
+                                (ScanPolicy) determinePolicy(clazz, PolicyType.SCAN));
+
+                    } catch (NotAnnotatedClass nae) {
+                        return null;
+                    }
+                    cacheMap.put(clazz, entry);
+                    try {
+                        entry.construct();
+                    } catch (IllegalArgumentException iae) {
+                        cacheMap.remove(clazz);
+                        return null;
+                    }
+                }
             }
         }
         return entry;
