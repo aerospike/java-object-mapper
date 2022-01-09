@@ -1,16 +1,16 @@
 package com.aerospike.mapper.tools;
 
+import com.aerospike.client.AerospikeException;
+import com.aerospike.client.Key;
+import com.aerospike.client.Value;
+import com.aerospike.mapper.tools.configuration.ClassConfig;
+import com.aerospike.mapper.tools.utils.TypeUtils;
+import com.aerospike.mapper.tools.utils.TypeUtils.AnnotatedType;
+
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.lang.reflect.Type;
-
-import com.aerospike.client.AerospikeException;
-import com.aerospike.client.Key;
-import com.aerospike.client.Value;
-import com.aerospike.mapper.tools.utils.TypeUtils;
-import com.aerospike.mapper.tools.utils.TypeUtils.AnnotatedType;
-import com.aerospike.mapper.tools.configuration.ClassConfig;
 
 public class PropertyDefinition {
 
@@ -20,12 +20,12 @@ public class PropertyDefinition {
         VALUE
     }
 
+    private final String name;
+    private final IBaseAeroMapper mapper;
     private Method getter;
     private Method setter;
-    private String name;
     private Class<?> clazz;
     private TypeMapper typeMapper;
-    private final IBaseAeroMapper mapper;
     private SetterParamType setterParamType = SetterParamType.NONE;
 
     public PropertyDefinition(String name, IBaseAeroMapper mapper) {
@@ -94,9 +94,7 @@ public class PropertyDefinition {
             if (this.setter == null) {
                 throw new AerospikeException(String.format("Property %s on class %s must have a setter", this.name, className));
             }
-//			if (!TypeUtils.isVoidType(setter.getReturnType())) {
-//				throw new AerospikeException(String.format("Setter for property %s on class %s must return void", this.name, className));
-//			}
+
             if (setter.getParameterCount() == 2) {
                 Parameter param = setter.getParameters()[1];
                 if (param.getType().isAssignableFrom(Key.class)) {
@@ -104,17 +102,20 @@ public class PropertyDefinition {
                 } else if (param.getType().isAssignableFrom(Value.class)) {
                     this.setterParamType = SetterParamType.VALUE;
                 } else {
-                    throw new AerospikeException(String.format("Property %s on class %s has a setter with 2 arguments, but the second one is neither a Key or a Value", this.name, className));
+                    throw new AerospikeException(String.format("Property %s on class %s has a setter with 2 arguments," +
+                            " but the second one is neither a Key or a Value", this.name, className));
                 }
-            } else if (setter.getParameterCount() != 1 && setter.getParameterCount() != 2) {
-                throw new AerospikeException(String.format("Setter for property %s on class %s must take 1 or 2 arguments", this.name, className));
+            } else if (setter.getParameterCount() != 1) {
+                throw new AerospikeException(String.format("Setter for property %s on class %s must take 1 or 2 arguments",
+                        this.name, className));
             }
             setterClazz = setter.getParameterTypes()[0];
             this.setter.setAccessible(true);
         }
 
         if (setterClazz != null && !getterClazz.equals(setterClazz)) {
-            throw new AerospikeException(String.format("Getter (%s) and setter (%s) for property %s on class %s differ in type", getterClazz.getName(), setterClazz.getName(), this.name, className));
+            throw new AerospikeException(String.format("Getter (%s) and setter (%s) for property %s on class %s differ in type",
+                    getterClazz.getName(), setterClazz.getName(), this.name, className));
         }
         this.clazz = getterClazz;
 

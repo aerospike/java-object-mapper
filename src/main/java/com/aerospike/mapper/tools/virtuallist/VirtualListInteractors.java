@@ -875,10 +875,12 @@ public class VirtualListInteractors {
         }
     }
 
+    @SuppressWarnings("unchecked")
     public Operation getAppendOperation(Object aerospikeObject) {
         if (aerospikeObject instanceof Map.Entry) {
-            Map.Entry<Object, Object> entry = (Map.Entry) aerospikeObject;
-            return MapOperation.put(new MapPolicy(MapOrder.KEY_ORDERED, 0), binName, Value.get(entry.getKey()), Value.get(entry.getValue()));
+            Map.Entry<Object, Object> entry = (Map.Entry<Object, Object>) aerospikeObject;
+            return MapOperation.put(new MapPolicy(MapOrder.KEY_ORDERED, 0), binName,
+                    Value.get(entry.getKey()), Value.get(entry.getValue()));
         } else {
             return ListOperation.append(binName, Value.get(aerospikeObject));
         }
@@ -886,9 +888,11 @@ public class VirtualListInteractors {
 
     public Interactor getByIndexInteractor(int index) {
         if (listType == AerospikeEmbed.EmbedType.LIST) {
-            return new Interactor(ListOperation.getByIndex(binName, index, ListReturnType.VALUE), new ResultsUnpacker.ElementUnpacker(instanceMapper));
+            return new Interactor(ListOperation.getByIndex(binName, index, ListReturnType.VALUE),
+                    new ResultsUnpacker.ElementUnpacker(instanceMapper));
         } else {
-            return new Interactor(MapOperation.getByIndex(binName, index, MapReturnType.KEY_VALUE), ResultsUnpacker.ListUnpacker.instance, new ResultsUnpacker.ElementUnpacker(instanceMapper));
+            return new Interactor(MapOperation.getByIndex(binName, index, MapReturnType.KEY_VALUE),
+                    ResultsUnpacker.ListUnpacker.instance, new ResultsUnpacker.ElementUnpacker(instanceMapper));
         }
     }
 
