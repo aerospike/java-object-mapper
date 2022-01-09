@@ -26,12 +26,12 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.time.Instant;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class TypeUtils {
-    private static final Map<Class<?>, TypeMapper> mappers = new HashMap<>();
+    private static final Map<Class<?>, TypeMapper> mappers = new ConcurrentHashMap<>();
 
     public static class AnnotatedType {
 
@@ -79,6 +79,7 @@ public class TypeUtils {
             return parameterizedType != null;
         }
 
+        @SuppressWarnings("unchecked")
         public <T> T getAnnotation(Class<T> clazz) {
             if (this.annotations == null) {
                 return null;
