@@ -1,7 +1,17 @@
 package com.aerospike.mapper.tools;
 
-import com.aerospike.client.*;
-import com.aerospike.client.policy.*;
+import com.aerospike.client.AerospikeException;
+import com.aerospike.client.Bin;
+import com.aerospike.client.Key;
+import com.aerospike.client.Log;
+import com.aerospike.client.Operation;
+import com.aerospike.client.Value;
+import com.aerospike.client.policy.BatchPolicy;
+import com.aerospike.client.policy.Policy;
+import com.aerospike.client.policy.QueryPolicy;
+import com.aerospike.client.policy.RecordExistsAction;
+import com.aerospike.client.policy.ScanPolicy;
+import com.aerospike.client.policy.WritePolicy;
 import com.aerospike.client.query.Filter;
 import com.aerospike.client.query.KeyRecord;
 import com.aerospike.client.query.Statement;
@@ -101,7 +111,7 @@ public class ReactiveAeroMapper implements IReactiveAeroMapper {
                     }
                 } catch (RuntimeException re) {
                     if (allowsInvalid) {
-                        System.err.println("Ignoring issue with configuration: " + re.getMessage());
+                        Log.warn("Ignoring issue with configuration: " + re.getMessage());
                     } else {
                         throw re;
                     }

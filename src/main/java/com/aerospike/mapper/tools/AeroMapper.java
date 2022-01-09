@@ -2,7 +2,6 @@ package com.aerospike.mapper.tools;
 
 import com.aerospike.client.*;
 import com.aerospike.client.AerospikeException.ScanTerminated;
-import com.aerospike.client.Record;
 import com.aerospike.client.policy.BatchPolicy;
 import com.aerospike.client.policy.Policy;
 import com.aerospike.client.policy.QueryPolicy;
@@ -117,7 +116,7 @@ public class AeroMapper implements IAeroMapper {
                     }
                 } catch (RuntimeException re) {
                     if (allowsInvalid) {
-                        System.err.println("Ignoring issue with configuration: " + re.getMessage());
+                        Log.warn("Ignoring issue with configuration: " + re.getMessage());
                     } else {
                         throw re;
                     }
