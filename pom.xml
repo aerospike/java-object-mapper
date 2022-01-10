@@ -31,11 +31,11 @@
 		<aerospike-client.version>5.1.11</aerospike-client.version>
 		<aerospike-reactor.version>5.1.11</aerospike-reactor.version>
 		<commons-lang3.version>3.12.0</commons-lang3.version>
-		<jackson-dataformat-yaml.version>2.13.0</jackson-dataformat-yaml.version>
+		<jackson-dataformat-yaml.version>2.13.1</jackson-dataformat-yaml.version>
 		<lombok.version>1.18.22</lombok.version>
-		<reactor-test.version>3.4.10</reactor-test.version>
+		<reactor-test.version>3.4.13</reactor-test.version>
 		<blockhound.version>1.0.6.RELEASE</blockhound.version>
-		<junit-jupiter.version>5.8.1</junit-jupiter.version>
+		<junit-jupiter.version>5.8.2</junit-jupiter.version>
 	</properties>
 
 	<licenses>
