@@ -9,7 +9,7 @@ import com.aerospike.mapper.annotations.ToAerospike;
 import com.aerospike.mapper.tools.utils.TypeUtils;
 
 public class GenericTypeMapper extends TypeMapper {
-    private Class<?> mappedClass;
+    private final Class<?> mappedClass;
     private final Object converter;
     private Method toAerospike;
     private Method fromAerospike;
@@ -18,13 +18,15 @@ public class GenericTypeMapper extends TypeMapper {
         for (Method method : converter.getClass().getMethods()) {
             if (method.isAnnotationPresent(ToAerospike.class)) {
                 if (toAerospike != null) {
-                    throw new AerospikeException(String.format("Multiple methods annotated with @ToAerospike: %s, %s", toAerospike.toGenericString(), method.toGenericString()));
+                    throw new AerospikeException(String.format("Multiple methods annotated with @ToAerospike: %s, %s",
+                            toAerospike.toGenericString(), method.toGenericString()));
                 }
                 toAerospike = method;
             }
             if (method.isAnnotationPresent(FromAerospike.class)) {
                 if (fromAerospike != null) {
-                    throw new AerospikeException(String.format("Multiple methods annotated with @FromAerospike: %s, %s", fromAerospike.toGenericString(), method.toGenericString()));
+                    throw new AerospikeException(String.format("Multiple methods annotated with @FromAerospike: %s, %s",
+                            fromAerospike.toGenericString(), method.toGenericString()));
                 }
                 fromAerospike = method;
             }
