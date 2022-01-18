@@ -101,6 +101,7 @@ public class ClassCacheEntry<T> {
     private String shortenedClassName;
     private boolean isChildClass = false;
 
+    private volatile boolean constructed;
 
     // package visibility only.
     ClassCacheEntry(@NotNull Class<T> clazz, IBaseAeroMapper mapper, ClassConfig config,
@@ -160,7 +161,12 @@ public class ClassCacheEntry<T> {
         ClassCache.getInstance().setStoredName(this, this.shortenedClassName);
 
         this.checkRecordSettingsAgainstSuperClasses();
+        constructed = true;
         return this;
+    }
+
+    public boolean isNotConstructed() {
+        return !constructed;
     }
 
     public Policy getReadPolicy() {
