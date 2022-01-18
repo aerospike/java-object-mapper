@@ -56,7 +56,7 @@ public class ClassCache {
         }
 
         ClassCacheEntry<T> entry = (ClassCacheEntry<T>) cacheMap.get(clazz);
-        if (entry == null) {
+        if (entry == null || entry.isNotConstructed()) {
             synchronized (lock) {
                 entry = (ClassCacheEntry<T>) cacheMap.get(clazz);
                 if (entry == null) {
@@ -85,6 +85,9 @@ public class ClassCache {
                     } catch (IllegalArgumentException iae) {
                         cacheMap.remove(clazz);
                         return null;
+                    } catch (Exception e) {
+                        cacheMap.remove(clazz);
+                        throw e;
                     }
                 }
             }
