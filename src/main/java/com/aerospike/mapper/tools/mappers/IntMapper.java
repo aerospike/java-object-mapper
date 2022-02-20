@@ -12,8 +12,8 @@ public class IntMapper extends TypeMapper {
     @Override
     public Object fromAerospikeFormat(Object value) {
         if (value == null) {
-            return Integer.valueOf(0);
+            return null;
         }
-        return Integer.valueOf(((Number) value).intValue());
+        return ((Number) value).intValue();
     }
 }

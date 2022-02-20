@@ -6,14 +6,17 @@ public class ShortMapper extends TypeMapper {
 
     @Override
     public Object toAerospikeFormat(Object value) {
-        return Long.valueOf(((Number) value).longValue());
+        if (value == null) {
+            return null;
+        }
+        return ((Number) value).longValue();
     }
 
     @Override
     public Object fromAerospikeFormat(Object value) {
         if (value == null) {
-            return Short.valueOf((short) 0);
+            return null;
         }
-        return Short.valueOf(((Number) value).shortValue());
+        return ((Number) value).shortValue();
     }
 }

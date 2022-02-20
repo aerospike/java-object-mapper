@@ -11,9 +11,6 @@ public class DoubleMapper extends TypeMapper {
 
     @Override
     public Object fromAerospikeFormat(Object value) {
-        if (value == null) {
-            return Double.valueOf(0);
-        }
         return value;
     }
 }
