@@ -33,7 +33,7 @@ public class DefaultFieldValuesTest extends AeroMapperBaseTest {
     }
 
     @Test
-    public void testPartialSave() {
+    public void testDefaultValues() {
         WritePolicy writePolicy = new WritePolicy(client.getWritePolicyDefault());
         writePolicy.totalTimeout = 2000;
         writePolicy.socketTimeout = 100;
