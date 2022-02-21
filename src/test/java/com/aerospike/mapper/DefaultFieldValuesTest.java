@@ -1,11 +1,14 @@
 package com.aerospike.mapper;
 
+import com.aerospike.client.Key;
+import com.aerospike.client.Record;
 import com.aerospike.client.policy.WritePolicy;
 import com.aerospike.mapper.annotations.AerospikeKey;
 import com.aerospike.mapper.annotations.AerospikeRecord;
 import com.aerospike.mapper.tools.AeroMapper;
 import org.junit.jupiter.api.Test;
 
+import static com.aerospike.client.Value.UseBoolBin;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class DefaultFieldValuesTest extends AeroMapperBaseTest {
@@ -38,7 +41,7 @@ public class DefaultFieldValuesTest extends AeroMapperBaseTest {
         writePolicy.totalTimeout = 2000;
         writePolicy.socketTimeout = 100;
         AeroMapper mapper = new AeroMapper.Builder(client)
-                .withWritePolicy(writePolicy).forClasses(PartialRecordsTest.DataClass.class)
+                .withWritePolicy(writePolicy).forClasses(DefaultFieldsClass.class)
                 .build();
 
         DefaultFieldsClass obj = new DefaultFieldsClass();
@@ -62,5 +65,31 @@ public class DefaultFieldValuesTest extends AeroMapperBaseTest {
         assertEquals(0, dfc.b2);
         assertNull(dfc.bool);
         assertFalse(dfc.bool2);
+    }
+
+    @Test
+    public void testBooleanValue() {
+        AeroMapper mapper = new AeroMapper.Builder(client).build();
+
+        DefaultFieldsClass obj = new DefaultFieldsClass();
+        obj.key = "dfc";
+        mapper.save(obj);
+
+        Key key = new Key("test", "testSet", "dfc");
+
+        Record record = client.get(null, key);
+        assertTrue(record.bins.get("bool2") instanceof Long);
+        assertEquals(0, record.getLong("bool2"));
+        DefaultFieldsClass dfc = mapper.read(DefaultFieldsClass.class, "dfc");
+        assertFalse(dfc.bool2);
+
+        UseBoolBin = true;
+        mapper.save(obj);
+        record = client.get(null, key);
+        assertTrue(record.bins.get("bool2") instanceof Boolean);
+        assertFalse(record.getBoolean("bool2"));
+        dfc = mapper.read(DefaultFieldsClass.class, "dfc");
+        assertFalse(dfc.bool2);
+        UseBoolBin = false;
     }
 }
