@@ -12,8 +12,8 @@ public class FloatMapper extends TypeMapper {
     @Override
     public Object fromAerospikeFormat(Object value) {
         if (value == null) {
-            return Float.valueOf(0f);
+            return null;
         }
-        return Float.valueOf(((Number) value).floatValue());
+        return ((Number) value).floatValue();
     }
 }

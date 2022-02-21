@@ -6,14 +6,17 @@ public class ByteMapper extends TypeMapper {
 
     @Override
     public Object toAerospikeFormat(Object value) {
-        return Long.valueOf(((Number) value).longValue());
+        if (value == null) {
+            return null;
+        }
+        return ((Number) value).longValue();
     }
 
     @Override
     public Object fromAerospikeFormat(Object value) {
         if (value == null) {
-            return Byte.valueOf((byte) 0);
+            return null;
         }
-        return Byte.valueOf(((Number) value).byteValue());
+        return ((Number) value).byteValue();
     }
 }

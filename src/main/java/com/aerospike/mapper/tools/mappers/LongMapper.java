@@ -11,9 +11,6 @@ public class LongMapper extends TypeMapper {
 
     @Override
     public Object fromAerospikeFormat(Object value) {
-        if (value == null) {
-            return Long.valueOf(0);
-        }
         return value;
     }
 }

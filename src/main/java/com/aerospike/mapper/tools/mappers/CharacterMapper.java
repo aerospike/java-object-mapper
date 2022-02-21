@@ -7,19 +7,19 @@ public class CharacterMapper extends TypeMapper {
     @Override
     public Object toAerospikeFormat(Object value) {
         if (value == null) {
-            return Long.valueOf(0);
+            return null;
         } else {
-            char c = ((Character) value).charValue();
-            return Long.valueOf(c);
+            char c = (Character) value;
+            return (long) c;
         }
     }
 
     @Override
     public Object fromAerospikeFormat(Object value) {
         if (value == null) {
-            return Character.valueOf((char) 0);
+            return null;
         }
         long longVal = ((Number) value).longValue();
-        return Character.valueOf((char) longVal);
+        return (char) longVal;
     }
 }
