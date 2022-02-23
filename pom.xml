@@ -25,7 +25,7 @@
 		<maven.source.plugin.version>3.2.1</maven.source.plugin.version>
 		<maven.javadoc.plugin.version>3.3.0</maven.javadoc.plugin.version>
 		<maven.gpg.plugin.version>1.6</maven.gpg.plugin.version>
-		<maven.compiler.plugin.version>3.9.0</maven.compiler.plugin.version>
+		<maven.compiler.plugin.version>3.10.0</maven.compiler.plugin.version>
 		<maven-surefire-plugin.version>3.0.0-M5</maven-surefire-plugin.version>
 		<javax.validation-api.version>2.0.1.Final</javax.validation-api.version>
 		<aerospike-client.version>5.1.11</aerospike-client.version>
@@ -33,7 +33,7 @@
 		<commons-lang3.version>3.12.0</commons-lang3.version>
 		<jackson-dataformat-yaml.version>2.13.1</jackson-dataformat-yaml.version>
 		<lombok.version>1.18.22</lombok.version>
-		<reactor-test.version>3.4.14</reactor-test.version>
+		<reactor-test.version>3.4.15</reactor-test.version>
 		<blockhound.version>1.0.6.RELEASE</blockhound.version>
 		<junit-jupiter.version>5.8.2</junit-jupiter.version>
 	</properties>
