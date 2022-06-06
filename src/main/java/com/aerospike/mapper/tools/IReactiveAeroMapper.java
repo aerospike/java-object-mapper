@@ -210,7 +210,9 @@ public interface IReactiveAeroMapper extends IBaseAeroMapper {
      * @param clazz    - The type of the record.
      * @param function a Boolean function.
      * @throws AerospikeException an AerospikeException will be thrown in case of an error.
+     * @deprecated use the scan/query APIs instead.
      */
+    @Deprecated
     <T> Mono<Void> find(@NotNull Class<T> clazz, Function<T, Boolean> function);
 
     /**
