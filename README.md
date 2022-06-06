@@ -209,17 +209,6 @@ To delete:
 ```java
 mapper.delete(person);
 ```
- 
-To find:
- 
-```java
-Function<Person,Boolean> function = person -> {
-    System.out.println(person.getSsn());
-    return true;
-};
-        	
-mapper.find(Person.class, function);
-```
 
 ----
 
