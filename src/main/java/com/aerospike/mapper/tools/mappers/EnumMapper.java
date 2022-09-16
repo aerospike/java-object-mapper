@@ -14,12 +14,12 @@ public class EnumMapper extends TypeMapper {
     public EnumMapper(Class<? extends Enum<?>> clazz, String enumField) {
         this.clazz = clazz;
         this.enumField = enumField;
-        if (!enumField.equals("")) {
+        if (!enumField.isEmpty()) {
             try {
                 this.enumRequestedField = clazz.getDeclaredField(enumField);
                 this.enumRequestedField.setAccessible(true);
             } catch (NoSuchFieldException e) {
-                throw new AerospikeException("Cannot Map requested enum, issue with the requested enumField.");
+                throw toAerospikeException(e);
             }
         } else {
             this.enumRequestedField = null;
@@ -28,11 +28,19 @@ public class EnumMapper extends TypeMapper {
 
     @Override
     public Object toAerospikeFormat(Object value) {
-        if (!enumField.equals("")) {
+        if (value == null) {
+            return null;
+        }
+
+        if (!enumField.isEmpty()) {
+            if (enumRequestedField == null) {
+                return null;
+            }
             try {
-                return enumRequestedField.get(value).toString();
+                Object enumValue = enumRequestedField.get(value);
+                return enumValue == null ? null : enumValue.toString();
             } catch (IllegalAccessException e) {
-                throw new AerospikeException("Cannot Map requested enum, issue with the requested enumField.");
+                throw toAerospikeException(e);
             }
         }
         return value.toString();
@@ -47,7 +55,7 @@ public class EnumMapper extends TypeMapper {
         String stringValue = (String) value;
         Enum<?>[] constants = clazz.getEnumConstants();
 
-        if (!enumField.equals("")) {
+        if (!enumField.isEmpty()) {
             try {
                 for (Enum<?> thisEnum : constants) {
                     if (enumRequestedField.get(thisEnum).equals(stringValue)) {
@@ -55,7 +63,7 @@ public class EnumMapper extends TypeMapper {
                     }
                 }
             } catch (IllegalAccessException e) {
-                throw new AerospikeException("Cannot Map requested enum, issue with the requested enumField.");
+                throw toAerospikeException(e);
             }
         } else {
             for (Enum<?> thisEnum : constants) {
@@ -64,6 +72,10 @@ public class EnumMapper extends TypeMapper {
                 }
             }
         }
-        throw new AerospikeException(String.format("Enum value of \"%s\" not found in type %s", stringValue, clazz.toString()));
+        throw new AerospikeException(String.format("Enum value of \"%s\" not found in type %s", stringValue, clazz));
+    }
+
+    private AerospikeException toAerospikeException(Exception e) {
+        return new AerospikeException("Cannot Map requested enum, issue with the requested enumField.", e);
     }
 }
