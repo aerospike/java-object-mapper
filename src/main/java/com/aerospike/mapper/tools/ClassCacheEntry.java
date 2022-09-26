@@ -631,7 +631,7 @@ public class ClassCacheEntry<T> {
             boolean isKey = false;
             BinConfig thisBin = getBinFromField(thisField);
             if (Modifier.isFinal(thisField.getModifiers()) && Modifier.isStatic(thisField.getModifiers())) {
-            	// We cannot map final fields
+            	// We cannot map static final fields
             	continue;
             }
             if (thisField.isAnnotationPresent(AerospikeKey.class) || (!StringUtils.isBlank(keyField) && keyField.equals(thisField.getName()))) {
