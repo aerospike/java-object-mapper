@@ -342,8 +342,8 @@ public class ClassCacheEntry<T> {
                 for (Annotation thisAnnotation : thisValue.getAnnotations()) {
                     if (thisAnnotation instanceof AerospikeOrdinal) {
                         ordinal = ((AerospikeOrdinal) thisAnnotation).value();
+                        break;
                     }
-                    break;
                 }
             }
             if (ordinal != null) {
