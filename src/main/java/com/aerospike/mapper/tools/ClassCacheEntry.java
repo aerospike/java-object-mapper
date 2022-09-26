@@ -104,7 +104,7 @@ public class ClassCacheEntry<T> {
     private volatile boolean constructed;
 
     // package visibility only.
-    ClassCacheEntry(@NotNull Class<T> clazz, IBaseAeroMapper mapper, ClassConfig config,
+    ClassCacheEntry(@NotNull Class<T> clazz, IBaseAeroMapper mapper, ClassConfig config, boolean requireRecord,
                     @NotNull Policy readPolicy, @NotNull WritePolicy writePolicy,
                     @NotNull BatchPolicy batchPolicy, @NotNull QueryPolicy queryPolicy,
                     @NotNull ScanPolicy scanPolicy) {
@@ -118,8 +118,9 @@ public class ClassCacheEntry<T> {
         this.queryPolicy = queryPolicy;
 
         AerospikeRecord recordDescription = clazz.getAnnotation(AerospikeRecord.class);
-        if (recordDescription == null && config == null) {
-            throw new NotAnnotatedClass("Class " + clazz.getName() + " is not augmented by the @AerospikeRecord annotation");
+        if (requireRecord && recordDescription == null && config == null) {
+            throw new NotAnnotatedClass(String.format("Class %s is not augmented by the @AerospikeRecord annotation",
+                    clazz.getName()));
         } else if (recordDescription != null) {
             this.namespace = ParserUtils.getInstance().get(recordDescription.namespace());
             this.setName = ParserUtils.getInstance().get(recordDescription.set());
@@ -146,7 +147,8 @@ public class ClassCacheEntry<T> {
         this.superClazz = ClassCache.getInstance().loadClass(this.clazz.getSuperclass(), this.mapper);
         this.binCount = this.values.size() + (superClazz != null ? superClazz.binCount : 0);
         if (this.binCount == 0) {
-            throw new AerospikeException("Class " + clazz.getSimpleName() + " has no values defined to be stored in the database");
+            throw new AerospikeException(String.format("Class %s has no values defined to be stored in the database",
+                    clazz.getSimpleName()));
         }
         this.formOrdinalsFromValues();
         Method factoryConstructorMethod = findConstructorFactoryMethod();
@@ -240,7 +242,7 @@ public class ClassCacheEntry<T> {
 
     private void checkRecordSettingsAgainstSuperClasses() {
         if (!StringUtils.isBlank(this.namespace) && !StringUtils.isBlank(this.setName)) {
-            // This class defines it's own namespace + set, it is only a child class if it's closest named superclass is the same as ours.
+            // This class defines its own namespace + set, it is only a child class if its closest named superclass is the same as ours.
             this.isChildClass = false;
             ClassCacheEntry<?> thisEntry = this.superClazz;
             while (thisEntry != null) {

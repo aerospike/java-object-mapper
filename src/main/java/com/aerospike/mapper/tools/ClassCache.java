@@ -18,27 +18,14 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class ClassCache {
+
     private static final ClassCache instance = new ClassCache();
-
-    public static ClassCache getInstance() {
-        return instance;
-    }
-
-    enum PolicyType {
-        READ,
-        WRITE,
-        BATCH,
-        SCAN,
-        QUERY
-    }
-
     private final Map<Class<?>, ClassCacheEntry<?>> cacheMap = new HashMap<>();
     private final Map<String, ClassConfig> classesConfig = new HashMap<>();
     private final Map<PolicyType, Policy> defaultPolicies = new HashMap<>();
     private final Map<String, ClassCacheEntry<?>> storedNameToCacheEntry = new HashMap<>();
     private final Map<PolicyType, Map<Class<?>, Policy>> childrenPolicies = new HashMap<>();
     private final Map<PolicyType, Map<Class<?>, Policy>> specificPolicies = new HashMap<>();
-
     private final Object lock = new Object();
 
     private ClassCache() {
@@ -48,8 +35,16 @@ public class ClassCache {
         }
     }
 
-    @SuppressWarnings("unchecked")
+    public static ClassCache getInstance() {
+        return instance;
+    }
+
     public <T> ClassCacheEntry<T> loadClass(@NotNull Class<T> clazz, IBaseAeroMapper mapper) {
+        return loadClass(clazz, mapper, true);
+    }
+
+    @SuppressWarnings("unchecked")
+    public <T> ClassCacheEntry<T> loadClass(@NotNull Class<T> clazz, IBaseAeroMapper mapper, boolean requireRecord) {
         if (clazz.isPrimitive() || clazz.equals(Object.class) || clazz.equals(String.class)
                 || clazz.equals(Character.class) || Number.class.isAssignableFrom(clazz)) {
             return null;
@@ -69,7 +64,7 @@ public class ClassCache {
                         //      public int id;
                         //      public A a;
                         //  }
-                        entry = new ClassCacheEntry<>(clazz, mapper, getClassConfig(clazz),
+                        entry = new ClassCacheEntry<>(clazz, mapper, getClassConfig(clazz), requireRecord,
                                 determinePolicy(clazz, PolicyType.READ),
                                 (WritePolicy) determinePolicy(clazz, PolicyType.WRITE),
                                 (BatchPolicy) determinePolicy(clazz, PolicyType.BATCH),
@@ -194,5 +189,13 @@ public class ClassCache {
 
     public boolean hasClassConfig(Class<?> clazz) {
         return classesConfig.containsKey(clazz.getName());
+    }
+
+    enum PolicyType {
+        READ,
+        WRITE,
+        BATCH,
+        SCAN,
+        QUERY
     }
 }

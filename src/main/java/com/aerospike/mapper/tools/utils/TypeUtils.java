@@ -25,72 +25,17 @@ import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class TypeUtils {
+
     private static final Map<Class<?>, TypeMapper> mappers = new ConcurrentHashMap<>();
 
-    public static class AnnotatedType {
-
-        private static final AnnotatedType defaultAnnotatedType = new AnnotatedType(null, null, null);
-
-        public static AnnotatedType getDefaultAnnotateType() {
-            return defaultAnnotatedType;
-        }
-
-        private final Annotation[] annotations;
-        private final ParameterizedType parameterizedType;
-        private final BinConfig binConfig;
-
-        private AnnotatedType(BinConfig binConfig, Type type, Annotation[] annotations) {
-            this.binConfig = binConfig;
-            this.annotations = annotations;
-            if (type instanceof ParameterizedType) {
-                this.parameterizedType = (ParameterizedType) type;
-            } else {
-                this.parameterizedType = null;
-            }
-        }
-
-        public AnnotatedType(ClassConfig config, Field field) {
-            this(config == null ? null : config.getBinByFieldName(field.getName()), field.getGenericType(), field.getAnnotations());
-        }
-
-        public AnnotatedType(ClassConfig config, Method getter) {
-            this(config == null ? null : config.getBinByGetterName(getter.getName()), getter.getGenericReturnType(), getter.getAnnotations());
-        }
-
-        public Annotation[] getAnnotations() {
-            return annotations;
-        }
-
-        public BinConfig getBinConfig() {
-            return binConfig;
-        }
-
-        public ParameterizedType getParameterizedType() {
-            return parameterizedType;
-        }
-
-        public boolean isParameterizedType() {
-            return parameterizedType != null;
-        }
-
-        @SuppressWarnings("unchecked")
-        public <T> T getAnnotation(Class<T> clazz) {
-            if (this.annotations == null) {
-                return null;
-            }
-            for (Annotation annotation : this.annotations) {
-                if (annotation.annotationType().equals(clazz)) {
-                    return (T) annotation;
-                }
-            }
-            return null;
-        }
+    private TypeUtils() {
     }
 
     /**
@@ -113,6 +58,9 @@ public class TypeUtils {
         if (clazz == null) {
             return null;
         }
+        boolean isEmbedded = type != null && type.annotations != null && Arrays.stream(type.annotations)
+                .anyMatch(a -> a.annotationType().isAssignableFrom(AerospikeEmbed.class));
+
         TypeMapper typeMapper = mappers.get(clazz);
         boolean addToMap = true;
         if (typeMapper == null) {
@@ -158,7 +106,6 @@ public class TypeUtils {
                         if (reference != null) {
                             allowBatch = reference.batchLoad();
                         }
-
                     }
                     TypeMapper subMapper = getMapper(elementType, type, mapper, true);
                     typeMapper = new ArrayMapper(elementType, subMapper, allowBatch);
@@ -169,7 +116,8 @@ public class TypeUtils {
                     ParameterizedType paramType = type.getParameterizedType();
                     Type[] types = paramType.getActualTypeArguments();
                     if (types.length != 2) {
-                        throw new AerospikeException(String.format("Type %s is a parameterized type as expected, but has %d type parameters, not the expected 2", clazz.getName(), types.length));
+                        throw new AerospikeException(String.format("Type %s is a parameterized type as expected, but has %d type parameters, not the expected 2",
+                                clazz.getName(), types.length));
                     }
 
                     Class<?> keyClazz = (Class<?>) types[0];
@@ -216,7 +164,8 @@ public class TypeUtils {
                     ParameterizedType paramType = type.getParameterizedType();
                     Type[] types = paramType.getActualTypeArguments();
                     if (types.length != 1) {
-                        throw new AerospikeException(String.format("Type %s is a parameterized type as expected, but has %d type parameters, not the expected 1", clazz.getName(), types.length));
+                        throw new AerospikeException(String.format("Type %s is a parameterized type as expected, but has %d type parameters, not the expected 1",
+                                clazz.getName(), types.length));
                     }
 
                     Class<?> subClazz = (Class<?>) types[0];
@@ -226,7 +175,7 @@ public class TypeUtils {
                     typeMapper = new ListMapper(clazz, null, null, mapper, embedType, saveKey, allowBatch);
                 }
                 addToMap = false;
-            } else if (clazz.isAnnotationPresent(AerospikeRecord.class) || ClassCache.getInstance().hasClassConfig(clazz)) {
+            } else if (clazz.isAnnotationPresent(AerospikeRecord.class) || ClassCache.getInstance().hasClassConfig(clazz) || isEmbedded) {
                 boolean throwError = false;
                 if (type != null) {
                     BinConfig binConfig = type.getBinConfig();
@@ -356,6 +305,65 @@ public class TypeUtils {
             case NONE:
             default:
                 return MapReturnType.NONE;
+        }
+    }
+
+    public static class AnnotatedType {
+
+        private static final AnnotatedType defaultAnnotatedType = new AnnotatedType(null, null, null);
+        private final Annotation[] annotations;
+        private final ParameterizedType parameterizedType;
+        private final BinConfig binConfig;
+
+        private AnnotatedType(BinConfig binConfig, Type type, Annotation[] annotations) {
+            this.binConfig = binConfig;
+            this.annotations = annotations;
+            if (type instanceof ParameterizedType) {
+                this.parameterizedType = (ParameterizedType) type;
+            } else {
+                this.parameterizedType = null;
+            }
+        }
+
+        public AnnotatedType(ClassConfig config, Field field) {
+            this(config == null ? null : config.getBinByFieldName(field.getName()), field.getGenericType(), field.getAnnotations());
+        }
+
+        public AnnotatedType(ClassConfig config, Method getter) {
+            this(config == null ? null : config.getBinByGetterName(getter.getName()), getter.getGenericReturnType(), getter.getAnnotations());
+        }
+
+        public static AnnotatedType getDefaultAnnotateType() {
+            return defaultAnnotatedType;
+        }
+
+        public Annotation[] getAnnotations() {
+            return annotations;
+        }
+
+        public BinConfig getBinConfig() {
+            return binConfig;
+        }
+
+        public ParameterizedType getParameterizedType() {
+            return parameterizedType;
+        }
+
+        public boolean isParameterizedType() {
+            return parameterizedType != null;
+        }
+
+        @SuppressWarnings("unchecked")
+        public <T> T getAnnotation(Class<T> clazz) {
+            if (this.annotations == null) {
+                return null;
+            }
+            for (Annotation annotation : this.annotations) {
+                if (annotation.annotationType().equals(clazz)) {
+                    return (T) annotation;
+                }
+            }
+            return null;
         }
     }
 }

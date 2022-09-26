@@ -7,6 +7,10 @@ import com.aerospike.mapper.tools.IBaseAeroMapper;
 import org.apache.commons.lang3.StringUtils;
 
 public class MapperUtils {
+
+    private MapperUtils() {
+    }
+
     public static <T> ClassCacheEntry<T> getEntryAndValidateNamespace(Class<T> clazz, IBaseAeroMapper mapper) {
         ClassCacheEntry<T> entry = ClassCache.getInstance().loadClass(clazz, mapper);
         String namespace = null;
