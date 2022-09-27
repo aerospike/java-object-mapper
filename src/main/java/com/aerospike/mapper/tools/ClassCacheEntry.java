@@ -630,6 +630,10 @@ public class ClassCacheEntry<T> {
         for (Field thisField : this.clazz.getDeclaredFields()) {
             boolean isKey = false;
             BinConfig thisBin = getBinFromField(thisField);
+            if (Modifier.isFinal(thisField.getModifiers()) && Modifier.isStatic(thisField.getModifiers())) {
+            	// We cannot map static final fields
+            	continue;
+            }
             if (thisField.isAnnotationPresent(AerospikeKey.class) || (!StringUtils.isBlank(keyField) && keyField.equals(thisField.getName()))) {
                 if (thisField.isAnnotationPresent(AerospikeExclude.class) || (thisBin != null && thisBin.isExclude() != null && thisBin.isExclude())) {
                     throw new AerospikeException("Class " + clazz.getName() + " cannot have a field which is both a key and excluded.");
