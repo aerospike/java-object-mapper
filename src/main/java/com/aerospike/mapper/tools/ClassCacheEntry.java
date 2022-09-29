@@ -1,24 +1,5 @@
 package com.aerospike.mapper.tools;
 
-import java.lang.annotation.Annotation;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-import java.lang.reflect.Parameter;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeMap;
-
-import javax.validation.constraints.NotNull;
-
-import org.apache.commons.lang3.StringUtils;
-
 import com.aerospike.client.AerospikeException;
 import com.aerospike.client.Bin;
 import com.aerospike.client.Key;
@@ -30,15 +11,7 @@ import com.aerospike.client.policy.Policy;
 import com.aerospike.client.policy.QueryPolicy;
 import com.aerospike.client.policy.ScanPolicy;
 import com.aerospike.client.policy.WritePolicy;
-import com.aerospike.mapper.annotations.AerospikeBin;
-import com.aerospike.mapper.annotations.AerospikeConstructor;
-import com.aerospike.mapper.annotations.AerospikeExclude;
-import com.aerospike.mapper.annotations.AerospikeGetter;
-import com.aerospike.mapper.annotations.AerospikeKey;
-import com.aerospike.mapper.annotations.AerospikeOrdinal;
-import com.aerospike.mapper.annotations.AerospikeRecord;
-import com.aerospike.mapper.annotations.AerospikeSetter;
-import com.aerospike.mapper.annotations.ParamFrom;
+import com.aerospike.mapper.annotations.*;
 import com.aerospike.mapper.exceptions.NotAnnotatedClass;
 import com.aerospike.mapper.tools.configuration.BinConfig;
 import com.aerospike.mapper.tools.configuration.ClassConfig;
@@ -46,6 +19,16 @@ import com.aerospike.mapper.tools.configuration.KeyConfig;
 import com.aerospike.mapper.tools.utils.ParserUtils;
 import com.aerospike.mapper.tools.utils.TypeUtils;
 import com.aerospike.mapper.tools.utils.TypeUtils.AnnotatedType;
+import org.apache.commons.lang3.StringUtils;
+
+import javax.validation.constraints.NotNull;
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.lang.reflect.Parameter;
+import java.util.*;
 
 public class ClassCacheEntry<T> {
 
@@ -144,7 +127,7 @@ public class ClassCacheEntry<T> {
 
         this.loadFieldsFromClass();
         this.loadPropertiesFromClass();
-        this.superClazz = ClassCache.getInstance().loadClass(this.clazz.getSuperclass(), this.mapper);
+        this.superClazz = ClassCache.getInstance().loadClass(this.clazz.getSuperclass(), this.mapper, !this.mapAll);
         this.binCount = this.values.size() + (superClazz != null ? superClazz.binCount : 0);
         if (this.binCount == 0) {
             throw new AerospikeException(String.format("Class %s has no values defined to be stored in the database",
