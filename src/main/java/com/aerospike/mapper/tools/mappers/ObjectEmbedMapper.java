@@ -1,13 +1,13 @@
 package com.aerospike.mapper.tools.mappers;
 
-import java.util.List;
-import java.util.Map;
-
 import com.aerospike.client.AerospikeException;
 import com.aerospike.mapper.annotations.AerospikeEmbed.EmbedType;
 import com.aerospike.mapper.tools.ClassCache;
 import com.aerospike.mapper.tools.ClassCacheEntry;
 import com.aerospike.mapper.tools.IBaseAeroMapper;
+
+import java.util.List;
+import java.util.Map;
 
 public class ObjectEmbedMapper extends ObjectMapper {
 
@@ -28,10 +28,13 @@ public class ObjectEmbedMapper extends ObjectMapper {
         if (value == null) {
             return null;
         }
+        if (isSimple(value)) {
+            return value;
+        }
         // In this case we want to store a reference to the object.
         boolean needsType = !(referencedClass.equals(value.getClass()));
-        // Use the actual class here in case a sub-class is passed. In that case needsType will be true
-        ClassCacheEntry<?> entry = ClassCache.getInstance().loadClass(value.getClass(), mapper);
+        // Use the actual class here in case a subclass is passed. In that case needsType will be true.
+        ClassCacheEntry<?> entry = ClassCache.getInstance().loadClass(value.getClass(), mapper, false);
         switch (type) {
             case LIST:
                 return entry.getList(value, skipKey, needsType);
@@ -50,25 +53,29 @@ public class ObjectEmbedMapper extends ObjectMapper {
         if (value == null) {
             return null;
         }
+        if (isSimple(value)) {
+            return value;
+        }
         ClassCacheEntry<?> entry = ClassCache.getInstance().loadClass(referencedClass, mapper);
         try {
-            Object instance;
-
             switch (type) {
                 case LIST:
                     List<Object> listValue = (List<Object>) value;
-                    instance = entry.constructAndHydrate(listValue, skipKey);
-                    break;
+                    return entry.constructAndHydrate(listValue, skipKey);
                 case MAP:    // Fall through
                 case DEFAULT:
-                    instance = entry.constructAndHydrate((Map<String, Object>) value);
-                    break;
+                    return entry.constructAndHydrate((Map<String, Object>) value);
                 default:
                     throw new AerospikeException("Unspecified EmbedType");
             }
-            return instance;
         } catch (Exception e) {
             throw new AerospikeException(e);
         }
+    }
+
+    private boolean isSimple(Object value) {
+        Class<?> clazz = value.getClass();
+        return clazz.isPrimitive() || clazz.equals(Object.class) || clazz.equals(String.class)
+                || clazz.equals(Character.class) || Number.class.isAssignableFrom(clazz);
     }
 }
