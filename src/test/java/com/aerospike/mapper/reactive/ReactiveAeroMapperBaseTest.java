@@ -5,7 +5,6 @@ import com.aerospike.client.reactor.IAerospikeReactorClient;
 import com.aerospike.mapper.AeroMapperBaseTest;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-import reactor.blockhound.BlockHound;
 
 import java.io.IOException;
 
@@ -22,10 +21,5 @@ public class ReactiveAeroMapperBaseTest extends AeroMapperBaseTest {
         if (reactorClient != null) {
             reactorClient.close();
         }
-    }
-
-    @BeforeAll
-    public static void installBlockHound() {
-        BlockHound.install();
     }
 }
