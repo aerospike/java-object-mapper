@@ -34,7 +34,6 @@
 		<jackson-dataformat-yaml.version>2.13.4</jackson-dataformat-yaml.version>
 		<lombok.version>1.18.24</lombok.version>
 		<reactor-test.version>3.4.23</reactor-test.version>
-		<blockhound.version>1.0.6.RELEASE</blockhound.version>
 		<junit-jupiter.version>5.9.1</junit-jupiter.version>
 	</properties>
 
@@ -123,12 +122,6 @@
 			<scope>test</scope>
 		</dependency>
 
-		<dependency>
-			<groupId>io.projectreactor.tools</groupId>
-			<artifactId>blockhound</artifactId>
-			<version>${blockhound.version}</version>
-			<scope>test</scope>
-		</dependency>
 		<dependency>
 			<groupId>org.junit.jupiter</groupId>
 			<artifactId>junit-jupiter</artifactId>
