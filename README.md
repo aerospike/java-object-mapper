@@ -50,6 +50,22 @@ The documentation for this project can be found on [javadoc.io](https://www.java
 | 1.2.x, 1.3.x, 1.4.x | 5.1.x | 5.0.x
 | 1.1.x | 5.0.x | 
 
+# Installing the Mapper
+The easiest way to use the mapper is through Maven or Gradle. For Maven, pull it in from Maven Central:
+```
+<!-- https://mvnrepository.com/artifact/com.aerospike/java-object-mapper -->
+<dependency>
+    <groupId>com.aerospike</groupId>
+    <artifactId>java-object-mapper</artifactId>
+    <version>2.1.0</version>
+</dependency>
+```
+For Gradle, you can use
+```
+// https://mvnrepository.com/artifact/com.aerospike/java-object-mapper
+implementation group: 'com.aerospike', name: 'java-object-mapper', version: '2.1.0'
+```
+
 # Motivation and a simple example
 Consider a simple class:
 
@@ -264,10 +280,11 @@ Note that each operation can also optionally take a policy if it is desired to c
 If it is desired to change one part of a policy but keep the rest as the defaults set up with these policies, the appropriate policy can be read with `getReadPolicy`, `getWritePolicy`, `getBatchPolicy`, `getScanPolicy` and `getQueryPolicy` methods on the AeroMapper. For example, if we need a policy which was previously set up on a Customer class but need to change the `durableDelete` property, we could do
 
 ```java
-WritePolicy writePolicy = mapper.getWritePolicy(Customer.class);
+WritePolicy writePolicy = new WritePolicy(mapper.getWritePolicy(Customer.class));
 writePolicy.durableDelete = true;
 mapper.delete(writePolicy, myCustomer);
 ```
+Note that the `getXxxPolicy` methods return the actual underlying policy rather than a copy of it, so it is best to instantiate a new instance of this object before changing it.
 
 In summary, the policy which will be used for a call are: (lower number is a higher priority)
 
@@ -1917,6 +1934,7 @@ classes:
           elementType: LIST
         name: data
 ```
+(Note: DataClass and ContainerClasss were defined as static inner classes inside AeroMapperConfigurationYamlTest, hence the need for the long class name. In real production applications this isn't likely to be needed)
  
 ### File Structure
 The structure of the file is: 
@@ -2088,7 +2106,7 @@ name: "container"
 ```
 
 Note however that the list in the object in memory still contains only 4 items. *Virtual lists affect only the database representation of the data and not the Java POJO.*
-Virtual Lists tend to use the (Operate)[https://www.aerospike.com/docs/client/java/usage/kvs/multiops.html] command which allows multiple operations to be performed on the same key at the same time. As a consequence, multiple commands can be done on a list with a single Aerospike operation. For example:
+Virtual Lists tend to use the [Operate](https://www.aerospike.com/docs/client/java/usage/kvs/multiops.html) command which allows multiple operations to be performed on the same key at the same time. As a consequence, multiple commands can be done on a list with a single Aerospike operation. For example:
 
 ```java
 List<Item> results = (List<Item>) list.beginMultiOperation()
@@ -2124,7 +2142,7 @@ List<Item> results = (List<Item>) list.beginMultiOperation()
 
 Then the result would be the result of the `removeByKey`, which by default is null. (Write operations pass a ReturnType of NONE to CDT operations by default)
 
-However, if we wanted a particular operation in the list to return it's result, we can flag it with `asResult()`. For example:
+However, if we wanted a particular operation in the list to return its result, we can flag it with `asResult()`. For example:
 
 ```java
 List<Item> results = (List<Item>) list.beginMultiOperation()
@@ -2134,7 +2152,7 @@ List<Item> results = (List<Item>) list.beginMultiOperation()
 	.end();
 ```
 
-In this case, the element removed with with the `removeByKey(200)` will be returned, giving the data associated with item 200..
+In this case, the element removed with with the `removeByKey(200)` will be returned, giving the data associated with item 200.
 
 The type of the result (where supported) can also be changed with a call to `asResultOfType()`. For example:
 
