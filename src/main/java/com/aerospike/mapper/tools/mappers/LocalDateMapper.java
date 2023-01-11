@@ -1,6 +1,5 @@
 package com.aerospike.mapper.tools.mappers;
 
-import java.sql.Date;
 import java.time.LocalDate;
 
 import com.aerospike.mapper.tools.TypeMapper;
@@ -12,7 +11,7 @@ public class LocalDateMapper extends TypeMapper {
         if (value == null) {
             return null;
         }
-        return Date.valueOf((LocalDate) value).getTime();
+        return ((LocalDate)value).toEpochDay();
     }
 
     @Override
@@ -20,7 +19,6 @@ public class LocalDateMapper extends TypeMapper {
         if (value == null) {
             return null;
         }
-        long longValue = (Long) value;
-        return new Date(longValue).toLocalDate();
+        return LocalDate.ofEpochDay((Long) value);
     } 
 }
