@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -22,6 +23,7 @@ public class LocalDateConverterTest extends AeroMapperBaseTest {
 	public static class LocalDateTimeContainer {
 		@AerospikeKey
 		public int id;
+		public LocalTime localTime;
 		public LocalDate localDate;
 		public LocalDateTime localDateTime;
 	}
@@ -44,16 +46,19 @@ public class LocalDateConverterTest extends AeroMapperBaseTest {
 		container.id = 1;
 		container.localDate = LocalDate.now();
 		container.localDateTime = LocalDateTime.now();
+		container.localTime = LocalTime.now();
 		
 		mapper.save(container);
 		
 		LocalDateTimeContainer readContainer = mapper.read(LocalDateTimeContainer.class, 1);
 		assertEquals(container.id, readContainer.id);
 		assertEquals(container.localDate, readContainer.localDate);
+		assertEquals(container.localTime, readContainer.localTime);
 		assertEquals(container.localDateTime, readContainer.localDateTime);
 		
 		com.aerospike.client.Record record = client.get(null, new Key("test", "local", 1));
 		long value = record.getLong("localDate");
+		long timeValue = record.getLong("localTime");
 		List<Long> dateTimeValues = (List<Long>) record.getList("localDateTime");
 		assertTrue(value > 0);
 		assertTrue(dateTimeValues.get(0) > 0);		

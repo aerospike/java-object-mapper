@@ -40,7 +40,8 @@ public class LocalDateTimeMapper extends TypeMapper {
         if (value == null) {
             return null;
         }
-        List<Long> values = (List<Long>)value;
+        @SuppressWarnings("unchecked")
+		List<Long> values = (List<Long>)value;
         LocalDate date = LocalDate.ofEpochDay(values.get(0));
         LocalTime time = LocalTime.ofNanoOfDay(values.get(1));
         return LocalDateTime.of(date, time);

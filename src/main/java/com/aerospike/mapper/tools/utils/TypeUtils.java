@@ -8,6 +8,7 @@ import java.lang.reflect.Type;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
@@ -43,6 +44,7 @@ import com.aerospike.mapper.tools.mappers.IntMapper;
 import com.aerospike.mapper.tools.mappers.ListMapper;
 import com.aerospike.mapper.tools.mappers.LocalDateMapper;
 import com.aerospike.mapper.tools.mappers.LocalDateTimeMapper;
+import com.aerospike.mapper.tools.mappers.LocalTimeMapper;
 import com.aerospike.mapper.tools.mappers.MapMapper;
 import com.aerospike.mapper.tools.mappers.ObjectEmbedMapper;
 import com.aerospike.mapper.tools.mappers.ObjectReferenceMapper;
@@ -85,9 +87,11 @@ public class TypeUtils {
             if (Date.class.isAssignableFrom(clazz)) {
                 typeMapper = new DateMapper(); 
             } else if (LocalDateTime.class.isAssignableFrom(clazz)) {
-            	typeMapper = new LocalDateTimeMapper();
+                typeMapper = new LocalDateTimeMapper();
             } else if (LocalDate.class.isAssignableFrom(clazz)) {
-            	typeMapper = new LocalDateMapper();
+                typeMapper = new LocalDateMapper();
+            } else if (LocalTime.class.isAssignableFrom(clazz)) {
+                typeMapper = new LocalTimeMapper();
             } else if (Instant.class.isAssignableFrom(clazz)) {
                 typeMapper = new InstantMapper();
             } else if (Byte.class.isAssignableFrom(clazz) || Byte.TYPE.isAssignableFrom(clazz)) {
