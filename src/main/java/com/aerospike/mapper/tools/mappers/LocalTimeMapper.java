@@ -1,8 +1,8 @@
 package com.aerospike.mapper.tools.mappers;
 
-import java.time.LocalTime;
-
 import com.aerospike.mapper.tools.TypeMapper;
+
+import java.time.LocalTime;
 
 public class LocalTimeMapper extends TypeMapper {
 
@@ -11,7 +11,7 @@ public class LocalTimeMapper extends TypeMapper {
         if (value == null) {
             return null;
         }
-        return ((LocalTime)value).toNanoOfDay();
+        return ((LocalTime) value).toNanoOfDay();
     }
 
     @Override
@@ -20,5 +20,5 @@ public class LocalTimeMapper extends TypeMapper {
             return null;
         }
         return LocalTime.ofNanoOfDay((Long) value);
-    } 
+    }
 }

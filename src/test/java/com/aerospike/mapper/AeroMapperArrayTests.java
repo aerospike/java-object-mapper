@@ -1,9 +1,5 @@
 package com.aerospike.mapper;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-
-import java.util.List;
-
 import com.aerospike.client.Key;
 import com.aerospike.client.Record;
 import com.aerospike.mapper.annotations.AerospikeEmbed;
@@ -14,88 +10,11 @@ import com.aerospike.mapper.tools.AeroMapper;
 import com.aerospike.mapper.tools.ClassCache;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 public class AeroMapperArrayTests extends AeroMapperBaseTest {
-    @AerospikeRecord(namespace = "test", set = "testSet")
-    public static class ChildClass {
-        private int a;
-        private String b;
-        private float c;
-
-        public ChildClass() {
-        }
-
-        public ChildClass(int a, String b, float c) {
-            super();
-            this.a = a;
-            this.b = b;
-            this.c = c;
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            if (obj == null) {
-                return false;
-            }
-            ChildClass other = (ChildClass) obj;
-            return this.a == other.a && this.c == other.c && ((this.b == null && other.b == null) || (this.b != null && this.b.equals(other.b)));
-        }
-    }
-
-    @AerospikeRecord(namespace = "test", set = "testSet")
-    public static class AnnotatedClass {
-        @AerospikeKey
-        private int key;
-        private byte[] bytes;
-        private short[] shorts;
-        private int[] ints;
-        private long[] longs;
-        private float[] floats;
-        private double[] doubles;
-        private String[] strings;
-        @AerospikeEmbed
-        private ChildClass[] children;
-        @AerospikeEmbed(elementType = EmbedType.LIST)
-        private ChildClass[] listChildren;
-        @AerospikeEmbed(elementType = EmbedType.MAP)
-        private ChildClass[] mapChildren;
-    }
-
-    public static class UnAnnotatedChildClass {
-        private int a;
-        private String b;
-        private float c;
-
-        public UnAnnotatedChildClass() {
-        }
-
-        public UnAnnotatedChildClass(int a, String b, float c) {
-            super();
-            this.a = a;
-            this.b = b;
-            this.c = c;
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            if (obj == null) {
-                return false;
-            }
-            UnAnnotatedChildClass other = (UnAnnotatedChildClass) obj;
-            return this.a == other.a && this.c == other.c && ((this.b == null && other.b == null) || (this.b != null && this.b.equals(other.b)));
-        }
-    }
-
-    public static class UnAnnotatedClass {
-        private int key;
-        private byte[] bytes;
-        private short[] shorts;
-        private int[] ints;
-        private long[] longs;
-        private float[] floats;
-        private double[] doubles;
-        private String[] strings;
-        private UnAnnotatedChildClass[] children;
-    }
 
     @Test
     public void testByteArray() {
@@ -145,7 +64,6 @@ public class AeroMapperArrayTests extends AeroMapperBaseTest {
         assertEquals(unAnnotatedClass.bytes.length, bytes.length);
     }
 
-
     @Test
     public void testShortArray() {
         AeroMapper mapper = new AeroMapper.Builder(client).build();
@@ -155,6 +73,7 @@ public class AeroMapperArrayTests extends AeroMapperBaseTest {
         mapper.save(annotatedClass);
         AnnotatedClass class2 = mapper.read(AnnotatedClass.class, annotatedClass.key);
         Record record = client.get(null, new Key("test", "testSet", annotatedClass.key));
+        @SuppressWarnings("unchecked")
         List<Long> shorts = (List<Long>) record.getList("shorts");
 
         assertEquals(annotatedClass.shorts.length, class2.shorts.length);
@@ -184,6 +103,7 @@ public class AeroMapperArrayTests extends AeroMapperBaseTest {
         mapper.save(unAnnotatedClass);
         UnAnnotatedClass class2 = mapper.read(UnAnnotatedClass.class, unAnnotatedClass.key);
         Record record = client.get(null, new Key("test", "testSet", unAnnotatedClass.key));
+        @SuppressWarnings("unchecked")
         List<Long> shorts = (List<Long>) record.getList("shorts");
 
         assertEquals(unAnnotatedClass.shorts.length, class2.shorts.length);
@@ -194,7 +114,6 @@ public class AeroMapperArrayTests extends AeroMapperBaseTest {
         assertEquals(unAnnotatedClass.shorts.length, shorts.size());
     }
 
-
     @Test
     public void testIntArray() {
         AeroMapper mapper = new AeroMapper.Builder(client).build();
@@ -204,6 +123,7 @@ public class AeroMapperArrayTests extends AeroMapperBaseTest {
         mapper.save(annotatedClass);
         AnnotatedClass class2 = mapper.read(AnnotatedClass.class, annotatedClass.key);
         Record record = client.get(null, new Key("test", "testSet", annotatedClass.key));
+        @SuppressWarnings("unchecked")
         List<Long> ints = (List<Long>) record.getList("ints");
 
         assertEquals(annotatedClass.ints.length, class2.ints.length);
@@ -233,6 +153,7 @@ public class AeroMapperArrayTests extends AeroMapperBaseTest {
         mapper.save(unAnnotatedClass);
         UnAnnotatedClass class2 = mapper.read(UnAnnotatedClass.class, unAnnotatedClass.key);
         Record record = client.get(null, new Key("test", "testSet", unAnnotatedClass.key));
+        @SuppressWarnings("unchecked")
         List<Long> ints = (List<Long>) record.getList("ints");
 
         assertEquals(unAnnotatedClass.ints.length, class2.ints.length);
@@ -243,7 +164,6 @@ public class AeroMapperArrayTests extends AeroMapperBaseTest {
         assertEquals(unAnnotatedClass.ints.length, ints.size());
     }
 
-
     @Test
     public void testLongArray() {
         AeroMapper mapper = new AeroMapper.Builder(client).build();
@@ -253,6 +173,7 @@ public class AeroMapperArrayTests extends AeroMapperBaseTest {
         mapper.save(annotatedClass);
         AnnotatedClass class2 = mapper.read(AnnotatedClass.class, annotatedClass.key);
         Record record = client.get(null, new Key("test", "testSet", annotatedClass.key));
+        @SuppressWarnings("unchecked")
         List<Long> longs = (List<Long>) record.getList("longs");
 
         assertEquals(annotatedClass.longs.length, class2.longs.length);
@@ -282,6 +203,7 @@ public class AeroMapperArrayTests extends AeroMapperBaseTest {
         mapper.save(unAnnotatedClass);
         UnAnnotatedClass class2 = mapper.read(UnAnnotatedClass.class, unAnnotatedClass.key);
         Record record = client.get(null, new Key("test", "testSet", unAnnotatedClass.key));
+        @SuppressWarnings("unchecked")
         List<Long> longs = (List<Long>) record.getList("longs");
 
         assertEquals(unAnnotatedClass.longs.length, class2.longs.length);
@@ -292,7 +214,6 @@ public class AeroMapperArrayTests extends AeroMapperBaseTest {
         assertEquals(unAnnotatedClass.longs.length, longs.size());
     }
 
-
     @Test
     public void testFloatArray() {
         AeroMapper mapper = new AeroMapper.Builder(client).build();
@@ -302,6 +223,7 @@ public class AeroMapperArrayTests extends AeroMapperBaseTest {
         mapper.save(annotatedClass);
         AnnotatedClass class2 = mapper.read(AnnotatedClass.class, annotatedClass.key);
         Record record = client.get(null, new Key("test", "testSet", annotatedClass.key));
+        @SuppressWarnings("unchecked")
         List<Double> floats = (List<Double>) record.getList("floats");
 
         assertEquals(annotatedClass.floats.length, class2.floats.length);
@@ -331,6 +253,7 @@ public class AeroMapperArrayTests extends AeroMapperBaseTest {
         mapper.save(unAnnotatedClass);
         UnAnnotatedClass class2 = mapper.read(UnAnnotatedClass.class, unAnnotatedClass.key);
         Record record = client.get(null, new Key("test", "testSet", unAnnotatedClass.key));
+        @SuppressWarnings("unchecked")
         List<Double> floats = (List<Double>) record.getList("floats");
 
         assertEquals(unAnnotatedClass.floats.length, class2.floats.length);
@@ -341,7 +264,6 @@ public class AeroMapperArrayTests extends AeroMapperBaseTest {
         assertEquals(unAnnotatedClass.floats.length, floats.size());
     }
 
-
     @Test
     public void testDoubleArray() {
         AeroMapper mapper = new AeroMapper.Builder(client).build();
@@ -351,6 +273,7 @@ public class AeroMapperArrayTests extends AeroMapperBaseTest {
         mapper.save(annotatedClass);
         AnnotatedClass class2 = mapper.read(AnnotatedClass.class, annotatedClass.key);
         Record record = client.get(null, new Key("test", "testSet", annotatedClass.key));
+        @SuppressWarnings("unchecked")
         List<Double> doubles = (List<Double>) record.getList("doubles");
 
         assertEquals(annotatedClass.doubles.length, class2.doubles.length);
@@ -380,6 +303,7 @@ public class AeroMapperArrayTests extends AeroMapperBaseTest {
         mapper.save(unAnnotatedClass);
         UnAnnotatedClass class2 = mapper.read(UnAnnotatedClass.class, unAnnotatedClass.key);
         Record record = client.get(null, new Key("test", "testSet", unAnnotatedClass.key));
+        @SuppressWarnings("unchecked")
         List<Double> doubles = (List<Double>) record.getList("doubles");
 
         assertEquals(unAnnotatedClass.doubles.length, class2.doubles.length);
@@ -390,7 +314,6 @@ public class AeroMapperArrayTests extends AeroMapperBaseTest {
         assertEquals(unAnnotatedClass.doubles.length, doubles.size());
     }
 
-
     @Test
     public void testStringArray() {
         AeroMapper mapper = new AeroMapper.Builder(client).build();
@@ -400,6 +323,7 @@ public class AeroMapperArrayTests extends AeroMapperBaseTest {
         mapper.save(annotatedClass);
         AnnotatedClass class2 = mapper.read(AnnotatedClass.class, annotatedClass.key);
         Record record = client.get(null, new Key("test", "testSet", annotatedClass.key));
+        @SuppressWarnings("unchecked")
         List<String> strings = (List<String>) record.getList("strings");
 
         assertEquals(annotatedClass.strings.length, class2.strings.length);
@@ -429,6 +353,7 @@ public class AeroMapperArrayTests extends AeroMapperBaseTest {
         mapper.save(unAnnotatedClass);
         UnAnnotatedClass class2 = mapper.read(UnAnnotatedClass.class, unAnnotatedClass.key);
         Record record = client.get(null, new Key("test", "testSet", unAnnotatedClass.key));
+        @SuppressWarnings("unchecked")
         List<String> strings = (List<String>) record.getList("strings");
 
         assertEquals(unAnnotatedClass.strings.length, class2.strings.length);
@@ -439,14 +364,16 @@ public class AeroMapperArrayTests extends AeroMapperBaseTest {
         assertEquals(unAnnotatedClass.strings.length, strings.size());
     }
 
-
     @Test
     public void testClassArray() {
         ClassCache.getInstance().clear();
         AeroMapper mapper = new AeroMapper.Builder(client).build();
         AnnotatedClass annotatedClass = new AnnotatedClass();
         annotatedClass.key = 14;
-        annotatedClass.children = new ChildClass[]{new ChildClass(1, "a", 2), new ChildClass(2, "b", 4), new ChildClass(3, "c", 6)};
+        annotatedClass.children = new ChildClass[]{
+                new ChildClass(1, "a", 2),
+                new ChildClass(2, "b", 4), new ChildClass(3, "c", 6)
+        };
         mapper.save(annotatedClass);
         AnnotatedClass class2 = mapper.read(AnnotatedClass.class, annotatedClass.key);
 
@@ -481,7 +408,11 @@ public class AeroMapperArrayTests extends AeroMapperBaseTest {
 
         UnAnnotatedClass unAnnotatedClass = new UnAnnotatedClass();
         unAnnotatedClass.key = 15;
-        unAnnotatedClass.children = new UnAnnotatedChildClass[]{new UnAnnotatedChildClass(1, "a", 2), new UnAnnotatedChildClass(2, "b", 4), new UnAnnotatedChildClass(3, "c", 6)};
+        unAnnotatedClass.children = new UnAnnotatedChildClass[]{
+                new UnAnnotatedChildClass(1, "a", 2),
+                new UnAnnotatedChildClass(2, "b", 4),
+                new UnAnnotatedChildClass(3, "c", 6)
+        };
         mapper.save(unAnnotatedClass);
         UnAnnotatedClass class2 = mapper.read(UnAnnotatedClass.class, unAnnotatedClass.key);
 
@@ -489,5 +420,91 @@ public class AeroMapperArrayTests extends AeroMapperBaseTest {
         for (int i = 0; i < unAnnotatedClass.children.length; i++) {
             assertEquals(unAnnotatedClass.children[i], class2.children[i]);
         }
+    }
+
+    @AerospikeRecord(namespace = "test", set = "testSet")
+    public static class ChildClass {
+        private int a;
+        private String b;
+        private float c;
+
+        public ChildClass() {
+        }
+
+        public ChildClass(int a, String b, float c) {
+            super();
+            this.a = a;
+            this.b = b;
+            this.c = c;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (obj == null || getClass() != obj.getClass()) {
+                return false;
+            }
+            ChildClass other = (ChildClass) obj;
+            return this.a == other.a
+                    && this.c == other.c
+                    && ((this.b == null && other.b == null) || (this.b != null && this.b.equals(other.b)));
+        }
+    }
+
+    @AerospikeRecord(namespace = "test", set = "testSet")
+    public static class AnnotatedClass {
+        @AerospikeKey
+        private int key;
+        private byte[] bytes;
+        private short[] shorts;
+        private int[] ints;
+        private long[] longs;
+        private float[] floats;
+        private double[] doubles;
+        private String[] strings;
+        @AerospikeEmbed
+        private ChildClass[] children;
+        @AerospikeEmbed(elementType = EmbedType.LIST)
+        private ChildClass[] listChildren;
+        @AerospikeEmbed(elementType = EmbedType.MAP)
+        private ChildClass[] mapChildren;
+    }
+
+    public static class UnAnnotatedChildClass {
+        private int a;
+        private String b;
+        private float c;
+
+        public UnAnnotatedChildClass() {
+        }
+
+        public UnAnnotatedChildClass(int a, String b, float c) {
+            super();
+            this.a = a;
+            this.b = b;
+            this.c = c;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (obj == null || getClass() != obj.getClass()) {
+                return false;
+            }
+            UnAnnotatedChildClass other = (UnAnnotatedChildClass) obj;
+            return this.a == other.a
+                    && this.c == other.c
+                    && ((this.b == null && other.b == null) || (this.b != null && this.b.equals(other.b)));
+        }
+    }
+
+    public static class UnAnnotatedClass {
+        private int key;
+        private byte[] bytes;
+        private short[] shorts;
+        private int[] ints;
+        private long[] longs;
+        private float[] floats;
+        private double[] doubles;
+        private String[] strings;
+        private UnAnnotatedChildClass[] children;
     }
 }
