@@ -1,41 +1,19 @@
 package com.aerospike.mapper;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import com.aerospike.mapper.annotations.AerospikeKey;
+import com.aerospike.mapper.annotations.AerospikeRecord;
+import com.aerospike.mapper.tools.AeroMapper;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import org.junit.jupiter.api.Test;
-
-import com.aerospike.mapper.annotations.AerospikeKey;
-import com.aerospike.mapper.annotations.AerospikeRecord;
-import com.aerospike.mapper.tools.AeroMapper;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class AnonymousReferencesTest extends AeroMapperBaseTest {
 
-    @AerospikeRecord(namespace = "test", set = "A")
-    public static class A {
-        @AerospikeKey
-        public int id;
-        public List<B> namedB;
-        public List unnamedB;
-        public List nonB;
-
-        public A() {
-            namedB = new ArrayList<>();
-            unnamedB = new ArrayList<>();
-            nonB = new ArrayList<>();
-        }
-    }
-
-    @AerospikeRecord(namespace = "test", set = "B")
-    public static class B {
-        @AerospikeKey
-        public int id;
-        public String name;
-    }
-
     @Test
+    @SuppressWarnings({"unchecked", "rawtypes"})
     public void runner() {
         AeroMapper mapper = new AeroMapper.Builder(client).build();
         B b = new B();
@@ -56,7 +34,7 @@ public class AnonymousReferencesTest extends AeroMapperBaseTest {
         a.unnamedB.add(b);
         a.unnamedB.add(b1);
 
-        List nonB = new ArrayList();
+        List nonB = new ArrayList<>();
         nonB.add(2L);
         nonB.add("B");
         a.nonB.add(nonB);
@@ -79,5 +57,27 @@ public class AnonymousReferencesTest extends AeroMapperBaseTest {
         assertEquals(a.nonB.size(), a2.nonB.size());
         assertEquals(((List) a.nonB.get(0)).get(0), ((List) a2.nonB.get(0)).get(0));
         assertEquals(((List) a.nonB.get(0)).get(1), ((List) a2.nonB.get(0)).get(1));
+    }
+
+    @AerospikeRecord(namespace = "test", set = "A")
+    public static class A {
+        @AerospikeKey
+        public int id;
+        public List<B> namedB;
+        public List unnamedB;
+        public List nonB;
+
+        public A() {
+            namedB = new ArrayList<>();
+            unnamedB = new ArrayList<>();
+            nonB = new ArrayList<>();
+        }
+    }
+
+    @AerospikeRecord(namespace = "test", set = "B")
+    public static class B {
+        @AerospikeKey
+        public int id;
+        public String name;
     }
 }
