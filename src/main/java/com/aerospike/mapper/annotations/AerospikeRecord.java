@@ -17,7 +17,6 @@ public @interface AerospikeRecord {
     /**
      * The TTL for the record. As this must be a primitive value <code>Integer.MIN_VALUE</code> is used to indicate that the 
      * value has not been explicitly set.
-     * @return
      */
     int ttl() default Integer.MIN_VALUE;
 
