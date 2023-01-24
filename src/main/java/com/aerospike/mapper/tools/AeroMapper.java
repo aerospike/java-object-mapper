@@ -1,8 +1,27 @@
 package com.aerospike.mapper.tools;
 
-import com.aerospike.client.*;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.lang.reflect.Array;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Function;
+
+import javax.validation.constraints.NotNull;
+
+import org.apache.commons.lang3.StringUtils;
+
+import com.aerospike.client.AerospikeException;
 import com.aerospike.client.AerospikeException.ScanTerminated;
+import com.aerospike.client.Bin;
+import com.aerospike.client.IAerospikeClient;
+import com.aerospike.client.Key;
+import com.aerospike.client.Log;
+import com.aerospike.client.Operation;
 import com.aerospike.client.Record;
+import com.aerospike.client.Value;
 import com.aerospike.client.policy.BatchPolicy;
 import com.aerospike.client.policy.Policy;
 import com.aerospike.client.policy.QueryPolicy;
@@ -22,17 +41,6 @@ import com.aerospike.mapper.tools.virtuallist.VirtualList;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import org.apache.commons.lang3.StringUtils;
-
-import javax.validation.constraints.NotNull;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.lang.reflect.Array;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Function;
 
 public class AeroMapper implements IAeroMapper {
 
@@ -216,21 +224,24 @@ public class AeroMapper implements IAeroMapper {
             if (recordExistsAction != null) {
                 writePolicy.recordExistsAction = recordExistsAction;
             }
+            
+            // #132 -- Ensure that if an overriding TTL / sendkey is passed in the policy it is NOT overwritten. Hence
+            // only if the policy is null do we override these settings. 
+            Integer ttl = entry.getTtl();
+            Boolean sendKey = entry.getSendKey();
+
+            if (ttl != null) {
+                writePolicy.expiration = ttl;
+            }
+            if (sendKey != null) {
+                writePolicy.sendKey = sendKey;
+            }
         }
 
         String set = entry.getSetName();
         if ("".equals(set)) {
             // Use the null set
             set = null;
-        }
-        Integer ttl = entry.getTtl();
-        Boolean sendKey = entry.getSendKey();
-
-        if (ttl != null) {
-            writePolicy.expiration = ttl;
-        }
-        if (sendKey != null) {
-            writePolicy.sendKey = sendKey;
         }
         Key key = new Key(entry.getNamespace(), set, Value.get(entry.getKey(object)));
 
