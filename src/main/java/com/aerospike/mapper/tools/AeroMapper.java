@@ -226,7 +226,7 @@ public class AeroMapper implements IAeroMapper {
             }
             
             // #132 -- Ensure that if an overriding TTL / sendkey is passed in the policy it is NOT overwritten. Hence
-            // only if the policy is <code>null</code> do we override these settings. 
+            // only if the policy is null do we override these settings. 
             Integer ttl = entry.getTtl();
             Boolean sendKey = entry.getSendKey();
 
