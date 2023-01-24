@@ -53,7 +53,6 @@ public class TestCustomTtl extends AeroMapperBaseTest {
 	
 	@Test
 	public void testTtlViaPolicy() {
-		
 		WritePolicy writePolicy = new WritePolicy();
 		writePolicy.expiration = 300;
 		AeroMapper mapper = new AeroMapper.Builder(client)
@@ -78,5 +77,4 @@ public class TestCustomTtl extends AeroMapperBaseTest {
 		assertTrue(readClient1.getTimeToLive() > 290 && readClient1.getTimeToLive() <= 300);
 		assertTrue(readClient2.getTimeToLive() > 90 && readClient2.getTimeToLive() <= 100);
 	}
-
 }
