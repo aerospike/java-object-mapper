@@ -26,15 +26,15 @@
 		<maven.javadoc.plugin.version>3.3.0</maven.javadoc.plugin.version>
 		<maven.gpg.plugin.version>1.6</maven.gpg.plugin.version>
 		<maven.compiler.plugin.version>3.10.1</maven.compiler.plugin.version>
-		<maven-surefire-plugin.version>3.0.0-M7</maven-surefire-plugin.version>
+		<maven-surefire-plugin.version>3.0.0-M8</maven-surefire-plugin.version>
 		<javax.validation-api.version>2.0.1.Final</javax.validation-api.version>
-		<aerospike-client.version>6.1.2</aerospike-client.version>
+		<aerospike-client.version>6.1.6</aerospike-client.version>
 		<aerospike-reactor.version>6.1.2</aerospike-reactor.version>
 		<commons-lang3.version>3.12.0</commons-lang3.version>
-		<jackson-dataformat-yaml.version>2.13.4</jackson-dataformat-yaml.version>
+		<jackson-dataformat-yaml.version>2.14.2</jackson-dataformat-yaml.version>
 		<lombok.version>1.18.24</lombok.version>
-		<reactor-test.version>3.4.23</reactor-test.version>
-		<junit-jupiter.version>5.9.1</junit-jupiter.version>
+		<reactor-test.version>3.5.2</reactor-test.version>
+		<junit-jupiter.version>5.9.2</junit-jupiter.version>
 	</properties>
 
 	<licenses>
