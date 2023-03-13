@@ -1,8 +1,32 @@
 package com.aerospike.mapper.tools;
 
-import com.aerospike.client.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.lang.reflect.Array;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
+import javax.validation.constraints.NotNull;
+
+import org.apache.commons.lang3.StringUtils;
+
+import com.aerospike.client.AerospikeException;
 import com.aerospike.client.AerospikeException.ScanTerminated;
+import com.aerospike.client.Bin;
+import com.aerospike.client.IAerospikeClient;
+import com.aerospike.client.Key;
+import com.aerospike.client.Log;
+import com.aerospike.client.Operation;
 import com.aerospike.client.Record;
+import com.aerospike.client.Value;
 import com.aerospike.client.policy.BatchPolicy;
 import com.aerospike.client.policy.Policy;
 import com.aerospike.client.policy.QueryPolicy;
@@ -12,6 +36,7 @@ import com.aerospike.client.policy.WritePolicy;
 import com.aerospike.client.query.Filter;
 import com.aerospike.client.query.RecordSet;
 import com.aerospike.client.query.Statement;
+import com.aerospike.mapper.annotations.AerospikeRecord;
 import com.aerospike.mapper.tools.ClassCache.PolicyType;
 import com.aerospike.mapper.tools.configuration.ClassConfig;
 import com.aerospike.mapper.tools.configuration.Configuration;
@@ -22,17 +47,6 @@ import com.aerospike.mapper.tools.virtuallist.VirtualList;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import org.apache.commons.lang3.StringUtils;
-
-import javax.validation.constraints.NotNull;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.lang.reflect.Array;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Function;
 
 public class AeroMapper implements IAeroMapper {
 
@@ -68,6 +82,50 @@ public class AeroMapper implements IAeroMapper {
             classesToPreload.add(clazz);
             return this;
         }
+
+        public Builder preLoadClasses(Class<?> ... clazzes) {
+            if (classesToPreload == null) {
+                classesToPreload = new ArrayList<>();
+            }
+            classesToPreload.addAll(Arrays.asList(clazzes));
+            return this;
+        }
+
+        public Builder preLoadClassesFromPackage(Class<?> classInPackage) {
+        	return preLoadClassesFromPackage(classInPackage.getPackageName());
+        }
+
+        public Builder preLoadClassesFromPackage(String thePackage) {
+        	Set<Class<?>> clazzes = findAllClassesUsingClassLoader(thePackage);
+        	for (Class<?> thisClazz : clazzes) {
+        		// Only add classes with the AerospikeRecord annotation.
+        		if (thisClazz.getAnnotation(AerospikeRecord.class) != null) {
+        			this.preLoadClass(thisClazz);
+        		}
+        	}
+        	return this;
+        }
+        
+        // See https://www.baeldung.com/java-find-all-classes-in-package
+	    private Set<Class<?>> findAllClassesUsingClassLoader(String packageName) {
+	        InputStream stream = ClassLoader.getSystemClassLoader()
+	          .getResourceAsStream(packageName.replaceAll("[.]", "/"));
+	        BufferedReader reader = new BufferedReader(new InputStreamReader(stream));
+	        return reader.lines()
+	          .filter(line -> line.endsWith(".class"))
+	          .map(line -> getClass(line, packageName))
+	          .collect(Collectors.toSet());
+	    }
+	 
+	    private Class<?> getClass(String className, String packageName) {
+	        try {
+	            return Class.forName(packageName + "."
+	              + className.substring(0, className.lastIndexOf('.')));
+	        } catch (ClassNotFoundException e) {
+	        }
+	        return null;
+	    }
+
 
         public Builder withConfigurationFile(File file) throws IOException {
             return this.withConfigurationFile(file, false);
