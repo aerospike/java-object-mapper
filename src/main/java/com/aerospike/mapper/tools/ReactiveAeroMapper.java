@@ -210,21 +210,23 @@ public class ReactiveAeroMapper implements IReactiveAeroMapper {
             if (recordExistsAction != null) {
                 writePolicy.recordExistsAction = recordExistsAction;
             }
+            
+            // #132 -- Only override the TTL / send key if the policy was not passed in.
+            Integer ttl = entry.getTtl();
+            Boolean sendKey = entry.getSendKey();
+
+            if (ttl != null) {
+                writePolicy.expiration = ttl;
+            }
+            if (sendKey != null) {
+                writePolicy.sendKey = sendKey;
+            }
         }
 
         String set = entry.getSetName();
         if ("".equals(set)) {
             // Use the null set
             set = null;
-        }
-        Integer ttl = entry.getTtl();
-        Boolean sendKey = entry.getSendKey();
-
-        if (ttl != null) {
-            writePolicy.expiration = ttl;
-        }
-        if (sendKey != null) {
-            writePolicy.sendKey = sendKey;
         }
         Key key = new Key(entry.getNamespace(), set, Value.get(entry.getKey(object)));
 
