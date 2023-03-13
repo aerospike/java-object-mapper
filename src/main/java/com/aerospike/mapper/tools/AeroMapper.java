@@ -295,21 +295,24 @@ public class AeroMapper implements IAeroMapper {
             if (recordExistsAction != null) {
                 writePolicy.recordExistsAction = recordExistsAction;
             }
+            
+            // #132 -- Ensure that if an overriding TTL / sendkey is passed in the policy it is NOT overwritten. Hence
+            // only if the policy is null do we override these settings. 
+            Integer ttl = entry.getTtl();
+            Boolean sendKey = entry.getSendKey();
+
+            if (ttl != null) {
+                writePolicy.expiration = ttl;
+            }
+            if (sendKey != null) {
+                writePolicy.sendKey = sendKey;
+            }
         }
 
         String set = entry.getSetName();
         if ("".equals(set)) {
             // Use the null set
             set = null;
-        }
-        Integer ttl = entry.getTtl();
-        Boolean sendKey = entry.getSendKey();
-
-        if (ttl != null) {
-            writePolicy.expiration = ttl;
-        }
-        if (sendKey != null) {
-            writePolicy.sendKey = sendKey;
         }
         Key key = new Key(entry.getNamespace(), set, Value.get(entry.getKey(object)));
 

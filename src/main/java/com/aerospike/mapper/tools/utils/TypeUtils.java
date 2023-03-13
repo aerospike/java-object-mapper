@@ -1,5 +1,20 @@
 package com.aerospike.mapper.tools.utils;
 
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
 import com.aerospike.client.AerospikeException;
 import com.aerospike.client.cdt.ListReturnType;
 import com.aerospike.client.cdt.MapReturnType;
@@ -16,20 +31,25 @@ import com.aerospike.mapper.tools.configuration.BinConfig;
 import com.aerospike.mapper.tools.configuration.ClassConfig;
 import com.aerospike.mapper.tools.configuration.EmbedConfig;
 import com.aerospike.mapper.tools.configuration.ReferenceConfig;
-import com.aerospike.mapper.tools.mappers.*;
+import com.aerospike.mapper.tools.mappers.ArrayMapper;
+import com.aerospike.mapper.tools.mappers.BooleanMapper;
+import com.aerospike.mapper.tools.mappers.ByteMapper;
+import com.aerospike.mapper.tools.mappers.CharacterMapper;
+import com.aerospike.mapper.tools.mappers.DateMapper;
+import com.aerospike.mapper.tools.mappers.DefaultMapper;
+import com.aerospike.mapper.tools.mappers.EnumMapper;
+import com.aerospike.mapper.tools.mappers.FloatMapper;
+import com.aerospike.mapper.tools.mappers.InstantMapper;
+import com.aerospike.mapper.tools.mappers.IntMapper;
+import com.aerospike.mapper.tools.mappers.ListMapper;
+import com.aerospike.mapper.tools.mappers.LocalDateMapper;
+import com.aerospike.mapper.tools.mappers.LocalDateTimeMapper;
+import com.aerospike.mapper.tools.mappers.LocalTimeMapper;
+import com.aerospike.mapper.tools.mappers.MapMapper;
+import com.aerospike.mapper.tools.mappers.ObjectEmbedMapper;
+import com.aerospike.mapper.tools.mappers.ObjectReferenceMapper;
+import com.aerospike.mapper.tools.mappers.ShortMapper;
 import com.aerospike.mapper.tools.virtuallist.ReturnType;
-
-import java.lang.annotation.Annotation;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
-import java.time.Instant;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 public class TypeUtils {
 
@@ -65,9 +85,14 @@ public class TypeUtils {
         boolean addToMap = true;
         if (typeMapper == null) {
             if (Date.class.isAssignableFrom(clazz)) {
-                typeMapper = new DateMapper();
-            }
-            if (Instant.class.isAssignableFrom(clazz)) {
+                typeMapper = new DateMapper(); 
+            } else if (LocalDateTime.class.isAssignableFrom(clazz)) {
+                typeMapper = new LocalDateTimeMapper();
+            } else if (LocalDate.class.isAssignableFrom(clazz)) {
+                typeMapper = new LocalDateMapper();
+            } else if (LocalTime.class.isAssignableFrom(clazz)) {
+                typeMapper = new LocalTimeMapper();
+            } else if (Instant.class.isAssignableFrom(clazz)) {
                 typeMapper = new InstantMapper();
             } else if (Byte.class.isAssignableFrom(clazz) || Byte.TYPE.isAssignableFrom(clazz)) {
                 typeMapper = new ByteMapper();
