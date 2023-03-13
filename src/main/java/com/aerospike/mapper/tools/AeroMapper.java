@@ -90,9 +90,30 @@ public class AeroMapper implements IAeroMapper {
             classesToPreload.addAll(Arrays.asList(clazzes));
             return this;
         }
+        
+        public String getPackageName(Class<?> clazz) {
+        	Class<?> c;
+        	if (clazz.isArray()) {
+        		c = clazz.componentType();
+        	}
+        	else {
+        		c = clazz;
+        	}
+        	String pn;
+        	if (c.isPrimitive()) {
+        		pn = "java.lang";
+        	}
+        	else {
+                String cn = c.getName();
+                int dot = cn.lastIndexOf('.');
+                pn = (dot != -1) ? cn.substring(0, dot).intern() : "";
+        	}        		
+            return pn;
+        }
+
 
         public Builder preLoadClassesFromPackage(Class<?> classInPackage) {
-        	return preLoadClassesFromPackage(classInPackage.getPackageName());
+        	return preLoadClassesFromPackage(getPackageName(classInPackage));
         }
 
         public Builder preLoadClassesFromPackage(String thePackage) {
