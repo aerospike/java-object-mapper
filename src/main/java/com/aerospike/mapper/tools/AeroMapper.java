@@ -94,7 +94,7 @@ public class AeroMapper implements IAeroMapper {
         public String getPackageName(Class<?> clazz) {
         	Class<?> c;
         	if (clazz.isArray()) {
-        		c = clazz.componentType();
+        		c = clazz.getComponentType();
         	}
         	else {
         		c = clazz;
