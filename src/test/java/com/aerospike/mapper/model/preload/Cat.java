@@ -1,34 +1,39 @@
 package com.aerospike.mapper.model.preload;
 
+import com.aerospike.mapper.annotations.AerospikeConstructor;
 import com.aerospike.mapper.annotations.AerospikeRecord;
 import com.aerospike.mapper.annotations.ParamFrom;
 
 import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.experimental.SuperBuilder;
 
 @Data
+@SuperBuilder
+@EqualsAndHashCode(callSuper = true)
 @AerospikeRecord(namespace = "test", set = "zoo")
 public class Cat extends Animal {
-	
-	private String breed;
-	private String lifeSpan;
 
-	public Cat(@ParamFrom("animalId") String catId, @ParamFrom("breed") String breed, @ParamFrom("lifeSpan") String lifeSpan) {
-		super(catId);
-		this.breed = breed;
-		this.lifeSpan = lifeSpan;
-		
-		catId = "" + ((int) (Math.random() * 1000));
-	}
+    private final String breed;
+    private final String lifeSpan;
 
-	public String getBreed() {
-		return breed;
-	}
-	
-	public String getCatId() {
-		return super.getAnimalId();
-	}
-	
-	public String getLifeSpan() {
-		return lifeSpan;
-	}
+    @AerospikeConstructor
+    public Cat(@ParamFrom("animalId") String catId, @ParamFrom("breed") String breed,
+            @ParamFrom("lifeSpan") String lifeSpan) {
+        super(catId);
+        this.breed = breed;
+        this.lifeSpan = lifeSpan;
+    }
+
+    public String getBreed() {
+        return breed;
+    }
+
+    public String getCatId() {
+        return super.getAnimalId();
+    }
+
+    public String getLifeSpan() {
+        return lifeSpan;
+    }
 }

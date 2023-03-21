@@ -92,18 +92,16 @@ public class AeroMapper implements IAeroMapper {
         }
         
         public String getPackageName(Class<?> clazz) {
-        	Class<?> c;
-        	if (clazz.isArray()) {
-        		c = clazz.getComponentType();
-        	}
-        	else {
-        		c = clazz;
-        	}
-        	String pn;
-        	if (c.isPrimitive()) {
-        		pn = "java.lang";
-        	}
-        	else {
+            Class<?> c;
+            if (clazz.isArray()) {
+                c = clazz.getComponentType();
+            } else {
+                c = clazz;
+            }
+            String pn;
+            if (c.isPrimitive()) {
+                pn = "java.lang";
+            } else {
                 String cn = c.getName();
                 int dot = cn.lastIndexOf('.');
                 pn = (dot != -1) ? cn.substring(0, dot).intern() : "";
@@ -111,42 +109,40 @@ public class AeroMapper implements IAeroMapper {
             return pn;
         }
 
-
         public Builder preLoadClassesFromPackage(Class<?> classInPackage) {
         	return preLoadClassesFromPackage(getPackageName(classInPackage));
         }
 
         public Builder preLoadClassesFromPackage(String thePackage) {
-        	Set<Class<?>> clazzes = findAllClassesUsingClassLoader(thePackage);
-        	for (Class<?> thisClazz : clazzes) {
-        		// Only add classes with the AerospikeRecord annotation.
-        		if (thisClazz.getAnnotation(AerospikeRecord.class) != null) {
-        			this.preLoadClass(thisClazz);
-        		}
-        	}
-        	return this;
+            Set<Class<?>> clazzes = findAllClassesUsingClassLoader(thePackage);
+            for (Class<?> thisClazz : clazzes) {
+                // Only add classes with the AerospikeRecord annotation.
+                if (thisClazz.getAnnotation(AerospikeRecord.class) != null) {
+                    this.preLoadClass(thisClazz);
+                }
+            }
+            return this;
         }
         
         // See https://www.baeldung.com/java-find-all-classes-in-package
-	    private Set<Class<?>> findAllClassesUsingClassLoader(String packageName) {
-	        InputStream stream = ClassLoader.getSystemClassLoader()
-	          .getResourceAsStream(packageName.replaceAll("[.]", "/"));
-	        BufferedReader reader = new BufferedReader(new InputStreamReader(stream));
-	        return reader.lines()
-	          .filter(line -> line.endsWith(".class"))
-	          .map(line -> getClass(line, packageName))
-	          .collect(Collectors.toSet());
-	    }
-	 
-	    private Class<?> getClass(String className, String packageName) {
-	        try {
-	            return Class.forName(packageName + "."
-	              + className.substring(0, className.lastIndexOf('.')));
-	        } catch (ClassNotFoundException e) {
-	        }
-	        return null;
-	    }
+        private Set<Class<?>> findAllClassesUsingClassLoader(String packageName) {
+            InputStream stream = ClassLoader.getSystemClassLoader()
+                .getResourceAsStream(packageName.replaceAll("[.]", "/"));
+            BufferedReader reader = new BufferedReader(new InputStreamReader(stream));
+            return reader.lines()
+                .filter(line -> line.endsWith(".class"))
+                .map(line -> getClass(line, packageName))
+                .collect(Collectors.toSet());
+        }
 
+        private Class<?> getClass(String className, String packageName) {
+            try {
+                return Class.forName(packageName + "."
+                  + className.substring(0, className.lastIndexOf('.')));
+            } catch (ClassNotFoundException ignored) {
+            }
+            return null;
+        }
 
         public Builder withConfigurationFile(File file) throws IOException {
             return this.withConfigurationFile(file, false);
