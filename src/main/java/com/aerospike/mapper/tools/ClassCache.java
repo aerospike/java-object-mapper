@@ -45,7 +45,8 @@ public class ClassCache {
 
     @SuppressWarnings("unchecked")
     public <T> ClassCacheEntry<T> loadClass(@NotNull Class<T> clazz, IBaseAeroMapper mapper, boolean requireRecord) {
-        if (clazz.isPrimitive() || clazz.equals(Object.class) || clazz.equals(String.class)
+        // Clazz can be null if an interface is passed
+        if (clazz == null || clazz.isPrimitive() || clazz.equals(Object.class) || clazz.equals(String.class)
                 || clazz.equals(Character.class) || Number.class.isAssignableFrom(clazz)) {
             return null;
         }
