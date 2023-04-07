@@ -80,7 +80,6 @@ public class ClassCacheEntry<T> {
     private Object[] constructorParamDefaults;
     private Constructor<T> constructor;
     private final ClassConfig config;
-    private List<AerospikeRecord> aerospikeInterfaceRecords;
 
     private String factoryMethod;
     private String factoryClass;
@@ -134,9 +133,11 @@ public class ClassCacheEntry<T> {
             this.overrideSettings(config);
         }
 
-        this.aerospikeInterfaceRecords = this.loadAerospikeRecordsFromInterfaces(this.clazz);
-        for (int i = 0; (this.namespace == null || this.namespace.isEmpty()) && i < aerospikeInterfaceRecords.size(); i++) {
-            this.setPropertiesFromAerospikeRecord(aerospikeInterfaceRecords.get(i));
+        if (this.namespace == null || this.namespace.isEmpty()) {
+            List<AerospikeRecord> aerospikeInterfaceRecords = this.loadAerospikeRecordsFromInterfaces(this.clazz);
+            for (int i = 0; (this.namespace == null || this.namespace.isEmpty()) && i < aerospikeInterfaceRecords.size(); i++) {
+                this.setPropertiesFromAerospikeRecord(aerospikeInterfaceRecords.get(i));
+            }
         }
         this.loadFieldsFromClass();
         this.loadPropertiesFromClass();
