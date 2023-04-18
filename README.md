@@ -44,11 +44,11 @@ The documentation for this project can be found on [javadoc.io](https://www.java
 # Compatibility with Aerospike Clients
 
 | Java Object Mapper Version | Aerospike Client | Aerospike Reactor Client
-| :----------- | :----------- | :-----------
-| 2.1.x | 6.1.x | 6.1.x
-| 2.0.x | 5.1.x | 5.1.x
-| 1.2.x, 1.3.x, 1.4.x | 5.1.x | 5.0.x
-| 1.1.x | 5.0.x | 
+|:---------------------------| :----------- | :-----------
+| 2.1.x, 2.2.x               | 6.1.x | 6.1.x
+| 2.0.x                      | 5.1.x | 5.1.x
+| 1.2.x, 1.3.x, 1.4.x        | 5.1.x | 5.0.x
+| 1.1.x                      | 5.0.x | 
 
 # Installing the Mapper
 The easiest way to use the mapper is through Maven or Gradle. For Maven, pull it in from Maven Central:
@@ -57,13 +57,13 @@ The easiest way to use the mapper is through Maven or Gradle. For Maven, pull it
 <dependency>
     <groupId>com.aerospike</groupId>
     <artifactId>java-object-mapper</artifactId>
-    <version>2.1.0</version>
+    <version>2.2.0</version>
 </dependency>
 ```
 For Gradle, you can use
 ```
 // https://mvnrepository.com/artifact/com.aerospike/java-object-mapper
-implementation group: 'com.aerospike', name: 'java-object-mapper', version: '2.1.0'
+implementation group: 'com.aerospike', name: 'java-object-mapper', version: '2.2.0'
 ```
 
 # Motivation and a simple example
@@ -242,6 +242,12 @@ The Builder constructor simply takes an IAerospikeClient which it uses for acces
 `.addConverter(Object converter)`: Registers a class as a custom converter, which allows programmatic control over how data types are mapped to and from Aerospike. This custom converter must have @ToAerospike and @FromAerospike annotated methods. For more information, see [Custom Object Converters](#custom-object-converters) below.
 
 `.preLoadClass(Class<?>)`: Used to load a class before it is needed. The process of loading a class for the first time can be moderately expensive -- there is lots of introspection which goes on to determine how to map the classes to and from the database with the help of the annotations or configuration file. The results of this process are cached so it only has to happen once, and as few introspection calls as possible are called during the actual transformation. If a class is not preloaded, this computation will happen the first time an instance of that class is encountered, resulting in slowdown on the first call.
+
+Another reason to preload a class is situations where an abstract superclass might be read without the subclasses being seen by the AeroMapper first. For example, a list of `Animal` might be stored in the database, but `Animal` is an abstract class with concrete subclasses like `Dog`, `Cat`, etc. If the first call of the AeroMapper is to read a list of `Animal` from the database, there is not enough information to resolve the concrete sub-classes without preloading them.
+
+`.preLoadClasses(Class<?> ...)`: Use to preload several classes before they are called. This is a convenience mechanism which calls `.preLoadClass` for each of the classes in the list.
+
+`.preLoadClassesFromPackage(String | Class<?>)`: Preload all the classes in the specified package which are annotated with `@AerospikeRecord`. The package can be specified by passing a string of the package name or by passing a class in that package. The latter method is preferred as this is less brittle as code is refactored. Note that if a class is passed this class is used only for the package name and does not necessarily need to be a class annotated with `@AerospikeRecord`. Creating a 'marker' class in the package with no functionality and passing to this method is a good way of preventing breaking the preloading as classes are moved around.
 
 `withConfigurationFile`: Whilst mapping information from POJOs via annotations is efficient and has the mapping code inline with the POJO code, there are times when this is not available. For example, if an external library with POJOs is being used and it is desired to map those POJOs to the database, there is no easy way of annotating the source code. Another case this applies is if different mapping parameters are needed between different environments. For example, embedded objects might be stored in a map in development for ease of debugging, but stored in a list in production for compaction of stored data. In these cases an external configuration YAML file can be used to specify how to map the data to the database. See [External Configuration File](#external-configuration-file) for more details. There is an overload of this method which takes an additional boolean parameter -- if this is `true` and the configuration file is not valid, errors will be logged to `stderr` and the process continue. It is normally not recommended to set this parameter to true.
 

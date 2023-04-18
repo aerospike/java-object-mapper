@@ -143,10 +143,6 @@ public class ClassCacheEntry<T> {
         this.loadPropertiesFromClass();
         this.superClazz = ClassCache.getInstance().loadClass(this.clazz.getSuperclass(), this.mapper, !this.mapAll);
         this.binCount = this.values.size() + (superClazz != null ? superClazz.binCount : 0);
-//        if (this.binCount == 0) {
-//            throw new AerospikeException(String.format("Class %s has no values defined to be stored in the database",
-//                    clazz.getSimpleName()));
-//        }
         this.formOrdinalsFromValues();
         Method factoryConstructorMethod = findConstructorFactoryMethod();
         if (!this.clazz.isInterface()) {
@@ -816,6 +812,9 @@ public class ClassCacheEntry<T> {
     }
 
     public Integer getTtl() {
+    	if (ttl == null || ttl == Integer.MIN_VALUE) {
+    		return null;
+    	}
         return ttl;
     }
 

@@ -1,12 +1,5 @@
 package com.aerospike.mapper;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.fail;
-
-import java.util.Date;
-
-import org.junit.jupiter.api.Test;
-
 import com.aerospike.client.Key;
 import com.aerospike.client.Record;
 import com.aerospike.mapper.annotations.AerospikeBin;
@@ -16,6 +9,12 @@ import com.aerospike.mapper.model.Person;
 import com.aerospike.mapper.model.PersonDifferentNames;
 import com.aerospike.mapper.tools.AeroMapper;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import java.util.Date;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class AeroMapperTest extends AeroMapperBaseTest {
 
@@ -75,6 +74,24 @@ public class AeroMapperTest extends AeroMapperBaseTest {
         assertEquals(record.getInt("a"), p.getAge());
     }
 
+    @Test
+    public void testDuplicateName() {
+        try {
+            new AeroMapper.Builder(client).preLoadClass(DuplicateKeyClass.class).build();
+            fail();
+        } catch (Exception ignore) {
+        }
+    }
+
+    @Test
+    public void testMissingSetter() {
+        try {
+            new AeroMapper.Builder(client).preLoadClass(PropertyWithNoSetter.class).build();
+            fail();
+        } catch (Exception ignore) {
+        }
+    }
+
     @AerospikeRecord(namespace = "test", set = "none", mapAll = false)
     public static class PropertyWithNoSetter {
         @AerospikeBin(name = "dummy")
@@ -100,24 +117,6 @@ public class AeroMapperTest extends AeroMapperBaseTest {
         }
 
         public void setDummy(int dummy) {
-        }
-    }
-
-    @Test
-    public void testDuplicateName() {
-        try {
-            new AeroMapper.Builder(client).preLoadClass(DuplicateKeyClass.class).build();
-            fail();
-        } catch (Exception e) {
-        }
-    }
-
-    @Test
-    public void testMissingSetter() {
-        try {
-            new AeroMapper.Builder(client).preLoadClass(PropertyWithNoSetter.class).build();
-            fail();
-        } catch (Exception e) {
         }
     }
 }
