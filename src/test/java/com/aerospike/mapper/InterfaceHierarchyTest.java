@@ -3,6 +3,7 @@ package com.aerospike.mapper;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
@@ -89,9 +90,7 @@ public class InterfaceHierarchyTest extends AeroMapperBaseTest {
         public NestedContainer(BaseInterface firstChild, BaseInterface ... otherChildren) {
             this();
             this.children.add(firstChild);
-            for (int i = 0; i < otherChildren.length; i++) {
-                this.children.add(otherChildren[i]);
-            }
+            this.children.addAll(Arrays.asList(otherChildren));
         }
     }
 
@@ -118,7 +117,7 @@ public class InterfaceHierarchyTest extends AeroMapperBaseTest {
                 new SubClass1("Wilma")
         );
         
-        mapper.save(container, container.children.get(0), container.children.get(1), container.children.get(2));
+        mapper.save(container);
         NestedContainer readContainer = mapper.read(NestedContainer.class, 2);
         assertEquals(container, readContainer);
     }
