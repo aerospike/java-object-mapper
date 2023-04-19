@@ -17,7 +17,7 @@ import lombok.NoArgsConstructor;
 
 public class InterfaceHierarchyTest extends AeroMapperBaseTest {
     @AerospikeRecord(set = "testSet", namespace = "test")
-    public static interface BaseInterface {
+    public interface BaseInterface {
         String getName();
     }
 
@@ -71,9 +71,7 @@ public class InterfaceHierarchyTest extends AeroMapperBaseTest {
         public Container(BaseInterface firstChild, BaseInterface ... otherChildren) {
             this();
             this.children.add(firstChild);
-            for (int i = 0; i < otherChildren.length; i++) {
-                this.children.add(otherChildren[i]);
-            }
+            this.children.addAll(Arrays.asList(otherChildren));
         }
     }
 
