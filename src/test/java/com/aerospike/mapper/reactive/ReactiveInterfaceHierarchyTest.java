@@ -16,6 +16,8 @@ import com.aerospike.mapper.tools.ReactiveAeroMapper;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import reactor.core.scheduler.Scheduler;
+import reactor.core.scheduler.Schedulers;
 
 public class ReactiveInterfaceHierarchyTest extends ReactiveAeroMapperBaseTest {
     @AerospikeRecord(set = "testSet", namespace = "test")
@@ -105,8 +107,9 @@ public class ReactiveInterfaceHierarchyTest extends ReactiveAeroMapperBaseTest {
                 new SubClass1("Wilma")
         );
         
-        reactiveMapper.save(container);
-        Container readContainer = reactiveMapper.read(Container.class, 1).block();
+        reactiveMapper.save(container, container.getChildren().get(0), container.getChildren().get(1), container.getChildren().get(2))
+                .subscribeOn(Schedulers.parallel()).blockLast();
+        Container readContainer = reactiveMapper.read(Container.class, 1).subscribeOn(Schedulers.parallel()).block();
         assertEquals(container, readContainer);
     }
 
@@ -120,7 +123,7 @@ public class ReactiveInterfaceHierarchyTest extends ReactiveAeroMapperBaseTest {
         );
         
         reactiveMapper.save(container);
-        NestedContainer readContainer = reactiveMapper.read(NestedContainer.class, 2).block();
+        NestedContainer readContainer = reactiveMapper.read(NestedContainer.class, 2).subscribeOn(Schedulers.parallel()).block();
         assertEquals(container, readContainer);
     }
 }
