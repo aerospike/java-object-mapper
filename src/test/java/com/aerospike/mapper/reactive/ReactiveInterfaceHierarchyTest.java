@@ -122,7 +122,7 @@ public class ReactiveInterfaceHierarchyTest extends ReactiveAeroMapperBaseTest {
                 new SubClass1("Wilma")
         );
         
-        reactiveMapper.save(container);
+        reactiveMapper.save(container).subscribeOn(Schedulers.parallel()).block();
         NestedContainer readContainer = reactiveMapper.read(NestedContainer.class, 2).subscribeOn(Schedulers.parallel()).block();
         assertEquals(container, readContainer);
     }
