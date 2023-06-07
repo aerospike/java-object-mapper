@@ -556,4 +556,28 @@ public class ReactiveAeroMapper implements IReactiveAeroMapper {
         }
         return e;
     }
+    
+    @Override
+    public <T> Mono<String> getNamespace(Class<T> clazz) {
+        ClassCacheEntry<T> entry = MapperUtils.getEntryAndValidateNamespace(clazz, this);
+        return entry == null ? null : Mono.just(entry.getNamespace());
+    }
+
+    @Override
+    public <T> Mono<String> getSet(Class<T> clazz) {
+        ClassCacheEntry<?> entry = ClassCache.getInstance().loadClass(clazz, this);
+        return entry == null ? null : Mono.just(entry.getSetName());
+    }
+
+    @Override
+    public Mono<Object> getKey(Object obj) {
+        ClassCacheEntry<?> entry = ClassCache.getInstance().loadClass(obj.getClass(), this);
+        return entry == null ? null : Mono.just(entry.getKey(obj));
+    }
+
+    @Override
+    public Mono<Key> getRecordKey(Object obj) {
+        ClassCacheEntry<?> entry = ClassCache.getInstance().loadClass(obj.getClass(), this);
+        return entry == null ? null : Mono.just(new Key(entry.getNamespace(), entry.getSetName(), Value.get(entry.getKey(obj))));
+    }
 }
