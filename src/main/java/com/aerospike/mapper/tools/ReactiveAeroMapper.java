@@ -1,5 +1,17 @@
 package com.aerospike.mapper.tools;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Objects;
+import java.util.function.Function;
+
+import javax.validation.constraints.NotNull;
+
+import org.apache.commons.lang3.StringUtils;
+
 import com.aerospike.client.AerospikeException;
 import com.aerospike.client.Bin;
 import com.aerospike.client.Key;
@@ -25,18 +37,9 @@ import com.aerospike.mapper.tools.virtuallist.ReactiveVirtualList;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import org.apache.commons.lang3.StringUtils;
+
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-
-import javax.validation.constraints.NotNull;
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
-import java.util.function.Function;
 
 public class ReactiveAeroMapper implements IReactiveAeroMapper {
 
@@ -555,5 +558,29 @@ public class ReactiveAeroMapper implements IReactiveAeroMapper {
             return translateError(e);
         }
         return e;
+    }
+
+    @Override
+    public <T> Mono<String> getNamespace(Class<T> clazz) {
+        ClassCacheEntry<T> entry = MapperUtils.getEntryAndValidateNamespace(clazz, this);
+        return entry == null ? null : Mono.just(entry.getNamespace());
+    }
+
+    @Override
+    public <T> Mono<String> getSet(Class<T> clazz) {
+        ClassCacheEntry<?> entry = ClassCache.getInstance().loadClass(clazz, this);
+        return entry == null ? null : Mono.just(entry.getSetName());
+    }
+
+    @Override
+    public Mono<Object> getKey(Object obj) {
+        ClassCacheEntry<?> entry = ClassCache.getInstance().loadClass(obj.getClass(), this);
+        return entry == null ? null : Mono.just(entry.getKey(obj));
+    }
+
+    @Override
+    public Mono<Key> getRecordKey(Object obj) {
+        ClassCacheEntry<?> entry = ClassCache.getInstance().loadClass(obj.getClass(), this);
+        return entry == null ? null : Mono.just(new Key(entry.getNamespace(), entry.getSetName(), Value.get(entry.getKey(obj))));
     }
 }

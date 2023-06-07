@@ -1,6 +1,7 @@
 package com.aerospike.mapper.tools;
 
 import com.aerospike.client.AerospikeException;
+import com.aerospike.client.Key;
 import com.aerospike.client.Operation;
 import com.aerospike.client.policy.*;
 import com.aerospike.client.query.Filter;
@@ -321,4 +322,32 @@ public interface IReactiveAeroMapper extends IBaseAeroMapper {
     <T> ReactiveVirtualList<T> asBackedList(@NotNull Class<?> owningClazz, @NotNull Object key, @NotNull String binName, Class<T> elementClazz);
 
     IAerospikeReactorClient getReactorClient();
+    
+    /**
+     * Get the namespace associated with the passed class
+     * @param clazz - the class to retrieve the namespace of
+     * @return the namespace
+     */
+    <T> Mono<String> getNamespace(Class<T> clazz);
+
+    /**
+     * Get the set associated with the passed class
+     * @param clazz - the class to retrieve the set of
+     * @return the set
+     */
+    <T> Mono<String> getSet(Class<T> clazz);
+    
+    /**
+     * Get the primary id associated with the passed object
+     */
+    Mono<Object> getKey(Object obj);
+    
+    /**
+     * Get the Aerospike Key used to read the record associated with the passed key
+     * 
+     * @param obj - the object to return the key of
+     * @return the key which could be used to retrieve this record.
+     */
+    Mono<Key> getRecordKey(Object obj);
+
 }

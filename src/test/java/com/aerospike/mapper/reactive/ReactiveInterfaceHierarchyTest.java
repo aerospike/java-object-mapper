@@ -1,4 +1,4 @@
-package com.aerospike.mapper;
+package com.aerospike.mapper.reactive;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -12,11 +12,12 @@ import com.aerospike.mapper.annotations.AerospikeEmbed;
 import com.aerospike.mapper.annotations.AerospikeKey;
 import com.aerospike.mapper.annotations.AerospikeRecord;
 import com.aerospike.mapper.tools.AeroMapper;
+import com.aerospike.mapper.tools.ReactiveAeroMapper;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-public class InterfaceHierarchyTest extends AeroMapperBaseTest {
+public class ReactiveInterfaceHierarchyTest extends ReactiveAeroMapperBaseTest {
     @AerospikeRecord(set = "testSet", namespace = "test")
     public interface BaseInterface {
         String getName();
@@ -97,29 +98,29 @@ public class InterfaceHierarchyTest extends AeroMapperBaseTest {
 
     @Test
     public void runTest() {
-        AeroMapper mapper = new AeroMapper.Builder(client).build();
+        ReactiveAeroMapper reactiveMapper = new ReactiveAeroMapper.Builder(reactorClient).build();
         Container container = new Container(
                 new SubClass1("Bob"),
                 new SubClass2("Fred"),
                 new SubClass1("Wilma")
         );
         
-        mapper.save(container);
-        Container readContainer = mapper.read(Container.class, 1);
+        reactiveMapper.save(container);
+        Container readContainer = reactiveMapper.read(Container.class, 1).block();
         assertEquals(container, readContainer);
     }
 
     @Test
     public void runNestedTest() {
-        AeroMapper mapper = new AeroMapper.Builder(client).build();
+        ReactiveAeroMapper reactiveMapper = new ReactiveAeroMapper.Builder(reactorClient).build();
         NestedContainer container = new NestedContainer(
                 new SubClass1("Bob"),
                 new SubClass2("Fred"),
                 new SubClass1("Wilma")
         );
         
-        mapper.save(container);
-        NestedContainer readContainer = mapper.read(NestedContainer.class, 2);
+        reactiveMapper.save(container);
+        NestedContainer readContainer = reactiveMapper.read(NestedContainer.class, 2).block();
         assertEquals(container, readContainer);
     }
 }
