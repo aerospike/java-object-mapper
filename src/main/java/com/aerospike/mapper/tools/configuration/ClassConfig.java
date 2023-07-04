@@ -119,4 +119,46 @@ public class ClassConfig {
             thisBin.validate(this.className);
         }
     }
+
+    public void setClassName(String className) {
+        this.className = className;
+    }
+
+    public void setNamespace(String namespace) {
+        this.namespace = namespace;
+    }
+
+    public void setSet(String set) {
+        this.set = set;
+    }
+
+    public void setTtl(Integer ttl) {
+        this.ttl = ttl;
+    }
+
+    public void setVersion(Integer version) {
+        this.version = version;
+    }
+
+    public void setSendKey(Boolean sendKey) {
+        this.sendKey = sendKey;
+    }
+
+    public void setMapAll(Boolean mapAll) {
+        this.mapAll = mapAll;
+    }
+
+    public void setDurableDelete(Boolean durableDelete) {
+        this.durableDelete = durableDelete;
+    }
+
+    public void setKey(KeyConfig key) {
+        this.key = key;
+    }
+
+    public void setShortName(String shortName) {
+        this.shortName = shortName;
+    }
+    
+    
 }

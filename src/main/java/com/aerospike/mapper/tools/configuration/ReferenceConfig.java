@@ -7,6 +7,12 @@ public class ReferenceConfig {
     private Boolean lazy;
     private Boolean batchLoad;
 
+    public ReferenceConfig() {}
+    public ReferenceConfig(ReferenceType type, boolean lazy) {
+        this.type = type;
+        this.lazy = lazy;
+    }
+    
     public ReferenceType getType() {
         return type;
     }
@@ -16,6 +22,6 @@ public class ReferenceConfig {
     }
 
     public Boolean getBatchLoad() {
-        return lazy;
+        return batchLoad;
     }
 }

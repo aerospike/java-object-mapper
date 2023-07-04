@@ -13,4 +13,8 @@ public class Configuration {
     public List<ClassConfig> getClasses() {
         return classes;
     }
+    
+    public void add(ClassConfig config) {
+        this.classes.add(config);
+    }
 }
