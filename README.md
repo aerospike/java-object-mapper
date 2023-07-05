@@ -30,6 +30,7 @@ The documentation for this project can be found on [javadoc.io](https://www.java
     + 9.2. [Subclasses](#Subclasses)
         + 9.2.1. [Data Inheritance](#Data-Inheritance)
         + 9.2.2. [Subclass Inheritance](#Subclass-Inheritance)
+        + 9.2.3 [Using Interfaces](#Using-Interfaces)        
     + 9.3. [Custom Object Converters](#Custom-Object-Converters)
 10. [External Configuration File](#External-Configuration-File)
     + 10.1. [File Structure](#File-Structure)
@@ -1704,6 +1705,14 @@ public List customers;
 
 The former is considered better style in Java and also provides the Java Object Mapper with information about the elements in the list, so it will optimize its workings to know how to store a list of Customers. The latter gives it no type information so it must derive the type -- and hence how to map it to Aerospike -- for every element in this list. This can have a noticeable performance impact for large lists, as well as consuming more database space (as it must store the runtime type of each element in the list in addition to the data).
 
+### Using Interfaces
+Sometimes it is better to have an interface to group common types rather an an abstract superclass. In this case the Object Mapper supports placing the `@AerospikeReocrd` annotation on the interface and it will behave as if the annotation was on a superclass. There are multiple different was of placing the `@AerospikeRecord` annotation on a single class, and the order the Object Mapper looks for them in is:
+1. Configuration file
+2. Class level definition
+3. First parent class with `@AerospikeRecord` annotation (of any ancestor)
+4. Interface with `@AerospikeRecord` annotation (first one found)
+
+Once the Object Mapper finds an appropriate annotation it ignores any further annotations and uses the definitions on the first one found.
 
 ----
 

@@ -726,4 +726,28 @@ public class AeroMapper implements IAeroMapper {
             throw new UnsupportedOperationException("Provided unsupported policy.");
         }
     }
+
+    @Override
+    public String getNamespace(Class<?> clazz) {
+        ClassCacheEntry<?> entry = ClassCache.getInstance().loadClass(clazz, this);
+        return entry == null ? null : entry.getNamespace();
+    }
+
+    @Override
+    public String getSet(Class<?> clazz) {
+        ClassCacheEntry<?> entry = ClassCache.getInstance().loadClass(clazz, this);
+        return entry == null ? null : entry.getSetName();
+    }
+
+    @Override
+    public Object getKey(Object obj) {
+        ClassCacheEntry<?> entry = ClassCache.getInstance().loadClass(obj.getClass(), this);
+        return entry == null ? null : entry.getKey(obj);
+    }
+
+    @Override
+    public Key getRecordKey(Object obj) {
+        ClassCacheEntry<?> entry = ClassCache.getInstance().loadClass(obj.getClass(), this);
+        return entry == null ? null : new Key(entry.getNamespace(), entry.getSetName(), Value.get(entry.getKey(obj)));
+    }
 }

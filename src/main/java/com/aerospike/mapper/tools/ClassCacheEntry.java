@@ -122,16 +122,7 @@ public class ClassCacheEntry<T> {
             throw new NotAnnotatedClass(String.format("Class %s is not augmented by the @AerospikeRecord annotation",
                     clazz.getName()));
         } else if (recordDescription != null) {
-            this.namespace = ParserUtils.getInstance().get(recordDescription.namespace());
-            this.setName = ParserUtils.getInstance().get(recordDescription.set());
-            this.ttl = recordDescription.ttl();
-            this.mapAll = recordDescription.mapAll();
-            this.version = recordDescription.version();
-            this.sendKey = recordDescription.sendKey();
-            this.durableDelete = recordDescription.durableDelete();
-            this.shortenedClassName = recordDescription.shortName();
-            this.factoryClass = recordDescription.factoryClass();
-            this.factoryMethod = recordDescription.factoryMethod();
+            this.setPropertiesFromAerospikeRecord(recordDescription);
         }
         this.config = config;
     }
@@ -142,16 +133,24 @@ public class ClassCacheEntry<T> {
             this.overrideSettings(config);
         }
 
+        if (this.namespace == null || this.namespace.isEmpty()) {
+            List<AerospikeRecord> aerospikeInterfaceRecords = this.loadAerospikeRecordsFromInterfaces(this.clazz);
+            for (int i = 0; (this.namespace == null || this.namespace.isEmpty()) && i < aerospikeInterfaceRecords.size(); i++) {
+                this.setPropertiesFromAerospikeRecord(aerospikeInterfaceRecords.get(i));
+            }
+        }
         this.loadFieldsFromClass();
         this.loadPropertiesFromClass();
         this.superClazz = ClassCache.getInstance().loadClass(this.clazz.getSuperclass(), this.mapper, !this.mapAll);
         this.binCount = this.values.size() + (superClazz != null ? superClazz.binCount : 0);
         this.formOrdinalsFromValues();
         Method factoryConstructorMethod = findConstructorFactoryMethod();
-        if (factoryConstructorMethod == null) {
-            this.findConstructor();
-        } else {
-            this.setConstructorFactoryMethod(factoryConstructorMethod);
+        if (!this.clazz.isInterface()) {
+            if (factoryConstructorMethod == null) {
+                this.findConstructor();
+            } else {
+                this.setConstructorFactoryMethod(factoryConstructorMethod);
+            }
         }
         if (StringUtils.isBlank(this.shortenedClassName)) {
             this.shortenedClassName = clazz.getSimpleName();
@@ -234,6 +233,33 @@ public class ClassCacheEntry<T> {
 
     public boolean isChildClass() {
         return isChildClass;
+    }
+
+    private List<AerospikeRecord> loadAerospikeRecordsFromInterfaces(Class<?> clazz) {
+        List<AerospikeRecord> results = new ArrayList<>();
+        Class<?>[] interfaces = clazz.getInterfaces();
+        for (int i = 0; i < interfaces.length; i++) {
+            Class<?> thisInterface = interfaces[i];
+            AerospikeRecord[] aerospikeRecords = thisInterface.getAnnotationsByType(AerospikeRecord.class);
+            for (int j = 0; j < aerospikeRecords.length; j++) {
+                results.add(aerospikeRecords[j]);
+            }
+            results.addAll(loadAerospikeRecordsFromInterfaces(thisInterface));
+        }
+        return results;
+    }
+    
+    private void setPropertiesFromAerospikeRecord(AerospikeRecord recordDescription) {
+        this.namespace = ParserUtils.getInstance().get(recordDescription.namespace());
+        this.setName = ParserUtils.getInstance().get(recordDescription.set());
+        this.ttl = recordDescription.ttl();
+        this.mapAll = recordDescription.mapAll();
+        this.version = recordDescription.version();
+        this.sendKey = recordDescription.sendKey();
+        this.durableDelete = recordDescription.durableDelete();
+        this.shortenedClassName = recordDescription.shortName();
+        this.factoryClass = recordDescription.factoryClass();
+        this.factoryMethod = recordDescription.factoryMethod();
     }
 
     private void checkRecordSettingsAgainstSuperClasses() {
