@@ -191,7 +191,7 @@ public class ClassCache {
         return classesConfig.containsKey(clazz.getName());
     }
 
-    public static enum PolicyType {
+    public enum PolicyType {
         READ,
         WRITE,
         BATCH,

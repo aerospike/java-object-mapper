@@ -30,6 +30,4 @@ public class EmbedConfig {
     public void setSaveKey(Boolean saveKey) {
         this.saveKey = saveKey;
     }
-    
-    
 }

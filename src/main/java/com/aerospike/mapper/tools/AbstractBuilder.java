@@ -44,8 +44,8 @@ public abstract class AbstractBuilder<T extends IBaseAeroMapper> {
      * @return this object
      */
     public AbstractBuilder<T> addConverter(Object converter) {
-        GenericTypeMapper mapper = new GenericTypeMapper(converter);
-        TypeUtils.addTypeMapper(mapper.getMappedClass(), mapper);
+        GenericTypeMapper typeMapper = new GenericTypeMapper(converter);
+        TypeUtils.addTypeMapper(typeMapper.getMappedClass(), typeMapper);
 
         return this;
     }
@@ -90,6 +90,17 @@ public abstract class AbstractBuilder<T extends IBaseAeroMapper> {
         this.loadConfiguration(configuration, allowsInvalid);
         return this;
     }
+    
+    public AbstractBuilder<T> withClassConfigurations(ClassConfig classConfig, ClassConfig ...classConfigs) {
+        Configuration configuration = new Configuration();
+        configuration.add(classConfig);
+        for (ClassConfig thisConfig : classConfigs) {
+            configuration.add(thisConfig);
+        }
+        ClassCache.getInstance().addConfiguration(configuration);
+        return this;
+
+    }
 
     private void loadConfiguration(@NotNull Configuration configuration, boolean allowsInvalid) {
         for (ClassConfig config : configuration.getClasses()) {
@@ -115,176 +126,6 @@ public abstract class AbstractBuilder<T extends IBaseAeroMapper> {
         ClassCache.getInstance().addConfiguration(configuration);
     }
 
-    public AeroConfigMapper<T> withConfigurationForClass(Class<?> clazz) {
-        return new AeroConfigMapper<T>(this, clazz);
-    }
-    
-    public static class AeroConfigMapper<T extends IBaseAeroMapper> {
-        private final AbstractBuilder<T> builder;
-        private final ClassConfig classConfig;
-        private final Class<?> clazz;
-        
-        public AeroConfigMapper(AbstractBuilder<T> builder, Class<?> clazz) {
-            this.builder = builder;
-            this.clazz = clazz;
-            this.classConfig = new ClassConfig();
-            this.classConfig.setClassName(clazz.getName());
-        }
-        
-        public AeroConfigMapper<T> withNamespace(String namespace) {
-            this.classConfig.setNamespace(namespace);
-            return this;
-        }
-        public AeroConfigMapper<T> withSet(String setName) {
-            this.classConfig.setSet(setName);
-            return this;
-        }
-        public AeroConfigMapper<T> withTtl(int ttl) {
-            this.classConfig.setTtl(ttl);
-            return this;
-        }
-        public AeroConfigMapper<T> withVersion(int version) {
-            this.classConfig.setVersion(version);
-            return this;
-        }
-        public AeroConfigMapper<T> withSendKey(boolean sendKey) {
-            this.classConfig.setSendKey(sendKey);
-            return this;
-        }
-        public AeroConfigMapper<T> withMapAll(boolean mapAll) {
-            this.classConfig.setMapAll(mapAll);
-            return this;
-        }
-        public AeroConfigMapper<T> withDurableDelete(boolean durableDelete) {
-            this.classConfig.setDurableDelete(durableDelete);
-            return this;
-        }
-        public AeroConfigMapper<T> withShortName(boolean sendKey) {
-            this.classConfig.setSendKey(sendKey);
-            return this;
-        }
-        
-        public AeroConfigMapper<T> withFactoryClassAndMethod(@NotNull Class<?> factoryClass, @NotNull String factoryMethod) {
-            this.classConfig.setFactoryClass(factoryClass.getName());
-            this.classConfig.setFactoryMethod(factoryMethod);
-            return this;
-        }
-        
-        public AeroConfigMapper<T> withKeyField(String fieldName) {
-            if (this.classConfig.getKey() == null) {
-                this.classConfig.setKey(new KeyConfig());
-            }
-            if (!ConfigurationUtils.validateFieldOnClass(this.clazz, fieldName)) {
-                throw new AerospikeException(String.format("Field %s does not exist on class %s or its superclasses", fieldName, this.clazz));
-            }
-            this.classConfig.getKey().setField(fieldName);
-            return this;
-        }
-        
-        public AeroConfigMapper<T> withKeyGetterAndSetterOf(String getterName, String setterName) {
-            if (this.classConfig.getKey() == null) {
-                this.classConfig.setKey(new KeyConfig());
-            }
-            // TODO: Do we need to validate the method names?
-            this.classConfig.getKey().setGetter(getterName);
-            this.classConfig.getKey().setSetter(setterName);
-            return this;
-        }
-        
-        public AeroBinConfig<T> withFieldNamed(String fieldName) {
-            if (!ConfigurationUtils.validateFieldOnClass(this.clazz, fieldName)) {
-                throw new AerospikeException(String.format("Field %s does not exist on class %s or its superclasses", fieldName, this.clazz));
-            }
-            return new AeroBinConfig<T>(this, fieldName);
-        }
-        
-        private void mergeBinConfig(BinConfig config) {
-            List<BinConfig> bins = this.classConfig.getBins();
-            for (BinConfig thisBin : bins) {
-                if (config.getField().equals(thisBin.getField())) {
-                    thisBin.merge(config);
-                    return;
-                }
-            }
-            this.classConfig.getBins().add(config);
-        }
-        
-        public AbstractBuilder<T> end() {
-            Configuration configuration = new Configuration();
-            configuration.add(classConfig);
-            ClassCache.getInstance().addConfiguration(configuration);
-            return this.builder;
-        }
-    }
-    
-    public static class AeroBinConfig<T extends IBaseAeroMapper> {
-        private final AeroConfigMapper<T> mapper;
-        private final BinConfig binConfig;
-        
-        public AeroBinConfig(AeroConfigMapper<T> mapper, String fieldName) {
-            super();
-            this.mapper = mapper;
-            this.binConfig = new BinConfig();
-            this.binConfig.setField(fieldName);
-        }
-        
-        public AeroConfigMapper<T> mappingToBin(String name) {
-            this.binConfig.setName(name);
-            return this.end();
-        }
-        
-        public AeroConfigMapper<T> beingReferencedBy(AerospikeReference.ReferenceType type) {
-            this.binConfig.setReference(new ReferenceConfig(type, false));
-            return this.end();
-        }
-        
-        public AeroConfigMapper<T> beingLazilyReferencedBy(AerospikeReference.ReferenceType type) {
-            this.binConfig.setReference(new ReferenceConfig(type, true));
-            return this.end();
-        }
-        
-        public AeroConfigMapper<T> beingEmbeddedAs(AerospikeEmbed.EmbedType type) {
-            EmbedConfig embedConfig = new EmbedConfig();
-            embedConfig.setType(type);
-            this.binConfig.setEmbed(embedConfig);
-            return this.end();
-        }
-        public AeroConfigMapper<T> beingEmbeddedAs(AerospikeEmbed.EmbedType type, AerospikeEmbed.EmbedType elementType) {
-            EmbedConfig embedConfig = new EmbedConfig();
-            embedConfig.setType(type);
-            embedConfig.setElementType(elementType);
-            this.binConfig.setEmbed(embedConfig);
-            return this.end();
-        }
-        public AeroConfigMapper<T> beingEmbeddedAs(AerospikeEmbed.EmbedType type, AerospikeEmbed.EmbedType elementType, boolean saveKey) {
-            EmbedConfig embedConfig = new EmbedConfig();
-            embedConfig.setType(type);
-            embedConfig.setElementType(elementType);
-            embedConfig.setSaveKey(saveKey);
-            this.binConfig.setEmbed(embedConfig);
-            return this.end();
-        }
-        /**
-         * Exclude the field. An excluded field doesn't need any other config, so return the parent.
-         * This allows for more natural syntax like:
-         * <code>
-         * .withConfigurationForClass(B.class)
-         *     .withFieldName("ignoreMe").beingExcluded()
-         * .end()
-         * </code>
-         * @return
-         */
-        public AeroConfigMapper<T> beingExcluded() {
-            this.binConfig.setExclude(true);
-            return this.end();
-        }
-        
-        private AeroConfigMapper<T> end() {
-            this.mapper.mergeBinConfig(binConfig);
-            return this.mapper;
-        }
-    }
-    
     public static class AeroPolicyMapper<T extends IBaseAeroMapper> {
         private final AbstractBuilder<T> builder;
         private final Policy policy;
@@ -315,23 +156,23 @@ public abstract class AbstractBuilder<T extends IBaseAeroMapper> {
     }
 
     public AeroPolicyMapper<T> withReadPolicy(Policy policy) {
-        return new AeroPolicyMapper<T>(this, PolicyType.READ, policy);
+        return new AeroPolicyMapper<>(this, PolicyType.READ, policy);
     }
 
     public AeroPolicyMapper<T> withWritePolicy(Policy policy) {
-        return new AeroPolicyMapper<T>(this, PolicyType.WRITE, policy);
+        return new AeroPolicyMapper<>(this, PolicyType.WRITE, policy);
     }
 
     public AeroPolicyMapper<T> withBatchPolicy(BatchPolicy policy) {
-        return new AeroPolicyMapper<T>(this, PolicyType.BATCH, policy);
+        return new AeroPolicyMapper<>(this, PolicyType.BATCH, policy);
     }
 
     public AeroPolicyMapper<T> withScanPolicy(ScanPolicy policy) {
-        return new AeroPolicyMapper<T>(this, PolicyType.SCAN, policy);
+        return new AeroPolicyMapper<>(this, PolicyType.SCAN, policy);
     }
 
     public AeroPolicyMapper<T> withQueryPolicy(QueryPolicy policy) {
-        return new AeroPolicyMapper<T>(this, PolicyType.QUERY, policy);
+        return new AeroPolicyMapper<>(this, PolicyType.QUERY, policy);
     }
 
     public T build() {

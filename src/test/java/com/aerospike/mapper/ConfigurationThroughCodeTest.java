@@ -12,6 +12,7 @@ import com.aerospike.mapper.annotations.AerospikeEmbed;
 import com.aerospike.mapper.annotations.AerospikeKey;
 import com.aerospike.mapper.annotations.AerospikeRecord;
 import com.aerospike.mapper.tools.AeroMapper;
+import com.aerospike.mapper.tools.configuration.ClassConfig;
 
 import lombok.Data;
 
@@ -82,17 +83,19 @@ public class ConfigurationThroughCodeTest extends AeroMapperBaseTest {
     }
     
     @Test
-    public void testWithInvalidConfiguarion() {
+    public void testWithInvalidConfiguration() {
         try {
+            ClassConfig classConfigC = new ClassConfig.Builder(C.class)
+                    .withKeyField("id1")
+                    .build();
+            ClassConfig classConfigB = new ClassConfig.Builder(B.class)
+                    .withFieldNamed("c").beingEmbeddedAs(AerospikeEmbed.EmbedType.MAP)
+                    .build();
+            
             new AeroMapper.Builder(new AerospikeClient("172.17.0.2", 3000))
-                    .withConfigurationForClass(C.class)
-                        .withKeyField("id1")
-                    .end()
-                    .withConfigurationForClass(B.class) 
-                        .withFieldNamed("c").beingEmbeddedAs(AerospikeEmbed.EmbedType.MAP)
-                    .end()
-                .build();
-            Assertions.fail("Excpected invalid configuration to throw an error");
+                    .withClassConfigurations(classConfigB, classConfigC)
+                    .build();
+            Assertions.fail("Expected invalid configuration to throw an error");
         }
         catch (AerospikeException ignore) {
         }
@@ -100,14 +103,15 @@ public class ConfigurationThroughCodeTest extends AeroMapperBaseTest {
     
     @Test
     public void testWithConfiguration() {
+        ClassConfig classConfigC = new ClassConfig.Builder(C.class)
+                .withKeyField("id")
+                .build();
+        ClassConfig classConfigB = new ClassConfig.Builder(B.class)
+                .withFieldNamed("c").beingEmbeddedAs(AerospikeEmbed.EmbedType.MAP)
+                .build();
         AeroMapper mapper = new AeroMapper.Builder(client)
-                .withConfigurationForClass(C.class)
-                    .withKeyField("id")
-                .end()
-                .withConfigurationForClass(B.class) 
-                    .withFieldNamed("c").beingEmbeddedAs(AerospikeEmbed.EmbedType.MAP)
-                .end()
-            .build();
+                .withClassConfigurations(classConfigB, classConfigC)
+                .build();
         A a = setupA();
         mapper.delete(a);
         

@@ -2040,14 +2040,15 @@ In this example, let's assume that the source code is available for class `A` bu
 
 To solve this, we can introduce some configuration in the builder:
 ```java
+ClassConfig classConfigC = new ClassConfig.Builder(C.class)
+        .withKeyField("id")
+        .build();
+ClassConfig classConfigB = new ClassConfig.Builder(B.class)
+        .withFieldNamed("c").beingEmbeddedAs(AerospikeEmbed.EmbedType.MAP)
+        .build();
 AeroMapper mapper = new AeroMapper.Builder(client)
-        .withConfigurationForClass(B.class) 
-            .withFieldNamed("c").beingEmbeddedAs(AerospikeEmbed.EmbedType.MAP)
-        .end()
-        .withConfigurationForClass(C.class)
-            .withKeyField("id")
-        .end()
-    .build();
+        .withClassConfigurations(classConfigB, classConfigC)
+        .build();
 ```
 
 In this case we've told the mapper that `B.class` should be treated as an `AerospikeRecord` (`.withConfigurationForClass(B.class)`) and that the 'c' field in that class should be embedded as a MAP. The class `C` is also set to be a mapped class and that the key of that class is to be the field `id`. The class needs to have a key as it's being stored in a map, and objects being stored in a map must be identified by a key.
