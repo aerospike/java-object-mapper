@@ -1,5 +1,24 @@
 package com.aerospike.mapper.tools;
 
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.lang.reflect.Parameter;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
+
+import javax.validation.constraints.NotNull;
+
+import org.apache.commons.lang3.StringUtils;
+
 import com.aerospike.client.AerospikeException;
 import com.aerospike.client.Bin;
 import com.aerospike.client.Key;
@@ -11,7 +30,15 @@ import com.aerospike.client.policy.Policy;
 import com.aerospike.client.policy.QueryPolicy;
 import com.aerospike.client.policy.ScanPolicy;
 import com.aerospike.client.policy.WritePolicy;
-import com.aerospike.mapper.annotations.*;
+import com.aerospike.mapper.annotations.AerospikeBin;
+import com.aerospike.mapper.annotations.AerospikeConstructor;
+import com.aerospike.mapper.annotations.AerospikeExclude;
+import com.aerospike.mapper.annotations.AerospikeGetter;
+import com.aerospike.mapper.annotations.AerospikeKey;
+import com.aerospike.mapper.annotations.AerospikeOrdinal;
+import com.aerospike.mapper.annotations.AerospikeRecord;
+import com.aerospike.mapper.annotations.AerospikeSetter;
+import com.aerospike.mapper.annotations.ParamFrom;
 import com.aerospike.mapper.exceptions.NotAnnotatedClass;
 import com.aerospike.mapper.tools.configuration.BinConfig;
 import com.aerospike.mapper.tools.configuration.ClassConfig;
@@ -19,16 +46,6 @@ import com.aerospike.mapper.tools.configuration.KeyConfig;
 import com.aerospike.mapper.tools.utils.ParserUtils;
 import com.aerospike.mapper.tools.utils.TypeUtils;
 import com.aerospike.mapper.tools.utils.TypeUtils.AnnotatedType;
-import org.apache.commons.lang3.StringUtils;
-
-import javax.validation.constraints.NotNull;
-import java.lang.annotation.Annotation;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-import java.lang.reflect.Parameter;
-import java.util.*;
 
 public class ClassCacheEntry<T> {
 
@@ -105,16 +122,7 @@ public class ClassCacheEntry<T> {
             throw new NotAnnotatedClass(String.format("Class %s is not augmented by the @AerospikeRecord annotation",
                     clazz.getName()));
         } else if (recordDescription != null) {
-            this.namespace = ParserUtils.getInstance().get(recordDescription.namespace());
-            this.setName = ParserUtils.getInstance().get(recordDescription.set());
-            this.ttl = recordDescription.ttl();
-            this.mapAll = recordDescription.mapAll();
-            this.version = recordDescription.version();
-            this.sendKey = recordDescription.sendKey();
-            this.durableDelete = recordDescription.durableDelete();
-            this.shortenedClassName = recordDescription.shortName();
-            this.factoryClass = recordDescription.factoryClass();
-            this.factoryMethod = recordDescription.factoryMethod();
+            this.setPropertiesFromAerospikeRecord(recordDescription);
         }
         this.config = config;
     }
@@ -125,20 +133,24 @@ public class ClassCacheEntry<T> {
             this.overrideSettings(config);
         }
 
+        if (this.namespace == null || this.namespace.isEmpty()) {
+            List<AerospikeRecord> aerospikeInterfaceRecords = this.loadAerospikeRecordsFromInterfaces(this.clazz);
+            for (int i = 0; (this.namespace == null || this.namespace.isEmpty()) && i < aerospikeInterfaceRecords.size(); i++) {
+                this.setPropertiesFromAerospikeRecord(aerospikeInterfaceRecords.get(i));
+            }
+        }
         this.loadFieldsFromClass();
         this.loadPropertiesFromClass();
         this.superClazz = ClassCache.getInstance().loadClass(this.clazz.getSuperclass(), this.mapper, !this.mapAll);
         this.binCount = this.values.size() + (superClazz != null ? superClazz.binCount : 0);
-        if (this.binCount == 0) {
-            throw new AerospikeException(String.format("Class %s has no values defined to be stored in the database",
-                    clazz.getSimpleName()));
-        }
         this.formOrdinalsFromValues();
         Method factoryConstructorMethod = findConstructorFactoryMethod();
-        if (factoryConstructorMethod == null) {
-            this.findConstructor();
-        } else {
-            this.setConstructorFactoryMethod(factoryConstructorMethod);
+        if (!this.clazz.isInterface()) {
+            if (factoryConstructorMethod == null) {
+                this.findConstructor();
+            } else {
+                this.setConstructorFactoryMethod(factoryConstructorMethod);
+            }
         }
         if (StringUtils.isBlank(this.shortenedClassName)) {
             this.shortenedClassName = clazz.getSimpleName();
@@ -221,6 +233,33 @@ public class ClassCacheEntry<T> {
 
     public boolean isChildClass() {
         return isChildClass;
+    }
+
+    private List<AerospikeRecord> loadAerospikeRecordsFromInterfaces(Class<?> clazz) {
+        List<AerospikeRecord> results = new ArrayList<>();
+        Class<?>[] interfaces = clazz.getInterfaces();
+        for (int i = 0; i < interfaces.length; i++) {
+            Class<?> thisInterface = interfaces[i];
+            AerospikeRecord[] aerospikeRecords = thisInterface.getAnnotationsByType(AerospikeRecord.class);
+            for (int j = 0; j < aerospikeRecords.length; j++) {
+                results.add(aerospikeRecords[j]);
+            }
+            results.addAll(loadAerospikeRecordsFromInterfaces(thisInterface));
+        }
+        return results;
+    }
+    
+    private void setPropertiesFromAerospikeRecord(AerospikeRecord recordDescription) {
+        this.namespace = ParserUtils.getInstance().get(recordDescription.namespace());
+        this.setName = ParserUtils.getInstance().get(recordDescription.set());
+        this.ttl = recordDescription.ttl();
+        this.mapAll = recordDescription.mapAll();
+        this.version = recordDescription.version();
+        this.sendKey = recordDescription.sendKey();
+        this.durableDelete = recordDescription.durableDelete();
+        this.shortenedClassName = recordDescription.shortName();
+        this.factoryClass = recordDescription.factoryClass();
+        this.factoryMethod = recordDescription.factoryMethod();
     }
 
     private void checkRecordSettingsAgainstSuperClasses() {
@@ -773,6 +812,9 @@ public class ClassCacheEntry<T> {
     }
 
     public Integer getTtl() {
+    	if (ttl == null || ttl == Integer.MIN_VALUE) {
+    		return null;
+    	}
         return ttl;
     }
 

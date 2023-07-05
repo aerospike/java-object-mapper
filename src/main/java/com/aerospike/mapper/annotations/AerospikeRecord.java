@@ -14,7 +14,11 @@ public @interface AerospikeRecord {
 
     String shortName() default "";
 
-    int ttl() default 0;
+    /**
+     * The TTL for the record. As this must be a primitive value <code>Integer.MIN_VALUE</code> is used to indicate that the 
+     * value has not been explicitly set.
+     */
+    int ttl() default Integer.MIN_VALUE;
 
     /**
      * Determine whether to add all the bins or not. If true, all bins will be added without having to map them via @AerospikeBin

@@ -77,21 +77,23 @@ public class ReactiveAeroMapper implements IReactiveAeroMapper {
             if (recordExistsAction != null) {
                 writePolicy.recordExistsAction = recordExistsAction;
             }
+            
+            // #132 -- Only override the TTL / send key if the policy was not passed in.
+            Integer ttl = entry.getTtl();
+            Boolean sendKey = entry.getSendKey();
+
+            if (ttl != null) {
+                writePolicy.expiration = ttl;
+            }
+            if (sendKey != null) {
+                writePolicy.sendKey = sendKey;
+            }
         }
 
         String set = entry.getSetName();
         if ("".equals(set)) {
             // Use the null set
             set = null;
-        }
-        Integer ttl = entry.getTtl();
-        Boolean sendKey = entry.getSendKey();
-
-        if (ttl != null) {
-            writePolicy.expiration = ttl;
-        }
-        if (sendKey != null) {
-            writePolicy.sendKey = sendKey;
         }
         Key key = new Key(entry.getNamespace(), set, Value.get(entry.getKey(object)));
 
@@ -420,5 +422,29 @@ public class ReactiveAeroMapper implements IReactiveAeroMapper {
             return translateError(e);
         }
         return e;
+    }
+    
+    @Override
+    public <T> Mono<String> getNamespace(Class<T> clazz) {
+        ClassCacheEntry<T> entry = MapperUtils.getEntryAndValidateNamespace(clazz, this);
+        return entry == null ? null : Mono.just(entry.getNamespace());
+    }
+
+    @Override
+    public <T> Mono<String> getSet(Class<T> clazz) {
+        ClassCacheEntry<?> entry = ClassCache.getInstance().loadClass(clazz, this);
+        return entry == null ? null : Mono.just(entry.getSetName());
+    }
+
+    @Override
+    public Mono<Object> getKey(Object obj) {
+        ClassCacheEntry<?> entry = ClassCache.getInstance().loadClass(obj.getClass(), this);
+        return entry == null ? null : Mono.just(entry.getKey(obj));
+    }
+
+    @Override
+    public Mono<Key> getRecordKey(Object obj) {
+        ClassCacheEntry<?> entry = ClassCache.getInstance().loadClass(obj.getClass(), this);
+        return entry == null ? null : Mono.just(new Key(entry.getNamespace(), entry.getSetName(), Value.get(entry.getKey(obj))));
     }
 }

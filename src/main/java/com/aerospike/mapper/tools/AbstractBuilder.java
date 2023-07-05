@@ -1,10 +1,15 @@
 package com.aerospike.mapper.tools;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import javax.validation.constraints.NotNull;
 
@@ -16,15 +21,10 @@ import com.aerospike.client.policy.BatchPolicy;
 import com.aerospike.client.policy.Policy;
 import com.aerospike.client.policy.QueryPolicy;
 import com.aerospike.client.policy.ScanPolicy;
-import com.aerospike.mapper.annotations.AerospikeEmbed;
-import com.aerospike.mapper.annotations.AerospikeReference;
+import com.aerospike.mapper.annotations.AerospikeRecord;
 import com.aerospike.mapper.tools.ClassCache.PolicyType;
-import com.aerospike.mapper.tools.configuration.BinConfig;
 import com.aerospike.mapper.tools.configuration.ClassConfig;
 import com.aerospike.mapper.tools.configuration.Configuration;
-import com.aerospike.mapper.tools.configuration.EmbedConfig;
-import com.aerospike.mapper.tools.configuration.KeyConfig;
-import com.aerospike.mapper.tools.configuration.ReferenceConfig;
 import com.aerospike.mapper.tools.utils.TypeUtils;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -48,6 +48,64 @@ public abstract class AbstractBuilder<T extends IBaseAeroMapper> {
         TypeUtils.addTypeMapper(typeMapper.getMappedClass(), typeMapper);
 
         return this;
+    }
+
+    public AbstractBuilder<T> preLoadClasses(Class<?>... clazzes) {
+        if (classesToPreload == null) {
+            classesToPreload = new ArrayList<>();
+        }
+        classesToPreload.addAll(Arrays.asList(clazzes));
+        return this;
+    }
+
+    public String getPackageName(Class<?> clazz) {
+        Class<?> c;
+        if (clazz.isArray()) {
+            c = clazz.getComponentType();
+        } else {
+            c = clazz;
+        }
+        String pn;
+        if (c.isPrimitive()) {
+            pn = "java.lang";
+        } else {
+            String cn = c.getName();
+            int dot = cn.lastIndexOf('.');
+            pn = (dot != -1) ? cn.substring(0, dot).intern() : "";
+        }
+        return pn;
+    }
+
+    public AbstractBuilder<T> preLoadClassesFromPackage(Class<?> classInPackage) {
+        return preLoadClassesFromPackage(getPackageName(classInPackage));
+    }
+
+    public AbstractBuilder<T> preLoadClassesFromPackage(String thePackage) {
+        Set<Class<?>> clazzes = findAllClassesUsingClassLoader(thePackage);
+        for (Class<?> thisClazz : clazzes) {
+            // Only add classes with the AerospikeRecord annotation.
+            if (thisClazz.getAnnotation(AerospikeRecord.class) != null) {
+                this.preLoadClass(thisClazz);
+            }
+        }
+        return this;
+    }
+
+    // See https://www.baeldung.com/java-find-all-classes-in-package
+    private Set<Class<?>> findAllClassesUsingClassLoader(String packageName) {
+        InputStream stream = ClassLoader.getSystemClassLoader()
+                .getResourceAsStream(packageName.replaceAll("[.]", "/"));
+        BufferedReader reader = new BufferedReader(new InputStreamReader(stream));
+        return reader.lines().filter(line -> line.endsWith(".class")).map(line -> getClass(line, packageName))
+                .collect(Collectors.toSet());
+    }
+
+    private Class<?> getClass(String className, String packageName) {
+        try {
+            return Class.forName(packageName + "." + className.substring(0, className.lastIndexOf('.')));
+        } catch (ClassNotFoundException ignored) {
+        }
+        return null;
     }
 
     public AbstractBuilder<T> preLoadClass(Class<?> clazz) {

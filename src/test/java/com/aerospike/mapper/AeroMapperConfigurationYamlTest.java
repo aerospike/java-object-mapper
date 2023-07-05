@@ -1,16 +1,17 @@
 package com.aerospike.mapper;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import com.aerospike.mapper.tools.AeroMapper;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-import com.aerospike.mapper.tools.AeroMapper;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class AeroMapperConfigurationYamlTest extends AeroMapperBaseTest {
+
     private AeroMapper mapper;
 
     @BeforeEach
@@ -18,87 +19,6 @@ public class AeroMapperConfigurationYamlTest extends AeroMapperBaseTest {
         mapper = new AeroMapper.Builder(client).build();
         client.truncate(null, NAMESPACE, "testSet", null);
     }
-
-    public static class DataClass {
-        private int id;
-        private int integer;
-        private String string;
-        private Date date;
-
-        public DataClass() {
-        }
-
-        public DataClass(int id, int integer, String string, Date date) {
-            super();
-            this.id = id;
-            this.integer = integer;
-            this.string = string;
-            this.date = date;
-        }
-
-        public int getId() {
-            return id;
-        }
-
-        public int getInteger() {
-            return integer;
-        }
-
-        public String getString() {
-            return string;
-        }
-
-        public Date getDate() {
-            return date;
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            if (obj == null) {
-                return false;
-            }
-            DataClass object = (DataClass) obj;
-            return (object.id == this.id && object.integer == this.integer && object.string.equals(this.string) && object.date.equals(this.date));
-        }
-
-        @Override
-        public String toString() {
-            return String.format("id:%d, integer:%d, string:%s, date:%s", id, integer, string, date);
-        }
-    }
-
-    public static class ContainerClass {
-        public int id;
-        public List<DataClass> dataClasses;
-
-        public ContainerClass() {
-            this.dataClasses = new ArrayList<>();
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            if (obj == null) {
-                return false;
-            }
-            ContainerClass container = (ContainerClass) obj;
-            if (this.id != container.id) {
-                return false;
-            }
-            if ((this.dataClasses == null && container.dataClasses != null) || this.dataClasses != null && container.dataClasses == null) {
-                return false;
-            }
-            if (this.dataClasses != null) {
-                return this.dataClasses.equals(container.dataClasses);
-            }
-            return true;
-        }
-
-        @Override
-        public String toString() {
-            return String.format("id:%d, elements:%s", this.id, this.dataClasses.toString());
-        }
-    }
-
 
     @Test
     public void testConvenienceMethods() throws Exception {
@@ -141,5 +61,87 @@ public class AeroMapperConfigurationYamlTest extends AeroMapperBaseTest {
 
         ContainerClass container2 = mapper.read(ContainerClass.class, container.id);
         assertEquals(container, container2);
+    }
+
+    public static class DataClass {
+        private int id;
+        private int integer;
+        private String string;
+        private Date date;
+
+        public DataClass() {
+        }
+
+        public DataClass(int id, int integer, String string, Date date) {
+            super();
+            this.id = id;
+            this.integer = integer;
+            this.string = string;
+            this.date = date;
+        }
+
+        public int getId() {
+            return id;
+        }
+
+        public int getInteger() {
+            return integer;
+        }
+
+        public String getString() {
+            return string;
+        }
+
+        public Date getDate() {
+            return date;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (obj == null || getClass() != obj.getClass()) {
+                return false;
+            }
+            DataClass object = (DataClass) obj;
+            return (object.id == this.id && object.integer == this.integer
+                    && object.string.equals(this.string) && object.date.equals(this.date));
+        }
+
+        @Override
+        public String toString() {
+            return String.format("id:%d, integer:%d, string:%s, date:%s", id, integer, string, date);
+        }
+    }
+
+    public static class ContainerClass {
+        public int id;
+        public List<DataClass> dataClasses;
+
+        public ContainerClass() {
+            this.dataClasses = new ArrayList<>();
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (obj == null || getClass() != obj.getClass()) {
+                return false;
+            }
+            ContainerClass container = (ContainerClass) obj;
+            if (this.id != container.id) {
+                return false;
+            }
+            if ((this.dataClasses == null && container.dataClasses != null)
+                    || this.dataClasses != null && container.dataClasses == null) {
+                return false;
+            }
+            if (this.dataClasses != null) {
+                return this.dataClasses.equals(container.dataClasses);
+            }
+            return true;
+        }
+
+        @Override
+        public String toString() {
+            return String.format("id:%d, elements:%s", this.id, this.dataClasses.toString());
+        }
     }
 }
