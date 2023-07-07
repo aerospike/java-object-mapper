@@ -19,6 +19,19 @@ public class KeyConfig {
         return setter;
     }
 
+    
+    public void setField(String field) {
+        this.field = field;
+    }
+
+    public void setGetter(String getter) {
+        this.getter = getter;
+    }
+
+    public void setSetter(String setter) {
+        this.setter = setter;
+    }
+
     public boolean isGetter(String methodName) {
         return (!StringUtils.isBlank(this.getter)) && this.getter.equals(methodName);
     }

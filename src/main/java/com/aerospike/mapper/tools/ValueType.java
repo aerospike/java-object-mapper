@@ -91,7 +91,7 @@ public abstract class ValueType {
                     try {
                         field.set(obj, object);
                     } catch (IllegalArgumentException | IllegalAccessException e) {
-                        throw new AerospikeException(String.format("Could not set field %s on %s to %s", field, obj, value));
+                        throw new AerospikeException(String.format("Could not set field %s on %s to %s. Error is %s (%s)", field, obj, value, e.getMessage(), e.getClass()));
                     }
                 };
                 DeferredObjectSetter objectSetter = new DeferredObjectSetter(setter, (DeferredObject) value);

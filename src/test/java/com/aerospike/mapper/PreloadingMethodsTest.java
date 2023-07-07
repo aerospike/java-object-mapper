@@ -8,9 +8,7 @@ import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
-import com.aerospike.client.AerospikeClient;
 import com.aerospike.client.AerospikeException;
-import com.aerospike.client.IAerospikeClient;
 import com.aerospike.mapper.annotations.AerospikeBin;
 import com.aerospike.mapper.annotations.AerospikeEmbed;
 import com.aerospike.mapper.annotations.AerospikeEmbed.EmbedType;
@@ -63,7 +61,6 @@ public class PreloadingMethodsTest extends AeroMapperBaseTest {
 
     @Test
     public void TestWriteThenRead() {
-        IAerospikeClient client = new AerospikeClient("127.0.0.1", 3000);
         AeroMapper mapper = new AeroMapper.Builder(client).build();
 
         Zoo zoo = createAnimalList();
@@ -74,7 +71,6 @@ public class PreloadingMethodsTest extends AeroMapperBaseTest {
 
     @Test
     public void TestWriteThenClearThenRead() {
-        IAerospikeClient client = new AerospikeClient("127.0.0.1", 3000);
         AeroMapper mapper = new AeroMapper.Builder(client).build();
 
         Zoo zoo = createAnimalList();
@@ -92,7 +88,6 @@ public class PreloadingMethodsTest extends AeroMapperBaseTest {
 
     @Test
     public void TestWriteThenClearThenReadWithPreload() {
-        IAerospikeClient client = new AerospikeClient("127.0.0.1", 3000);
         AeroMapper mapper = new AeroMapper.Builder(client).build();
 
         Zoo zoo = createAnimalList();
@@ -107,7 +102,6 @@ public class PreloadingMethodsTest extends AeroMapperBaseTest {
 
     @Test
     public void TestWriteThenClearThenReadWithPreloadClasses() {
-        IAerospikeClient client = new AerospikeClient("127.0.0.1", 3000);
         AeroMapper mapper = new AeroMapper.Builder(client).build();
 
         Zoo zoo = createAnimalList();
@@ -122,7 +116,6 @@ public class PreloadingMethodsTest extends AeroMapperBaseTest {
 
     @Test
     public void TestWriteThenClearThenReadWithPreloadClassesFromPackage() {
-        IAerospikeClient client = new AerospikeClient("127.0.0.1", 3000);
         AeroMapper mapper = new AeroMapper.Builder(client).build();
 
         Zoo zoo = createAnimalList();

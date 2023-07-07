@@ -2023,6 +2023,51 @@ The reference structure is used when the object being referenced is not to be em
 - **batchLoad**: Boolean, defaults to true. When the parent object is loaded, all non-lazy children will also be loaded. If there are several children, it is more efficient to load them from the database using a batch load. if this flag is set to false, children will not be loaded via a batch load. Note that if the parent object has 2 or less children to load, it will single thread the batch load as this is typically more performant than doing a very small batch. Otherwise the batchPolicy on the parent class will dictate how many nodes are hit in the batch at once.
 - **type**: Either ID or DIGEST, defaults to ID. The ID option stores the primary key of the referred object in the referencer, the DIGEST stores the digest instead. Note that DIGEST is not compatible with `lazy=true` as there is nowhere to store the digest. (For example, if the primary key of the object is a long, the digest is 20 bytes, without dynamically creating proxies or subtypes at runtime there is nowhere to store these 20 bytes. Dynamically creating objects like this is not performant so is not allowed).
 
+### Configuration through code
+
+It is also possible to configure classes through code. This is very useful in situations where external libraries (whose source code is not available) are used and providing all the information in an external configuration file is overkill. This configuration is performed when building the Object Mapper. Let's look at this with an example:
+
+```java
+@Data
+@AerospikeRecord(namespace = "test")
+public class A {
+    @AerospikeKey
+    private long id;
+    @AerospikeEmbed(type = AerospikeEmbed.EmbedType.LIST)
+    private List<B> b;
+    private String aData;
+}
+    
+@Data
+public class B {
+    private C c;
+    private String bData;
+}
+    
+@Data
+public class C {
+    private String id;
+    private String cData;
+}
+```
+
+In this example, let's assume that the source code is available for class `A` but not for either `B` or `C`. If we run this as is, the Object Mapper will not know how to handle the child classes. It will determine that B should be mapped as it's referenced directly from A, but has no idea what to do with C. Using a default builder will throw a `NotSerializableException`. 
+
+To solve this, we can introduce some configuration in the builder:
+```java
+ClassConfig classConfigC = new ClassConfig.Builder(C.class)
+        .withKeyField("id")
+        .build();
+ClassConfig classConfigB = new ClassConfig.Builder(B.class)
+        .withFieldNamed("c").beingEmbeddedAs(AerospikeEmbed.EmbedType.MAP)
+        .build();
+AeroMapper mapper = new AeroMapper.Builder(client)
+        .withClassConfigurations(classConfigB, classConfigC)
+        .build();
+```
+
+In this case we've told the mapper that `B.class` should be treated as an `AerospikeRecord` (`.withConfigurationForClass(B.class)`) and that the 'c' field in that class should be embedded as a MAP. The class `C` is also set to be a mapped class and that the key of that class is to be the field `id`. The class needs to have a key as it's being stored in a map, and objects being stored in a map must be identified by a key.
+
 ## Virtual Lists
 
 When mapping a Java object to Aerospike the most common operations to do are to save the whole object and load the whole object. The AeroMapper is set up primarily for these use cases. However, there are cases where it makes sense to manipulate objects directly in the database, particularly when it comes to manipulating lists and maps. This functionality is provided via virtual lists.  
