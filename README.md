@@ -46,7 +46,7 @@ The documentation for this project can be found on [javadoc.io](https://www.java
 
 | Java Object Mapper Version | Aerospike Client | Aerospike Reactor Client
 |:---------------------------| :----------- | :-----------
-| 2.1.x, 2.2.x               | 6.1.x | 6.1.x
+| 2.1.x, 2.2.x, 2.3.x        | 6.1.x | 6.1.x
 | 2.0.x                      | 5.1.x | 5.1.x
 | 1.2.x, 1.3.x, 1.4.x        | 5.1.x | 5.0.x
 | 1.1.x                      | 5.0.x | 
@@ -58,13 +58,13 @@ The easiest way to use the mapper is through Maven or Gradle. For Maven, pull it
 <dependency>
     <groupId>com.aerospike</groupId>
     <artifactId>java-object-mapper</artifactId>
-    <version>2.2.0</version>
+    <version>2.3.0</version>
 </dependency>
 ```
 For Gradle, you can use
 ```
 // https://mvnrepository.com/artifact/com.aerospike/java-object-mapper
-implementation group: 'com.aerospike', name: 'java-object-mapper', version: '2.2.0'
+implementation group: 'com.aerospike', name: 'java-object-mapper', version: '2.3.0'
 ```
 
 # Motivation and a simple example
