@@ -28,7 +28,7 @@
 		<maven.compiler.plugin.version>3.10.1</maven.compiler.plugin.version>
 		<maven-surefire-plugin.version>3.0.0-M8</maven-surefire-plugin.version>
 		<javax.validation-api.version>2.0.1.Final</javax.validation-api.version>
-		<aerospike-client.version>6.1.11</aerospike-client.version>
+		<aerospike-client.version>7.0.0</aerospike-client.version>
 		<aerospike-reactor.version>6.1.2</aerospike-reactor.version>
 		<commons-lang3.version>3.12.0</commons-lang3.version>
 		<jackson-dataformat-yaml.version>2.15.2</jackson-dataformat-yaml.version>
