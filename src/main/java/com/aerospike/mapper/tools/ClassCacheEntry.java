@@ -859,7 +859,7 @@ public class ClassCacheEntry<T> {
                                 TreeMap<?, ?> treeMap = (TreeMap<?, ?>) aerospikeValue;
                                 bins[index++] = new Bin(name, new ArrayList(treeMap.entrySet()), MapOrder.KEY_ORDERED);
                             } else {
-                                bins[index++] = new Bin(name, aerospikeValue);
+                                bins[index++] = new Bin(name, Value.get(aerospikeValue));
                             }
                         }
                     }
