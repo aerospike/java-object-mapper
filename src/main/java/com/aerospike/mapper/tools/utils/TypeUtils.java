@@ -5,6 +5,8 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -32,6 +34,8 @@ import com.aerospike.mapper.tools.configuration.ClassConfig;
 import com.aerospike.mapper.tools.configuration.EmbedConfig;
 import com.aerospike.mapper.tools.configuration.ReferenceConfig;
 import com.aerospike.mapper.tools.mappers.ArrayMapper;
+import com.aerospike.mapper.tools.mappers.BigDecimalMapper;
+import com.aerospike.mapper.tools.mappers.BigIntegerMapper;
 import com.aerospike.mapper.tools.mappers.BooleanMapper;
 import com.aerospike.mapper.tools.mappers.ByteMapper;
 import com.aerospike.mapper.tools.mappers.CharacterMapper;
@@ -94,6 +98,10 @@ public class TypeUtils {
                 typeMapper = new LocalTimeMapper();
             } else if (Instant.class.isAssignableFrom(clazz)) {
                 typeMapper = new InstantMapper();
+            } else if (BigInteger.class.isAssignableFrom(clazz)) {
+                typeMapper = new BigIntegerMapper();
+            } else if (BigDecimal.class.isAssignableFrom(clazz)) {
+                typeMapper = new BigDecimalMapper();
             } else if (Byte.class.isAssignableFrom(clazz) || Byte.TYPE.isAssignableFrom(clazz)) {
                 typeMapper = new ByteMapper();
             } else if (Character.class.isAssignableFrom(clazz) || Character.TYPE.isAssignableFrom(clazz)) {
