@@ -1,8 +1,8 @@
 package com.aerospike.mapper.tools.mappers;
 
-import java.math.BigInteger;
-
 import com.aerospike.mapper.tools.TypeMapper;
+
+import java.math.BigInteger;
 
 public class BigIntegerMapper extends TypeMapper {
 
@@ -20,6 +20,6 @@ public class BigIntegerMapper extends TypeMapper {
         if (value == null) {
             return null;
         }
-        return new BigInteger((String)value);
+        return new BigInteger((String) value);
     }
 }

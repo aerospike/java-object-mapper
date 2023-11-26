@@ -1,8 +1,8 @@
 package com.aerospike.mapper.tools.mappers;
 
-import java.math.BigDecimal;
-
 import com.aerospike.mapper.tools.TypeMapper;
+
+import java.math.BigDecimal;
 
 public class BigDecimalMapper extends TypeMapper {
 
@@ -20,6 +20,6 @@ public class BigDecimalMapper extends TypeMapper {
         if (value == null) {
             return null;
         }
-        return new BigDecimal((String)value);
+        return new BigDecimal((String) value);
     }
 }
