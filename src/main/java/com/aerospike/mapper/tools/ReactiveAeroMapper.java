@@ -101,8 +101,7 @@ public class ReactiveAeroMapper implements IReactiveAeroMapper {
 
         return reactorClient
                 .put(writePolicy, key, bins)
-                .map(docKey -> object)
-                .onErrorMap(this::translateError);
+                .map(docKey -> object);
     }
 
     @Override
@@ -417,13 +416,6 @@ public class ReactiveAeroMapper implements IReactiveAeroMapper {
         }
     }
 
-    private Throwable translateError(Throwable e) {
-        if (e instanceof AerospikeException) {
-            return translateError(e);
-        }
-        return e;
-    }
-    
     @Override
     public <T> Mono<String> getNamespace(Class<T> clazz) {
         ClassCacheEntry<T> entry = MapperUtils.getEntryAndValidateNamespace(clazz, this);
