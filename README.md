@@ -3,7 +3,7 @@
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.aerospike/java-object-mapper/badge.svg)](https://maven-badges.herokuapp.com/maven-central/com.aerospike/java-object-mapper/)
 [![javadoc](https://javadoc.io/badge2/com.aerospike/java-object-mapper/javadoc.svg)](https://javadoc.io/doc/com.aerospike/java-object-mapper)
 
-[Aerospike](https://www.aerospike.com) is one of, if not the fastest, NoSQL database in the world. It presents a Java API which is comprehensive and powerful, but requires a measure of boiler plate code to map the data from Java POJOs to the database. The aim of this repository is to lower the amount of code required when mapping POJOs to Aerospike and back as well as reducing some of the brittleness of the code.
+[Aerospike](https://www.aerospike.com) is one of, if not the fastest, NoSQL database in the world. It presents a Java API which is comprehensive and powerful, but requires a measure of boilerplate code to map the data from Java POJOs to the database. The aim of this repository is to lower the amount of code required when mapping POJOs to Aerospike and back as well as reducing some of the brittleness of the code.
 
 ## Documentation
 
@@ -45,11 +45,12 @@ The documentation for this project can be found on [javadoc.io](https://www.java
 # Compatibility with Aerospike Clients
 
 | Java Object Mapper Version | Aerospike Client | Aerospike Reactor Client
-|:---------------------------| :----------- | :-----------
-| 2.1.x, 2.2.x, 2.3.x        | 6.1.x | 6.1.x
-| 2.0.x                      | 5.1.x | 5.1.x
-| 1.2.x, 1.3.x, 1.4.x        | 5.1.x | 5.0.x
-| 1.1.x                      | 5.0.x | 
+|:---------------------------|:-----------------| :-----------
+| 2.4.x                      | 8.1.x (jdk8)     | 7.1.x
+| 2.1.x, 2.2.x, 2.3.x        | 6.1.x            | 6.1.x
+| 2.0.x                      | 5.1.x            | 5.1.x
+| 1.2.x, 1.3.x, 1.4.x        | 5.1.x            | 5.0.x
+| 1.1.x                      | 5.0.x            | 
 
 # Installing the Mapper
 The easiest way to use the mapper is through Maven or Gradle. For Maven, pull it in from Maven Central:
@@ -58,13 +59,13 @@ The easiest way to use the mapper is through Maven or Gradle. For Maven, pull it
 <dependency>
     <groupId>com.aerospike</groupId>
     <artifactId>java-object-mapper</artifactId>
-    <version>2.3.2</version>
+    <version>2.4.0</version>
 </dependency>
 ```
 For Gradle, you can use
 ```
 // https://mvnrepository.com/artifact/com.aerospike/java-object-mapper
-implementation group: 'com.aerospike', name: 'java-object-mapper', version: '2.3.2'
+implementation group: 'com.aerospike', name: 'java-object-mapper', version: '2.4.0'
 ```
 
 # Motivation and a simple example
