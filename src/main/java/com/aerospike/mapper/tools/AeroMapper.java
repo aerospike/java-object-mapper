@@ -78,7 +78,9 @@ public class AeroMapper implements IAeroMapper {
         ClassCacheEntry<T> entry = MapperUtils.getEntryAndValidateNamespace(clazz, this);
         if (writePolicy == null) {
             writePolicy = new WritePolicy(entry.getWritePolicy());
-            if (recordExistsAction != null) {
+            if (recordExistsAction != null && (writePolicy.recordExistsAction == null || writePolicy.recordExistsAction == RecordExistsAction.UPDATE)) {
+                // Override the default with the passed policy. Only do this if the policy is already at the default.
+                // Otherwise, "save" with an INSERT_ONLY policy would fail for example.
                 writePolicy.recordExistsAction = recordExistsAction;
             }
 
