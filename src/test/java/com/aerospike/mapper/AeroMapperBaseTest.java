@@ -25,7 +25,7 @@ public abstract class AeroMapperBaseTest {
         ClientPolicy policy = new ClientPolicy();
         // Set event loops to use in asynchronous commands.
         policy.eventLoops = new NioEventLoops(1);
-        client = new AerospikeClient(policy, "localhost", 3100);
+        client = new AerospikeClient(policy, "localhost", 3000);
     }
 
     @AfterAll
