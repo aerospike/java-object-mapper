@@ -484,7 +484,57 @@ public String getKey() {
 
 Note that it is not required to have a key on an object annotated with @AerospikeRecord. This is because an object can be embedded in another object (as a map or list) and hence not require a key to identify it to the database.
 
-Also, the existence of @AerospikeKey on a field does not imply that the field will get stored in the database explicitly. Use @AerospikeBin or mapAll attribute to ensure that the key gets mapped to the database too.
+Also, the existence of `@AerospikeKey` on a field does not imply that the field will get stored in the database explicitly. Use `@AerospikeBin` or `mapAll` attribute to ensure that the key gets mapped to the database too.
+
+By default, the key will always be stored in a separate column in the database. So for a class defined as
+
+```java
+@AerospikeRecord(namespace = "test", set = "testSet")
+public static class A {
+    @AerospikeKey
+    private long key;
+    private String value;
+}
+```
+
+there will be a bin in the database called `key`, whose value will be the same as the value used in the primary key. This is because Aerospike does not implicitly store the value of the key in the database, but rather uses a hash of the primary key  as a unique representation. So the value in the database might look like:
+
+```
+aql> select * from test.testSet
++-----+--------+
+| key | value  |
++-----+--------+
+| 1   | "test" |
++-----+--------+
+```
+
+If it is desired to force the primary key to be stored in the database and NOT have key added explicitly as a column then two things must be set:
+
+1. The `@AerospikeRecord` annotation must have `sendKey = true`
+2. The `@AerospikeKey` annotation must have `storeInPkOnly = true`
+
+So the object would look like:
+
+```java
+@AerospikeRecord(namespace = "test", set = "testSet", sendKey = true)
+public static class A {
+    @AerospikeKey(storeInPkOnly = true)
+    private long key;
+    private String value;
+}
+```
+
+When data is inserted, the field `key` is not saved, but rather the key is saved as the primary key. When the value is read from the database, the stored primary key is put back into the `key` field. So the data in the database might be:
+
+```
+aql> select * from test.testSet
++----+--------+
+| PK | value  |
++----+--------+
+| 1  | "test" |
++----+--------+
+```
+
 
 ----
 
@@ -679,7 +729,7 @@ Here are how standard Java types are mapped to Aerospike types:
 | Map<?,?> | Map |
 | Object Reference (@AerospikeRecord) | List or Map |
 
-These types are built into the converter. However, if you wish to change them, you can use a [Custom Object Converter](#Custom-Object-Converters). For example, if you want Dates stored in the database as a string, you could do:
+These types are built into the converter. However, if you wish to change them, you can use a Custom Object Converter](#custom-object-converters). For example, if you want Dates stored in the database as a string, you could do:
 
 ```java
 public static class DateConverter {
@@ -1975,6 +2025,7 @@ The key structure is used to specify the key to a record. Keys are optional in s
 
 The key structure contains:
 - **field**: The name of the field which to which this key is mapped. If this is provided, the getter and setter cannot be provided.
+- **storeInPkOnly**: Do not store the primary key column in the database, but rather use the `sendKey` facility related to Aerospike to save the key in the database. When the record is read, the value will be pulled back and place in the key field.
 - **getter**: The getter method used to populate the key. This must be used in conjunction with a setter method, and excludes the use of the field attribute.
 - **setter**: The setter method used to map data back to the Java key. This is used in conjunction with the getter method and precludes the use of the field attribute. Note that the return type of the getter must match the type of the first parameter of the setter, and the setter can have either 1 or 2 parameters, with the second (optional) parameter being either of type [com.aerospike.client.Key](https://www.aerospike.com/apidocs/java/com/aerospike/client/Key.html) or Object.
 

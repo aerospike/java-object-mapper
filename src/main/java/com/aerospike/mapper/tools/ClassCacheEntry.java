@@ -64,6 +64,7 @@ public class ClassCacheEntry<T> {
     private final Class<T> clazz;
     private ValueType key;
     private String keyName = null;
+    private boolean keyOnlyInPK = false;
     private final TreeMap<String, ValueType> values = new TreeMap<>();
     private ClassCacheEntry<?> superClazz;
     private int binCount;
@@ -665,9 +666,18 @@ public class ClassCacheEntry<T> {
                 if (key != null) {
                     throw new AerospikeException("Class " + clazz.getName() + " cannot have a more than one key");
                 }
+                AerospikeKey keyAnnotation = thisField.getAnnotation(AerospikeKey.class);
+                boolean storeInPkOnly = (keyAnnotation != null && keyAnnotation.storeInPkOnly());
+                if (keyConfig != null && keyConfig.getStoreInPkOnly() != null) {
+                    storeInPkOnly = keyConfig.getStoreInPkOnly();
+                }
+                if (storeInPkOnly && (this.sendKey == null || !this.sendKey)) {
+                    throw new AerospikeException("Class " + clazz.getName() + " attempts to store primary key information inside the aerospike key, but sendKey is not true at the record level");
+                }
                 AnnotatedType annotatedType = new AnnotatedType(config, thisField);
                 TypeMapper typeMapper = TypeUtils.getMapper(thisField.getType(), annotatedType, this.mapper);
                 this.key = new ValueType.FieldValue(thisField, typeMapper, annotatedType);
+                this.keyOnlyInPK = storeInPkOnly;
                 isKey = true;
             }
 
@@ -850,6 +860,10 @@ public class ClassCacheEntry<T> {
             while (thisClass != null) {
                 Set<String> keys = thisClass.values.keySet();
                 for (String name : keys) {
+                    if (name.equals(thisClass.keyName) && thisClass.keyOnlyInPK) {
+                        // Do not explicitly write the key to the bin
+                        continue;
+                    }
                     if (contains(binNames, name)) {
                         ValueType value = (ValueType) thisClass.values.get(name);
                         Object javaValue = value.get(instance);
@@ -948,15 +962,15 @@ public class ClassCacheEntry<T> {
     }
 
     public T constructAndHydrate(Map<String, Object> map) {
-        return constructAndHydrate(null, map);
+        return constructAndHydrate(null, null, map);
     }
 
-    public T constructAndHydrate(Record record) {
-        return constructAndHydrate(record, null);
+    public T constructAndHydrate(Key key, Record record) {
+        return constructAndHydrate(key, record, null);
     }
 
     @SuppressWarnings("unchecked")
-    private T constructAndHydrate(Record record, Map<String, Object> map) {
+    private T constructAndHydrate(Key key, Record record, Map<String, Object> map) {
         Map<String, Object> valueMap = new HashMap<>();
         try {
             ClassCacheEntry<?> thisClass = this;
@@ -976,7 +990,21 @@ public class ClassCacheEntry<T> {
             while (thisClass != null) {
                 for (String name : thisClass.values.keySet()) {
                     ValueType value = thisClass.values.get(name);
-                    Object aerospikeValue = record == null ? map.get(name) : record.getValue(name);
+                    Object aerospikeValue;
+                    if (record == null) {
+                        aerospikeValue = map.get(name);
+                    }
+                    else if (name.equals(thisClass.keyName) && thisClass.keyOnlyInPK) {
+                        if (key.userKey != null) {
+                            aerospikeValue = key.userKey.getObject();
+                        }
+                        else {
+                            throw new AerospikeException("Key field on class " + className + " was <null> for key " + key + ". Was the record saved passing 'sendKey = true'? ");
+                        }
+                    }
+                    else {
+                        aerospikeValue = record.getValue(name);
+                    }
                     valueMap.put(name, value.getTypeMapper().fromAerospikeFormat(aerospikeValue));
                 }
                 if (result == null) {

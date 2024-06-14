@@ -78,9 +78,9 @@ public class MappingConverter {
      * @return A virtual list.
      * @throws AerospikeException an AerospikeException will be thrown in case of an encountering a ReflectiveOperationException.
      */
-    public <T> T convertToObject(Class<T> clazz, Record record) {
+    public <T> T convertToObject(Class<T> clazz, Key key, Record record) {
         try {
-            return convertToObject(clazz, record, null);
+            return convertToObject(clazz, key, record, null);
         } catch (ReflectiveOperationException e) {
             throw new AerospikeException(e);
         }
@@ -96,18 +96,18 @@ public class MappingConverter {
      * @return A virtual list.
      * @throws AerospikeException an AerospikeException will be thrown in case of an encountering a ReflectiveOperationException.
      */
-    public <T> T convertToObject(Class<T> clazz, Record record, ClassCacheEntry<T> entry) throws ReflectiveOperationException {
-        return this.convertToObject(clazz, record, entry, true);
+    public <T> T convertToObject(Class<T> clazz, Key key, Record record, ClassCacheEntry<T> entry) throws ReflectiveOperationException {
+        return this.convertToObject(clazz, key, record, entry, true);
     }
 
     /**
      * This method should not be used, it is public only to allow mappers to see it.
      */
-    public <T> T convertToObject(Class<T> clazz, Record record, ClassCacheEntry<T> entry, boolean resolveDependencies) throws ReflectiveOperationException {
+    public <T> T convertToObject(Class<T> clazz, Key key, Record record, ClassCacheEntry<T> entry, boolean resolveDependencies) throws ReflectiveOperationException {
         if (entry == null) {
             entry = ClassCache.getInstance().loadClass(clazz, mapper);
         }
-        T result = entry.constructAndHydrate(record);
+        T result = entry.constructAndHydrate(key, record);
         if (resolveDependencies) {
             resolveDependencies(entry);
         }
@@ -252,7 +252,7 @@ public class MappingConverter {
                     DeferredObjectLoader.DeferredObjectSetter thisObjectSetter = deferredObjects.get(i);
                     try {
                         ThreadLocalKeySaver.save(keys[i]);
-                        Object result = records[i] == null ? null : convertToObject((Class) thisObjectSetter.getObject().getType(), records[i], classCacheEntryList.get(i), false);
+                        Object result = records[i] == null ? null : convertToObject((Class) thisObjectSetter.getObject().getType(), keys[i], records[i], classCacheEntryList.get(i), false);
                         thisObjectSetter.getSetter().setValue(result);
                     } catch (ReflectiveOperationException e) {
                         throw new AerospikeException(e);

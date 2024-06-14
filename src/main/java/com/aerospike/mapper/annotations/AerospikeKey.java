@@ -12,4 +12,6 @@ public @interface AerospikeKey {
      * The setter attribute is used only on Methods where the method is used to set the key on lazy object instantiation
      */
     boolean setter() default false;
+    
+    boolean storeInPkOnly() default false;
 }

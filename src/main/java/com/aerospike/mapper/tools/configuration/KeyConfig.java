@@ -6,6 +6,7 @@ public class KeyConfig {
     private String field;
     private String getter;
     private String setter;
+    private Boolean storeInPkOnly;
 
     public String getField() {
         return field;
@@ -18,7 +19,14 @@ public class KeyConfig {
     public String getSetter() {
         return setter;
     }
+    
+    public Boolean getStoreInPkOnly() {
+        return storeInPkOnly;
+    }
 
+    public void setStoreInPkOnly(boolean value) {
+        this.storeInPkOnly = value;
+    }
     
     public void setField(String field) {
         this.field = field;
