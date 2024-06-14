@@ -279,12 +279,12 @@ public class ClassConfig {
         }
         
         public Builder beingReferencedBy(AerospikeReference.ReferenceType type) {
-            this.binConfig.setReference(new ReferenceConfig(type, false));
+            this.binConfig.setReference(new ReferenceConfig(type, false, true));
             return this.end();
         }
         
         public Builder beingLazilyReferencedBy(AerospikeReference.ReferenceType type) {
-            this.binConfig.setReference(new ReferenceConfig(type, true));
+            this.binConfig.setReference(new ReferenceConfig(type, true, true));
             return this.end();
         }
         

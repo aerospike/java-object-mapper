@@ -8,9 +8,10 @@ public class ReferenceConfig {
     private Boolean batchLoad;
 
     public ReferenceConfig() {}
-    public ReferenceConfig(ReferenceType type, boolean lazy) {
+    public ReferenceConfig(ReferenceType type, boolean lazy, boolean batchLoad) {
         this.type = type;
         this.lazy = lazy;
+        this.batchLoad = batchLoad;
     }
     
     public ReferenceType getType() {

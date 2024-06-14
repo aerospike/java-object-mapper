@@ -229,7 +229,11 @@ public class TypeUtils {
                         } else {
                             // Reference
                             ReferenceConfig ref = binConfig.getReference();
-                            typeMapper = new ObjectReferenceMapper(ClassCache.getInstance().loadClass(clazz, mapper), ref.getLazy(), ref.getBatchLoad(), ref.getType(), mapper);
+                            typeMapper = new ObjectReferenceMapper(
+                                    ClassCache.getInstance().loadClass(clazz, mapper), 
+                                    ref.getLazy() == null? false : ref.getLazy(), 
+                                    ref.getBatchLoad() == null ? true : ref.getBatchLoad(), 
+                                    ref.getType(), mapper);
                             addToMap = false;
                         }
                     } else {
