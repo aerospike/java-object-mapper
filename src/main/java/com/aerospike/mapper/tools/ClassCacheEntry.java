@@ -417,12 +417,12 @@ public class ClassCacheEntry<T> {
         if (!StringUtils.isBlank(this.factoryClass) || !StringUtils.isBlank(this.factoryMethod)) {
             // Both must be specified
             if (StringUtils.isBlank(this.factoryClass)) {
-                throw new AerospikeException("Missing factoryClass definition when factoryMethod is specified on class " +
-                        clazz.getSimpleName());
+                throw new AerospikeException(String.format("Missing factoryClass definition when factoryMethod is specified on class %s",
+                        clazz.getSimpleName()));
             }
             if (StringUtils.isBlank(this.factoryClass)) {
-                throw new AerospikeException("Missing factoryMethod definition when factoryClass is specified on class " +
-                        clazz.getSimpleName());
+                throw new AerospikeException(String.format("Missing factoryMethod definition when factoryClass is specified on class %s",
+                        clazz.getSimpleName()));
             }
             // Load the class and check for the method
             try {
@@ -480,8 +480,8 @@ public class ClassCacheEntry<T> {
     private void findConstructor() {
         Constructor<?>[] constructors = clazz.getDeclaredConstructors();
         if (constructors.length == 0) {
-            throw new AerospikeException("Class " + clazz.getSimpleName() +
-                    " has no constructors and hence cannot be mapped to Aerospike");
+            throw new AerospikeException(String.format("Class %s has no constructors and hence cannot be mapped to Aerospike",
+                    clazz.getSimpleName()));
         }
         Constructor<?> desiredConstructor = null;
         Constructor<?> noArgConstructor = null;
@@ -495,9 +495,9 @@ public class ClassCacheEntry<T> {
                 AerospikeConstructor aerospikeConstructor = thisConstructor.getAnnotation(AerospikeConstructor.class);
                 if (aerospikeConstructor != null) {
                     if (desiredConstructor != null) {
-                        throw new AerospikeException("Class " + clazz.getSimpleName() +
-                                " has multiple constructors annotated with @AerospikeConstructor. " +
-                                "Only one constructor can be so annotated.");
+                        throw new AerospikeException(String.format("Class %s" +
+                                " has multiple constructors annotated with @AerospikeConstructor." +
+                                " Only one constructor can be so annotated.", clazz.getSimpleName()));
                     } else {
                         desiredConstructor = thisConstructor;
                     }
@@ -510,8 +510,9 @@ public class ClassCacheEntry<T> {
         }
 
         if (desiredConstructor == null) {
-            throw new AerospikeException("Class " + clazz.getSimpleName() + " has neither a no-arg constructor, " +
-                    "nor a constructor annotated with @AerospikeConstructor so cannot be mapped to Aerospike.");
+            throw new AerospikeException(String.format("Class %s has neither a no-arg constructor, " +
+                    "nor a constructor annotated with @AerospikeConstructor so cannot be mapped to Aerospike.",
+                    clazz.getSimpleName()));
         }
 
         Parameter[] params = desiredConstructor.getParameters();
@@ -552,10 +553,11 @@ public class ClassCacheEntry<T> {
             }
             Class<?> type = thisParam.getType();
             if (!type.isAssignableFrom(allValues.get(binName).getType())) {
-                throw new AerospikeException("Class " + clazz.getSimpleName() + " has a preferred constructor of " +
-                        desiredConstructor + ". However, parameter " + count +
-                        " is of type " + type + " but assigned from bin \"" + binName + "\" of type " +
-                        values.get(binName).getType() + ". These types are incompatible.");
+                throw new AerospikeException(String.format("Class %s has a preferred constructor of" +
+                                " %s. However, parameter %s" +
+                                " is of type %s but assigned from bin \"%s\" of type %s." +
+                                " These types are incompatible.",
+                        clazz.getSimpleName(), desiredConstructor, count, type, binName, values.get(binName).getType()));
             }
             constructorParamBins[count - 1] = binName;
             constructorParamDefaults[count - 1] = PrimitiveDefaults.getDefaultValue(thisParam.getType());
@@ -629,7 +631,7 @@ public class ClassCacheEntry<T> {
         if (keyProperty != null) {
             keyProperty.validate(clazz.getName(), config, true);
             if (key != null) {
-                throw new AerospikeException("Class " + clazz.getName() + " cannot have a more than one key");
+                throw new AerospikeException(String.format("Class %s cannot have a more than one key", clazz.getName()));
             }
             AnnotatedType annotatedType = new AnnotatedType(config, keyProperty.getGetter());
             TypeMapper typeMapper = TypeUtils.getMapper(keyProperty.getType(), annotatedType, this.mapper);
@@ -639,8 +641,8 @@ public class ClassCacheEntry<T> {
             PropertyDefinition thisProperty = properties.get(thisPropertyName);
             thisProperty.validate(clazz.getName(), config, false);
             if (this.values.get(thisPropertyName) != null) {
-                throw new AerospikeException("Class " + clazz.getName() + " cannot define the mapped name " +
-                        thisPropertyName + " more than once");
+                throw new AerospikeException(String.format("Class %s cannot define the mapped name %s more than once",
+                        clazz.getName(), thisPropertyName));
             }
             AnnotatedType annotatedType = new AnnotatedType(config, thisProperty.getGetter());
             TypeMapper typeMapper = TypeUtils.getMapper(thisProperty.getType(), annotatedType, this.mapper);
@@ -661,10 +663,12 @@ public class ClassCacheEntry<T> {
             }
             if (thisField.isAnnotationPresent(AerospikeKey.class) || (!StringUtils.isBlank(keyField) && keyField.equals(thisField.getName()))) {
                 if (thisField.isAnnotationPresent(AerospikeExclude.class) || (thisBin != null && thisBin.isExclude() != null && thisBin.isExclude())) {
-                    throw new AerospikeException("Class " + clazz.getName() + " cannot have a field which is both a key and excluded.");
+                    throw new AerospikeException(String.format("Class %s cannot have a field which is both a key and excluded.",
+                            clazz.getName()));
                 }
                 if (key != null) {
-                    throw new AerospikeException("Class " + clazz.getName() + " cannot have a more than one key");
+                    throw new AerospikeException(String.format("Class %s cannot have a more than one key",
+                            clazz.getName()));
                 }
                 AerospikeKey keyAnnotation = thisField.getAnnotation(AerospikeKey.class);
                 boolean storeInPkOnly = (keyAnnotation != null && keyAnnotation.storeInPkOnly());
@@ -672,7 +676,8 @@ public class ClassCacheEntry<T> {
                     storeInPkOnly = keyConfig.getStoreInPkOnly();
                 }
                 if (storeInPkOnly && (this.sendKey == null || !this.sendKey)) {
-                    throw new AerospikeException("Class " + clazz.getName() + " attempts to store primary key information inside the aerospike key, but sendKey is not true at the record level");
+                    throw new AerospikeException(String.format("Class %s attempts to store primary key information" +
+                            " inside the aerospike key, but sendKey is not true at the record level", clazz.getName()));
                 }
                 AnnotatedType annotatedType = new AnnotatedType(config, thisField);
                 TypeMapper typeMapper = TypeUtils.getMapper(thisField.getType(), annotatedType, this.mapper);
@@ -704,7 +709,8 @@ public class ClassCacheEntry<T> {
                 }
 
                 if (this.values.get(name) != null) {
-                    throw new AerospikeException("Class " + clazz.getName() + " cannot define the mapped name " + name + " more than once");
+                    throw new AerospikeException(String.format("Class %s cannot define the mapped name %s more than once",
+                            clazz.getName(), name));
                 }
                 if ((bin != null && bin.useAccessors()) || (thisBin != null && thisBin.getUseAccessors() != null && thisBin.getUseAccessors())) {
                     validateAccessorsForField(name, thisField);
@@ -788,8 +794,8 @@ public class ClassCacheEntry<T> {
         try {
             Object key = this._getKey(object);
             if (key == null) {
-                throw new AerospikeException("Null key from annotated object of class " + this.clazz.getSimpleName() +
-                        ". Did you forget an @AerospikeKey annotation?");
+                throw new AerospikeException(String.format("Null key from annotated object of class %s." +
+                        " Did you forget an @AerospikeKey annotation?", this.clazz.getSimpleName()));
             }
             return key;
         } catch (ReflectiveOperationException re) {
@@ -993,16 +999,14 @@ public class ClassCacheEntry<T> {
                     Object aerospikeValue;
                     if (record == null) {
                         aerospikeValue = map.get(name);
-                    }
-                    else if (name.equals(thisClass.keyName) && thisClass.keyOnlyInPK) {
+                    } else if (name.equals(thisClass.keyName) && thisClass.keyOnlyInPK) {
                         if (key.userKey != null) {
                             aerospikeValue = key.userKey.getObject();
+                        } else {
+                            throw new AerospikeException(String.format("Key field on class %s was <null> for key %s." +
+                                    " Was the record saved passing 'sendKey = true'? ", className, key));
                         }
-                        else {
-                            throw new AerospikeException("Key field on class " + className + " was <null> for key " + key + ". Was the record saved passing 'sendKey = true'? ");
-                        }
-                    }
-                    else {
+                    } else {
                         aerospikeValue = record.getValue(name);
                     }
                     valueMap.put(name, value.getTypeMapper().fromAerospikeFormat(aerospikeValue));

@@ -206,7 +206,7 @@ public class MappingConverter {
     public void resolveDependencies(ClassCacheEntry<?> parentEntity) {
         List<DeferredObjectLoader.DeferredObjectSetter> deferredObjects = DeferredObjectLoader.getAndClear();
 
-        if (deferredObjects.size() == 0) {
+        if (deferredObjects.isEmpty()) {
             return;
         }
 

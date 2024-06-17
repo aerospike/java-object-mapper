@@ -252,7 +252,7 @@ public class ReactiveAeroMapper implements IReactiveAeroMapper {
         if (writePolicy == null) {
             writePolicy = entry.getWritePolicy();
             if (entry.getDurableDelete() != null) {
-                // Clone the write policy so we're not changing the original one
+                // Clone the write policy, so we're not changing the original one
                 writePolicy = new WritePolicy(writePolicy);
                 writePolicy.durableDelete = entry.getDurableDelete();
             }
