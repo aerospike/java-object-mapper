@@ -497,7 +497,7 @@ public static class A {
 }
 ```
 
-there will be a bin in the database called `key`, whose value will be the same as the value used in the primary key. This is because Aerospike does not implicitly store the value of the key in the database, but rather uses a hash of the primary key  as a unique representation. So the value in the database might look like:
+there will be a bin in the database called `key`, whose value will be the same as the value used in the primary key. This is because Aerospike does not implicitly store the value of the key in the database, but rather uses a hash of the primary key as a unique representation. So the value in the database might look like:
 
 ```
 aql> select * from test.testSet
