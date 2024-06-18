@@ -231,13 +231,13 @@ public class ClassConfig {
             return this;
         }
         
-        public Builder withKeyFieldAndStorePkOnly(String fieldName, boolean storePkOnly) {
+        public Builder withKeyFieldAndStoreAsBin(String fieldName, boolean storeAsBin) {
             if (this.classConfig.getKey() == null) {
                 this.classConfig.setKey(new KeyConfig());
             }
             this.validateFieldExists(fieldName);
             this.classConfig.getKey().setField(fieldName);
-            this.classConfig.getKey().setStoreInPkOnly(storePkOnly);
+            this.classConfig.getKey().setStoreAsBin(storeAsBin);
             return this;
         }
         

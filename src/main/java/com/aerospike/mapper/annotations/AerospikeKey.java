@@ -13,5 +13,5 @@ public @interface AerospikeKey {
      */
     boolean setter() default false;
     
-    boolean storeInPkOnly() default false;
+    boolean storeAsBin() default true;
 }

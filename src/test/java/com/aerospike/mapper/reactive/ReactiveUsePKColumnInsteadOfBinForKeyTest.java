@@ -20,7 +20,7 @@ public class ReactiveUsePKColumnInsteadOfBinForKeyTest extends ReactiveAeroMappe
     @NoArgsConstructor
     @AerospikeRecord(namespace = "test", set = "testSet", sendKey = true)
     public static class A {
-        @AerospikeKey(storeInPkOnly = true)
+        @AerospikeKey(storeAsBin = false)
         private long key1;
         private String value;
     }
@@ -58,7 +58,7 @@ public class ReactiveUsePKColumnInsteadOfBinForKeyTest extends ReactiveAeroMappe
                 "   sendKey: true\n" +
                 "   key:\n" +
                 "     field: keyStr\n" +
-                "     storeInPkOnly: true\n";
+                "     storeAsBin: false\n";
         ReactiveAeroMapper reactiveMapper = new ReactiveAeroMapper.Builder(reactorClient).withConfiguration(yaml).build();
         B b = new B("key1", "test1");
         reactiveMapper.save(b).subscribeOn(Schedulers.parallel()).block();
@@ -78,7 +78,7 @@ public class ReactiveUsePKColumnInsteadOfBinForKeyTest extends ReactiveAeroMappe
                 .withNamespace("test")
                 .withSet("testSet")
                 .withSendKey(true)
-                .withKeyFieldAndStorePkOnly("keyStr", true).build();
+                .withKeyFieldAndStoreAsBin("keyStr", false).build();
         ReactiveAeroMapper reactiveMapper = new ReactiveAeroMapper.Builder(reactorClient).withClassConfigurations(classBConfig).build();
         B b = new B("key2", "test2");
         reactiveMapper.save(b).subscribeOn(Schedulers.parallel()).block();

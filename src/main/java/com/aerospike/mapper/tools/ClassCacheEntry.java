@@ -64,7 +64,7 @@ public class ClassCacheEntry<T> {
     private final Class<T> clazz;
     private ValueType key;
     private String keyName = null;
-    private boolean keyOnlyInPK = false;
+    private boolean keyAsBin = true;
     private final TreeMap<String, ValueType> values = new TreeMap<>();
     private ClassCacheEntry<?> superClazz;
     private int binCount;
@@ -671,18 +671,18 @@ public class ClassCacheEntry<T> {
                             clazz.getName()));
                 }
                 AerospikeKey keyAnnotation = thisField.getAnnotation(AerospikeKey.class);
-                boolean storeInPkOnly = (keyAnnotation != null && keyAnnotation.storeInPkOnly());
-                if (keyConfig != null && keyConfig.getStoreInPkOnly() != null) {
-                    storeInPkOnly = keyConfig.getStoreInPkOnly();
+                boolean storeAsBin = (keyAnnotation == null) || (keyAnnotation != null && keyAnnotation.storeAsBin());
+                if (keyConfig != null && keyConfig.getStoreAsBin() != null) {
+                    storeAsBin = keyConfig.getStoreAsBin();
                 }
-                if (storeInPkOnly && (this.sendKey == null || !this.sendKey)) {
+                if (!storeAsBin && (this.sendKey == null || !this.sendKey)) {
                     throw new AerospikeException(String.format("Class %s attempts to store primary key information" +
                             " inside the aerospike key, but sendKey is not true at the record level", clazz.getName()));
                 }
                 AnnotatedType annotatedType = new AnnotatedType(config, thisField);
                 TypeMapper typeMapper = TypeUtils.getMapper(thisField.getType(), annotatedType, this.mapper);
                 this.key = new ValueType.FieldValue(thisField, typeMapper, annotatedType);
-                this.keyOnlyInPK = storeInPkOnly;
+                this.keyAsBin = storeAsBin;
                 isKey = true;
             }
 
@@ -866,7 +866,7 @@ public class ClassCacheEntry<T> {
             while (thisClass != null) {
                 Set<String> keys = thisClass.values.keySet();
                 for (String name : keys) {
-                    if (name.equals(thisClass.keyName) && thisClass.keyOnlyInPK) {
+                    if (name.equals(thisClass.keyName) && !thisClass.keyAsBin) {
                         // Do not explicitly write the key to the bin
                         continue;
                     }
@@ -999,7 +999,7 @@ public class ClassCacheEntry<T> {
                     Object aerospikeValue;
                     if (record == null) {
                         aerospikeValue = map.get(name);
-                    } else if (name.equals(thisClass.keyName) && thisClass.keyOnlyInPK) {
+                    } else if (name.equals(thisClass.keyName) && !thisClass.keyAsBin) {
                         if (key.userKey != null) {
                             aerospikeValue = key.userKey.getObject();
                         } else {

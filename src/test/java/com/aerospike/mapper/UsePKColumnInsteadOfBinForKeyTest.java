@@ -1,5 +1,6 @@
 package com.aerospike.mapper;
 
+import com.aerospike.client.AerospikeException;
 import com.aerospike.client.Record;
 import com.aerospike.mapper.annotations.AerospikeKey;
 import com.aerospike.mapper.annotations.AerospikeRecord;
@@ -12,6 +13,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class UsePKColumnInsteadOfBinForKeyTest extends AeroMapperBaseTest {
 
@@ -20,7 +22,7 @@ public class UsePKColumnInsteadOfBinForKeyTest extends AeroMapperBaseTest {
     @NoArgsConstructor
     @AerospikeRecord(namespace = "test", set = "testSet", sendKey = true)
     public static class A {
-        @AerospikeKey(storeInPkOnly = true)
+        @AerospikeKey(storeAsBin = false)
         private long key1;
         private String value;
     }
@@ -30,6 +32,16 @@ public class UsePKColumnInsteadOfBinForKeyTest extends AeroMapperBaseTest {
     @NoArgsConstructor
     public static class B {
         private String keyStr;
+        private String value;
+    }
+
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    @AerospikeRecord(namespace = "test", set = "testSet", sendKey = false)
+    public static class C {
+        @AerospikeKey(storeAsBin = false)
+        private long key1;
         private String value;
     }
 
@@ -56,7 +68,7 @@ public class UsePKColumnInsteadOfBinForKeyTest extends AeroMapperBaseTest {
                 "   sendKey: true\n" +
                 "   key:\n" +
                 "     field: keyStr\n" +
-                "     storeInPkOnly: true\n";
+                "     storeAsBin: false\n";
         AeroMapper mapper = new AeroMapper.Builder(client).withConfiguration(yaml).build();
         B b = new B("key1", "test1");
         mapper.save(b);
@@ -74,7 +86,9 @@ public class UsePKColumnInsteadOfBinForKeyTest extends AeroMapperBaseTest {
                 .withNamespace("test")
                 .withSet("testSet")
                 .withSendKey(true)
-                .withKeyFieldAndStorePkOnly("keyStr", true).build();
+                .withKeyFieldAndStoreAsBin("keyStr", false).build();
+        
+        client.truncate(null, NAMESPACE, "testSet", null);
         AeroMapper mapper = new AeroMapper.Builder(client).withClassConfigurations(classBConfig).build();
         B b = new B("key2", "test2");
         mapper.save(b);
@@ -84,5 +98,14 @@ public class UsePKColumnInsteadOfBinForKeyTest extends AeroMapperBaseTest {
 
         Record rawObject = client.get(null, mapper.getRecordKey(b));
         assertFalse(rawObject.bins.containsKey("keyStr"));
+    }
+    
+    @Test
+    public void runTestWithInvalidConfig() {
+        AeroMapper mapper = new AeroMapper.Builder(client).build();
+        C c = new C(1, "test");
+        assertThrows(AerospikeException.class, () -> {
+            mapper.save(c);
+        });
     }
 }
