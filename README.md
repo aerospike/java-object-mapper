@@ -511,14 +511,14 @@ aql> select * from test.testSet
 If it is desired to force the primary key to be stored in the database and NOT have key added explicitly as a column then two things must be set:
 
 1. The `@AerospikeRecord` annotation must have `sendKey = true`
-2. The `@AerospikeKey` annotation must have `storeInPkOnly = true`
+2. The `@AerospikeKey` annotation must have `storeAsBin = false`
 
 So the object would look like:
 
 ```java
 @AerospikeRecord(namespace = "test", set = "testSet", sendKey = true)
 public static class A {
-    @AerospikeKey(storeInPkOnly = true)
+    @AerospikeKey(storeAsBin = false)
     private long key;
     private String value;
 }
@@ -2025,7 +2025,7 @@ The key structure is used to specify the key to a record. Keys are optional in s
 
 The key structure contains:
 - **field**: The name of the field which to which this key is mapped. If this is provided, the getter and setter cannot be provided.
-- **storeInPkOnly**: Do not store the primary key column in the database, but rather use the `sendKey` facility related to Aerospike to save the key in the database. When the record is read, the value will be pulled back and place in the key field.
+- **storeAsBin**: Store the primary key as a bin in the database, alternatively it is recommended to use the `sendKey` facility related to Aerospike to save the key in the record's metadata (and set this flag to false). When the record is read, the value will be pulled back and place in the key field.
 - **getter**: The getter method used to populate the key. This must be used in conjunction with a setter method, and excludes the use of the field attribute.
 - **setter**: The setter method used to map data back to the Java key. This is used in conjunction with the getter method and precludes the use of the field attribute. Note that the return type of the getter must match the type of the first parameter of the setter, and the setter can have either 1 or 2 parameters, with the second (optional) parameter being either of type [com.aerospike.client.Key](https://www.aerospike.com/apidocs/java/com/aerospike/client/Key.html) or Object.
 

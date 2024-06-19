@@ -630,9 +630,11 @@ public class ClassCacheEntry<T> {
 
         if (keyProperty != null) {
             keyProperty.validate(clazz.getName(), config, true);
+
             if (key != null) {
                 throw new AerospikeException(String.format("Class %s cannot have a more than one key", clazz.getName()));
             }
+
             AnnotatedType annotatedType = new AnnotatedType(config, keyProperty.getGetter());
             TypeMapper typeMapper = TypeUtils.getMapper(keyProperty.getType(), annotatedType, this.mapper);
             this.key = new ValueType.MethodValue(keyProperty, typeMapper, annotatedType);
@@ -640,10 +642,12 @@ public class ClassCacheEntry<T> {
         for (String thisPropertyName : properties.keySet()) {
             PropertyDefinition thisProperty = properties.get(thisPropertyName);
             thisProperty.validate(clazz.getName(), config, false);
+
             if (this.values.get(thisPropertyName) != null) {
                 throw new AerospikeException(String.format("Class %s cannot define the mapped name %s more than once",
                         clazz.getName(), thisPropertyName));
             }
+
             AnnotatedType annotatedType = new AnnotatedType(config, thisProperty.getGetter());
             TypeMapper typeMapper = TypeUtils.getMapper(thisProperty.getType(), annotatedType, this.mapper);
             ValueType value = new ValueType.MethodValue(thisProperty, typeMapper, annotatedType);
@@ -657,28 +661,34 @@ public class ClassCacheEntry<T> {
         for (Field thisField : this.clazz.getDeclaredFields()) {
             boolean isKey = false;
             BinConfig thisBin = getBinFromField(thisField);
+
             if (Modifier.isFinal(thisField.getModifiers()) && Modifier.isStatic(thisField.getModifiers())) {
             	// We cannot map static final fields
             	continue;
             }
+
             if (thisField.isAnnotationPresent(AerospikeKey.class) || (!StringUtils.isBlank(keyField) && keyField.equals(thisField.getName()))) {
                 if (thisField.isAnnotationPresent(AerospikeExclude.class) || (thisBin != null && thisBin.isExclude() != null && thisBin.isExclude())) {
                     throw new AerospikeException(String.format("Class %s cannot have a field which is both a key and excluded.",
                             clazz.getName()));
                 }
+
                 if (key != null) {
                     throw new AerospikeException(String.format("Class %s cannot have a more than one key",
                             clazz.getName()));
                 }
                 AerospikeKey keyAnnotation = thisField.getAnnotation(AerospikeKey.class);
                 boolean storeAsBin = (keyAnnotation == null) || (keyAnnotation != null && keyAnnotation.storeAsBin());
+
                 if (keyConfig != null && keyConfig.getStoreAsBin() != null) {
                     storeAsBin = keyConfig.getStoreAsBin();
                 }
+
                 if (!storeAsBin && (this.sendKey == null || !this.sendKey)) {
                     throw new AerospikeException(String.format("Class %s attempts to store primary key information" +
                             " inside the aerospike key, but sendKey is not true at the record level", clazz.getName()));
                 }
+
                 AnnotatedType annotatedType = new AnnotatedType(config, thisField);
                 TypeMapper typeMapper = TypeUtils.getMapper(thisField.getType(), annotatedType, this.mapper);
                 this.key = new ValueType.FieldValue(thisField, typeMapper, annotatedType);
