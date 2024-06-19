@@ -33,7 +33,7 @@ public interface IAeroMapper extends IBaseAeroMapper {
      * @param objects One or two objects to save.
      * @throws AerospikeException an AerospikeException will be thrown in case of an error.
      */
-    void save(@NotNull Object... objects);
+    <T> void save(@NotNull T... objects);
 
     /**
      * Save an object in the database. This method will perform a REPLACE on the existing record so any existing
@@ -42,7 +42,7 @@ public interface IAeroMapper extends IBaseAeroMapper {
      * @param object The object to save.
      * @throws AerospikeException an AerospikeException will be thrown in case of an error.
      */
-    void save(@NotNull Object object, String... binNames);
+    <T> void save(@NotNull T object, String... binNames);
 
     /**
      * Save an object in the database with the given WritePolicy. This write policy will override any other set writePolicy so
@@ -52,7 +52,16 @@ public interface IAeroMapper extends IBaseAeroMapper {
      * @param object      The object to save.
      * @throws AerospikeException an AerospikeException will be thrown in case of an error.
      */
-    void save(@NotNull WritePolicy writePolicy, @NotNull Object object, String... binNames);
+    <T> void save(@NotNull WritePolicy writePolicy, @NotNull T object, String... binNames);
+
+    /**
+     * Insert an object to the database This uses the RecordExistsAction
+     * of CREATE_ONLY. If bins are specified, only bins with the passed names will be inserted (or all of them if null is passed)
+     *
+     * @param object The object to insert.
+     * @throws AerospikeException an AerospikeException will be thrown in case of an error.
+     */
+    <T> void insert(@NotNull T object, String... binNames);
 
     /**
      * Updates the object in the database, merging the record with the existing record. This uses the RecordExistsAction
@@ -61,7 +70,7 @@ public interface IAeroMapper extends IBaseAeroMapper {
      * @param object The object to update.
      * @throws AerospikeException an AerospikeException will be thrown in case of an error.
      */
-    void update(@NotNull Object object, String... binNames);
+    <T> void update(@NotNull T object, String... binNames);
 
     /**
      * Read a record from the repository and map it to an instance of the passed class, by providing a digest.
