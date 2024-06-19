@@ -632,7 +632,7 @@ public class ClassCacheEntry<T> {
             keyProperty.validate(clazz.getName(), config, true);
 
             if (key != null) {
-                throw new AerospikeException(String.format("Class %s cannot have a more than one key", clazz.getName()));
+                throw new AerospikeException(String.format("Class %s cannot have more than one key", clazz.getName()));
             }
 
             AnnotatedType annotatedType = new AnnotatedType(config, keyProperty.getGetter());
@@ -674,11 +674,11 @@ public class ClassCacheEntry<T> {
                 }
 
                 if (key != null) {
-                    throw new AerospikeException(String.format("Class %s cannot have a more than one key",
+                    throw new AerospikeException(String.format("Class %s cannot have more than one key",
                             clazz.getName()));
                 }
                 AerospikeKey keyAnnotation = thisField.getAnnotation(AerospikeKey.class);
-                boolean storeAsBin = (keyAnnotation == null) || (keyAnnotation != null && keyAnnotation.storeAsBin());
+                boolean storeAsBin = keyAnnotation == null || keyAnnotation.storeAsBin();
 
                 if (keyConfig != null && keyConfig.getStoreAsBin() != null) {
                     storeAsBin = keyConfig.getStoreAsBin();
