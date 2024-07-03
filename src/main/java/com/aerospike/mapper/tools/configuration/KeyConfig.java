@@ -6,6 +6,7 @@ public class KeyConfig {
     private String field;
     private String getter;
     private String setter;
+    private Boolean storeAsBin;
 
     public String getField() {
         return field;
@@ -18,7 +19,14 @@ public class KeyConfig {
     public String getSetter() {
         return setter;
     }
+    
+    public Boolean getStoreAsBin() {
+        return storeAsBin;
+    }
 
+    public void setStoreAsBin(boolean value) {
+        this.storeAsBin = value;
+    }
     
     public void setField(String field) {
         this.field = field;

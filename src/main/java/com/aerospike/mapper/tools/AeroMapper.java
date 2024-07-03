@@ -234,7 +234,7 @@ public class AeroMapper implements IAeroMapper {
             try {
                 ThreadLocalKeySaver.save(key);
                 LoadedObjectResolver.begin();
-                return mappingConverter.convertToObject(clazz, record, entry, resolveDependencies);
+                return mappingConverter.convertToObject(clazz, key, record, entry, resolveDependencies);
             } catch (ReflectiveOperationException e) {
                 throw new AerospikeException(e);
             } finally {
@@ -265,7 +265,7 @@ public class AeroMapper implements IAeroMapper {
             } else {
                 try {
                     ThreadLocalKeySaver.save(keys[i]);
-                    T result = mappingConverter.convertToObject(clazz, records[i], entry, false);
+                    T result = mappingConverter.convertToObject(clazz, keys[i], records[i], entry, false);
                     results[i] = result;
                 } catch (ReflectiveOperationException e) {
                     throw new AerospikeException(e);
@@ -385,7 +385,7 @@ public class AeroMapper implements IAeroMapper {
         AtomicBoolean userTerminated = new AtomicBoolean(false);
         try {
             mClient.scanAll(policy, namespace, setName, (key, record) -> {
-                T object = this.getMappingConverter().convertToObject(clazz, record);
+                T object = this.getMappingConverter().convertToObject(clazz, key, record);
                 if (!processor.process(object)) {
                     userTerminated.set(true);
                     throw new AerospikeException.ScanTerminated();
@@ -433,7 +433,7 @@ public class AeroMapper implements IAeroMapper {
         RecordSet recordSet = mClient.query(policy, statement);
         try {
             while (recordSet.next()) {
-                T object = this.getMappingConverter().convertToObject(clazz, recordSet.getRecord());
+                T object = this.getMappingConverter().convertToObject(clazz, recordSet.getKey(), recordSet.getRecord());
                 if (!processor.process(object)) {
                     break;
                 }

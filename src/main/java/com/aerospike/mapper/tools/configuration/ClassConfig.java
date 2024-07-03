@@ -231,6 +231,16 @@ public class ClassConfig {
             return this;
         }
         
+        public Builder withKeyFieldAndStoreAsBin(String fieldName, boolean storeAsBin) {
+            if (this.classConfig.getKey() == null) {
+                this.classConfig.setKey(new KeyConfig());
+            }
+            this.validateFieldExists(fieldName);
+            this.classConfig.getKey().setField(fieldName);
+            this.classConfig.getKey().setStoreAsBin(storeAsBin);
+            return this;
+        }
+        
         public Builder withKeyGetterAndSetterOf(String getterName, String setterName) {
             if (this.classConfig.getKey() == null) {
                 this.classConfig.setKey(new KeyConfig());

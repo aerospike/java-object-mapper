@@ -216,7 +216,7 @@ public class ReactiveAeroMapper implements IReactiveAeroMapper {
                 .map(keyRecord -> {
                     try {
                         ThreadLocalKeySaver.save(key);
-                        return mappingConverter.convertToObject(clazz, keyRecord.record, entry, resolveDependencies);
+                        return mappingConverter.convertToObject(clazz, key, keyRecord.record, entry, resolveDependencies);
                     } catch (ReflectiveOperationException e) {
                         throw new AerospikeException(e);
                     } finally {
@@ -245,7 +245,7 @@ public class ReactiveAeroMapper implements IReactiveAeroMapper {
                 .map(keyRecord -> {
                     try {
                         ThreadLocalKeySaver.save(keyRecord.key);
-                        return mappingConverter.convertToObject(clazz, keyRecord.record, entry, true);
+                        return mappingConverter.convertToObject(clazz, keyRecord.key, keyRecord.record, entry, true);
                     } catch (ReflectiveOperationException e) {
                         throw new AerospikeException(e);
                     } finally {
@@ -267,7 +267,7 @@ public class ReactiveAeroMapper implements IReactiveAeroMapper {
         if (writePolicy == null) {
             writePolicy = entry.getWritePolicy();
             if (entry.getDurableDelete() != null) {
-                // Clone the write policy so we're not changing the original one
+                // Clone the write policy, so we're not changing the original one
                 writePolicy = new WritePolicy(writePolicy);
                 writePolicy.durableDelete = entry.getDurableDelete();
             }
@@ -339,7 +339,7 @@ public class ReactiveAeroMapper implements IReactiveAeroMapper {
         String setName = entry.getSetName();
 
         return reactorClient.scanAll(policy, namespace, setName)
-                .map(keyRecord -> getMappingConverter().convertToObject(clazz, keyRecord.record));
+                .map(keyRecord -> getMappingConverter().convertToObject(clazz, keyRecord.key, keyRecord.record));
     }
 
     @Override
@@ -359,7 +359,7 @@ public class ReactiveAeroMapper implements IReactiveAeroMapper {
         statement.setSetName(entry.getSetName());
 
         return reactorClient.query(policy, statement)
-                .map(keyRecord -> getMappingConverter().convertToObject(clazz, keyRecord.record));
+                .map(keyRecord -> getMappingConverter().convertToObject(clazz, keyRecord.key, keyRecord.record));
     }
 
     @Override
