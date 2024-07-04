@@ -183,34 +183,42 @@ public class ClassConfig {
             this.classConfig.setNamespace(namespace);
             return this;
         }
+
         public Builder withShortName(String shortName) {
             this.classConfig.setShortName(shortName);
             return this;
         }
+
         public Builder withSet(String setName) {
             this.classConfig.setSet(setName);
             return this;
         }
+
         public Builder withTtl(int ttl) {
             this.classConfig.setTtl(ttl);
             return this;
         }
+
         public Builder withVersion(int version) {
             this.classConfig.setVersion(version);
             return this;
         }
+
         public Builder withSendKey(boolean sendKey) {
             this.classConfig.setSendKey(sendKey);
             return this;
         }
+
         public Builder withMapAll(boolean mapAll) {
             this.classConfig.setMapAll(mapAll);
             return this;
         }
+
         public Builder withDurableDelete(boolean durableDelete) {
             this.classConfig.setDurableDelete(durableDelete);
             return this;
         }
+
         public Builder withShortName(boolean sendKey) {
             this.classConfig.setSendKey(sendKey);
             return this;
@@ -221,7 +229,7 @@ public class ClassConfig {
             this.classConfig.setFactoryMethod(factoryMethod);
             return this;
         }
-        
+
         public Builder withKeyField(String fieldName) {
             if (this.classConfig.getKey() == null) {
                 this.classConfig.setKey(new KeyConfig());
@@ -230,7 +238,7 @@ public class ClassConfig {
             this.classConfig.getKey().setField(fieldName);
             return this;
         }
-        
+
         public Builder withKeyFieldAndStoreAsBin(String fieldName, boolean storeAsBin) {
             if (this.classConfig.getKey() == null) {
                 this.classConfig.setKey(new KeyConfig());
@@ -240,7 +248,7 @@ public class ClassConfig {
             this.classConfig.getKey().setStoreAsBin(storeAsBin);
             return this;
         }
-        
+
         public Builder withKeyGetterAndSetterOf(String getterName, String setterName) {
             if (this.classConfig.getKey() == null) {
                 this.classConfig.setKey(new KeyConfig());
@@ -250,12 +258,12 @@ public class ClassConfig {
             this.classConfig.getKey().setSetter(setterName);
             return this;
         }
-        
+
         public AeroBinConfig withFieldNamed(String fieldName) {
             validateFieldExists(fieldName);
             return new AeroBinConfig(this, fieldName);
         }
-        
+
         private void mergeBinConfig(BinConfig config) {
             List<BinConfig> bins = this.classConfig.getBins();
             for (BinConfig thisBin : bins) {
@@ -271,39 +279,40 @@ public class ClassConfig {
             return this.classConfig;
         }
     }
-    
+
     public static class AeroBinConfig {
         private final Builder builder;
         private final BinConfig binConfig;
-        
+
         public AeroBinConfig(Builder builder, String fieldName) {
             super();
             this.builder = builder;
             this.binConfig = new BinConfig();
             this.binConfig.setField(fieldName);
         }
-        
+
         public Builder mappingToBin(String name) {
             this.binConfig.setName(name);
             return this.end();
         }
-        
+
         public Builder beingReferencedBy(AerospikeReference.ReferenceType type) {
-            this.binConfig.setReference(new ReferenceConfig(type, false));
+            this.binConfig.setReference(new ReferenceConfig(type, false, true));
             return this.end();
         }
-        
+
         public Builder beingLazilyReferencedBy(AerospikeReference.ReferenceType type) {
-            this.binConfig.setReference(new ReferenceConfig(type, true));
+            this.binConfig.setReference(new ReferenceConfig(type, true, true));
             return this.end();
         }
-        
+
         public Builder beingEmbeddedAs(AerospikeEmbed.EmbedType type) {
             EmbedConfig embedConfig = new EmbedConfig();
             embedConfig.setType(type);
             this.binConfig.setEmbed(embedConfig);
             return this.end();
         }
+
         public Builder beingEmbeddedAs(AerospikeEmbed.EmbedType type, AerospikeEmbed.EmbedType elementType) {
             EmbedConfig embedConfig = new EmbedConfig();
             embedConfig.setType(type);
@@ -311,6 +320,7 @@ public class ClassConfig {
             this.binConfig.setEmbed(embedConfig);
             return this.end();
         }
+
         public Builder beingEmbeddedAs(AerospikeEmbed.EmbedType type, AerospikeEmbed.EmbedType elementType, boolean saveKey) {
             EmbedConfig embedConfig = new EmbedConfig();
             embedConfig.setType(type);
@@ -319,6 +329,7 @@ public class ClassConfig {
             this.binConfig.setEmbed(embedConfig);
             return this.end();
         }
+
         /**
          * Exclude the field. An excluded field doesn't need any other config, so return the parent.
          * This allows for more natural syntax like:
@@ -327,17 +338,16 @@ public class ClassConfig {
          *     .withFieldName("ignoreMe").beingExcluded()
          * .end()
          * </code>
-         * @return
+         * @return Parent builder
          */
         public Builder beingExcluded() {
             this.binConfig.setExclude(true);
             return this.end();
         }
-        
+
         private Builder end() {
             this.builder.mergeBinConfig(binConfig);
             return this.builder;
         }
     }
-
 }
