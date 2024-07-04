@@ -57,6 +57,15 @@ public interface IReactiveAeroMapper extends IBaseAeroMapper {
     <T> Mono<T> save(@NotNull WritePolicy writePolicy, @NotNull T object, String... binNames);
 
     /**
+     * Insert an object to the database This uses the RecordExistsAction
+     * of CREATE_ONLY. If bins are specified, only bins with the passed names will be inserted (or all of them if null is passed)
+     *
+     * @param object The object to insert.
+     * @throws AerospikeException an AerospikeException will be thrown in case of an error.
+     */
+    <T> Mono<T> insert(@NotNull T object, String... binNames);
+
+    /**
      * Updates the object in the database, merging the record with the existing record. This uses the RecordExistsAction
      * of UPDATE. If bins are specified, only bins with the passed names will be updated (or all of them if null is passed)
      *

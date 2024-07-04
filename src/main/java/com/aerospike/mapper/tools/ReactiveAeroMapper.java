@@ -60,34 +60,19 @@ public class ReactiveAeroMapper implements IReactiveAeroMapper {
 
     @Override
     public <T> Mono<T> save(@NotNull T object, String... binNames) {
-        return save(null, object, RecordExistsAction.REPLACE, binNames);
-    }
-
-    @Override
-    public <T> Mono<T> save(@NotNull WritePolicy writePolicy, @NotNull T object, String... binNames) {
-        return save(writePolicy, object, null, binNames);
+        WritePolicy writePolicy = generateWritePolicyFromObject(object);
+        writePolicy.recordExistsAction = RecordExistsAction.REPLACE;
+        return save(writePolicy, object, binNames);
     }
 
     @SuppressWarnings("unchecked")
-    private <T> Mono<T> save(WritePolicy writePolicy, @NotNull T object, RecordExistsAction recordExistsAction, String[] binNames) {
+    @Override
+    public <T> Mono<T> save(@NotNull WritePolicy writePolicy, @NotNull T object, String... binNames) {
         Class<T> clazz = (Class<T>) object.getClass();
         ClassCacheEntry<T> entry = MapperUtils.getEntryAndValidateNamespace(clazz, this);
-        if (writePolicy == null) {
-            writePolicy = new WritePolicy(entry.getWritePolicy());
-            if (recordExistsAction != null) {
-                writePolicy.recordExistsAction = recordExistsAction;
-            }
-            
-            // #132 -- Only override the TTL / send key if the policy was not passed in.
-            Integer ttl = entry.getTtl();
-            Boolean sendKey = entry.getSendKey();
 
-            if (ttl != null) {
-                writePolicy.expiration = ttl;
-            }
-            if (sendKey != null) {
-                writePolicy.sendKey = sendKey;
-            }
+        if (writePolicy == null) {
+            writePolicy = generateWritePolicyFromObject(object);
         }
 
         String set = entry.getSetName();
@@ -105,8 +90,38 @@ public class ReactiveAeroMapper implements IReactiveAeroMapper {
     }
 
     @Override
+    public <T> Mono<T> insert(@NotNull T object, String... binNames) {
+        WritePolicy writePolicy = generateWritePolicyFromObject(object);
+        writePolicy.recordExistsAction = RecordExistsAction.CREATE_ONLY;
+        return save(writePolicy, object, binNames);
+    }
+
+    @Override
     public <T> Mono<T> update(@NotNull T object, String... binNames) {
-        return save(null, object, RecordExistsAction.UPDATE, binNames);
+        WritePolicy writePolicy = generateWritePolicyFromObject(object);
+        writePolicy.recordExistsAction = RecordExistsAction.UPDATE;
+        return save(writePolicy, object, binNames);
+    }
+
+    @SuppressWarnings("unchecked")
+    private <T> WritePolicy generateWritePolicyFromObject(T object) {
+        Class<T> clazz = (Class<T>) object.getClass();
+        ClassCacheEntry<T> entry = MapperUtils.getEntryAndValidateNamespace(clazz, this);
+
+        WritePolicy writePolicy = new WritePolicy(entry.getWritePolicy());
+
+        // #132 -- Ensure that if an overriding TTL / sendKey is passed in the policy it
+        // is NOT overwritten. Hence, only if the policy is null do we override these settings.
+        Integer ttl = entry.getTtl();
+        Boolean sendKey = entry.getSendKey();
+
+        if (ttl != null) {
+            writePolicy.expiration = ttl;
+        }
+        if (sendKey != null) {
+            writePolicy.sendKey = sendKey;
+        }
+        return writePolicy;
     }
 
     @Override

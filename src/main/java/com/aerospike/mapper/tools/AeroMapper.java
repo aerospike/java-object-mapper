@@ -29,6 +29,7 @@ import com.aerospike.mapper.tools.ClassCache.PolicyType;
 import com.aerospike.mapper.tools.converters.MappingConverter;
 import com.aerospike.mapper.tools.utils.MapperUtils;
 import com.aerospike.mapper.tools.virtuallist.VirtualList;
+import reactor.core.publisher.Mono;
 
 public class AeroMapper implements IAeroMapper {
 
@@ -52,48 +53,30 @@ public class AeroMapper implements IAeroMapper {
 
         }
     }
-    
+
     @Override
-    public void save(@NotNull Object... objects) throws AerospikeException {
-        for (Object thisObject : objects) {
+    public <T> void save(@NotNull T... objects) throws AerospikeException {
+        for (T thisObject : objects) {
             this.save(thisObject);
         }
     }
 
     @Override
-    public void save(@NotNull Object object, String... binNames) throws AerospikeException {
-        save(null, object, RecordExistsAction.REPLACE, binNames);
-    }
-
-    @Override
-    public void save(@NotNull WritePolicy writePolicy, @NotNull Object object, String... binNames)
-            throws AerospikeException {
-        save(writePolicy, object, null, binNames);
+    public <T> void save(@NotNull T object, String... binNames) throws AerospikeException {
+        WritePolicy writePolicy = generateWritePolicyFromObject(object);
+        writePolicy.recordExistsAction = RecordExistsAction.REPLACE;
+        save(writePolicy, object, binNames);
     }
 
     @SuppressWarnings("unchecked")
-    private <T> void save(WritePolicy writePolicy, @NotNull T object, RecordExistsAction recordExistsAction,
-            String[] binNames) {
+    @Override
+    public <T> void save(@NotNull WritePolicy writePolicy, @NotNull T object, String... binNames)
+            throws AerospikeException {
         Class<T> clazz = (Class<T>) object.getClass();
         ClassCacheEntry<T> entry = MapperUtils.getEntryAndValidateNamespace(clazz, this);
+
         if (writePolicy == null) {
-            writePolicy = new WritePolicy(entry.getWritePolicy());
-            if (recordExistsAction != null) {
-                writePolicy.recordExistsAction = recordExistsAction;
-            }
-
-            // #132 -- Ensure that if an overriding TTL / sendkey is passed in the policy it
-            // is NOT overwritten. Hence
-            // only if the policy is null do we override these settings.
-            Integer ttl = entry.getTtl();
-            Boolean sendKey = entry.getSendKey();
-
-            if (ttl != null) {
-                writePolicy.expiration = ttl;
-            }
-            if (sendKey != null) {
-                writePolicy.sendKey = sendKey;
-            }
+            writePolicy = generateWritePolicyFromObject(object);
         }
 
         String set = entry.getSetName();
@@ -109,8 +92,38 @@ public class AeroMapper implements IAeroMapper {
     }
 
     @Override
-    public void update(@NotNull Object object, String... binNames) throws AerospikeException {
-        save(null, object, RecordExistsAction.UPDATE, binNames);
+    public <T> void insert(@NotNull T object, String... binNames) {
+        WritePolicy writePolicy = generateWritePolicyFromObject(object);
+        writePolicy.recordExistsAction = RecordExistsAction.CREATE_ONLY;
+        save(writePolicy, object, binNames);
+    }
+
+    @Override
+    public <T> void update(@NotNull T object, String... binNames) throws AerospikeException {
+        WritePolicy writePolicy = generateWritePolicyFromObject(object);
+        writePolicy.recordExistsAction = RecordExistsAction.UPDATE;
+        save(writePolicy, object, binNames);
+    }
+
+    @SuppressWarnings("unchecked")
+    private <T> WritePolicy generateWritePolicyFromObject(T object) {
+        Class<T> clazz = (Class<T>) object.getClass();
+        ClassCacheEntry<T> entry = MapperUtils.getEntryAndValidateNamespace(clazz, this);
+
+        WritePolicy writePolicy = new WritePolicy(entry.getWritePolicy());
+
+        // #132 -- Ensure that if an overriding TTL / sendKey is passed in the policy it
+        // is NOT overwritten. Hence, only if the policy is null do we override these settings.
+        Integer ttl = entry.getTtl();
+        Boolean sendKey = entry.getSendKey();
+
+        if (ttl != null) {
+            writePolicy.expiration = ttl;
+        }
+        if (sendKey != null) {
+            writePolicy.sendKey = sendKey;
+        }
+        return writePolicy;
     }
 
     @Override
