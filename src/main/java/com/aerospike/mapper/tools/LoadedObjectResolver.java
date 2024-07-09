@@ -30,7 +30,7 @@ public class LoadedObjectResolver {
     public static void setObjectForCurrentKey(Object object) {
         Key currentKey = ThreadLocalKeySaver.get();
         LoadedObjectMap map = threadLocalObjects.get();
-        if (currentKey != null) {
+        if (currentKey != null && map.referenceCount > 0) {
             map.objectMap.put(currentKey, object);
         }
     }
