@@ -1,18 +1,16 @@
 package com.aerospike.mapper.tools;
 
+import com.aerospike.client.Key;
+
 import java.util.HashMap;
 import java.util.Map;
 
-import com.aerospike.client.Key;
-
 public class LoadedObjectResolver {
 
-    private static class LoadedObjectMap {
-        private int referenceCount = 0;
-        private final Map<Key, Object> objectMap = new HashMap<>();
-    }
-
     private static final ThreadLocal<LoadedObjectMap> threadLocalObjects = ThreadLocal.withInitial(LoadedObjectMap::new);
+
+    private LoadedObjectResolver() {
+    }
 
     public static void begin() {
         LoadedObjectMap map = threadLocalObjects.get();
@@ -23,7 +21,7 @@ public class LoadedObjectResolver {
         LoadedObjectMap map = threadLocalObjects.get();
         map.referenceCount--;
         if (map.referenceCount == 0) {
-            map.objectMap.clear();
+            threadLocalObjects.remove();
         }
     }
 
@@ -38,5 +36,10 @@ public class LoadedObjectResolver {
     public static Object get(Key key) {
         LoadedObjectMap map = threadLocalObjects.get();
         return map.objectMap.get(key);
+    }
+
+    private static class LoadedObjectMap {
+        private final Map<Key, Object> objectMap = new HashMap<>();
+        private int referenceCount = 0;
     }
 }

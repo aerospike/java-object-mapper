@@ -1,11 +1,5 @@
 package com.aerospike.mapper.tools;
 
-import java.util.Arrays;
-import java.util.Objects;
-import java.util.function.Function;
-
-import javax.validation.constraints.NotNull;
-
 import com.aerospike.client.AerospikeException;
 import com.aerospike.client.Bin;
 import com.aerospike.client.Key;
@@ -24,9 +18,13 @@ import com.aerospike.client.reactor.IAerospikeReactorClient;
 import com.aerospike.mapper.tools.converters.MappingConverter;
 import com.aerospike.mapper.tools.utils.MapperUtils;
 import com.aerospike.mapper.tools.virtuallist.ReactiveVirtualList;
-
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+
+import javax.validation.constraints.NotNull;
+import java.util.Arrays;
+import java.util.Objects;
+import java.util.function.Function;
 
 public class ReactiveAeroMapper implements IReactiveAeroMapper {
 
@@ -34,18 +32,6 @@ public class ReactiveAeroMapper implements IReactiveAeroMapper {
     private final IAeroMapper aeroMapper;
     private final MappingConverter mappingConverter;
 
-    /**
-     * Create a new Builder to instantiate the AeroMapper. 
-     * @author tfaulkes
-     *
-     */
-    public static class Builder extends AbstractBuilder<ReactiveAeroMapper> {
-        public Builder(IAerospikeReactorClient reactorClient) {
-            super(new ReactiveAeroMapper(reactorClient));
-            ClassCache.getInstance().setReactiveDefaultPolicies(reactorClient);
-        }
-    }
-    
     private ReactiveAeroMapper(@NotNull IAerospikeReactorClient reactorClient) {
         this.reactorClient = reactorClient;
         this.aeroMapper = new AeroMapper.Builder(reactorClient.getAerospikeClient()).build();
@@ -205,7 +191,15 @@ public class ReactiveAeroMapper implements IReactiveAeroMapper {
         return readBatch(batchPolicy, clazz, keys, entry, operations);
     }
 
-    private <T> Mono<T> read(Policy readPolicy, @NotNull Class<T> clazz, @NotNull Key key, @NotNull ClassCacheEntry<T> entry, boolean resolveDependencies) {
+    @SuppressWarnings("unchecked")
+    private <T> Mono<T> read(Policy readPolicy, @NotNull Class<T> clazz, @NotNull Key key,
+                             @NotNull ClassCacheEntry<T> entry, boolean resolveDependencies) {
+        if (readPolicy == null || readPolicy.filterExp == null) {
+            Object objectForKey = LoadedObjectResolver.get(key);
+            if (objectForKey != null) {
+                return Mono.just((T) objectForKey);
+            }
+        }
         if (readPolicy == null) {
             readPolicy = entry.getReadPolicy();
         }
@@ -216,10 +210,12 @@ public class ReactiveAeroMapper implements IReactiveAeroMapper {
                 .map(keyRecord -> {
                     try {
                         ThreadLocalKeySaver.save(key);
+                        LoadedObjectResolver.begin();
                         return mappingConverter.convertToObject(clazz, key, keyRecord.record, entry, resolveDependencies);
                     } catch (ReflectiveOperationException e) {
                         throw new AerospikeException(e);
                     } finally {
+                        LoadedObjectResolver.end();
                         ThreadLocalKeySaver.clear();
                     }
                 });
@@ -368,7 +364,8 @@ public class ReactiveAeroMapper implements IReactiveAeroMapper {
     }
 
     @Override
-    public <T> ReactiveVirtualList<T> asBackedList(@NotNull Class<?> owningClazz, @NotNull Object key, @NotNull String binName, Class<T> elementClazz) {
+    public <T> ReactiveVirtualList<T> asBackedList(@NotNull Class<?> owningClazz, @NotNull Object key,
+                                                   @NotNull String binName, Class<T> elementClazz) {
         return new ReactiveVirtualList<>(this, owningClazz, key, binName, elementClazz);
     }
 
@@ -453,5 +450,15 @@ public class ReactiveAeroMapper implements IReactiveAeroMapper {
     public Mono<Key> getRecordKey(Object obj) {
         ClassCacheEntry<?> entry = ClassCache.getInstance().loadClass(obj.getClass(), this);
         return entry == null ? null : Mono.just(new Key(entry.getNamespace(), entry.getSetName(), Value.get(entry.getKey(obj))));
+    }
+
+    /**
+     * Create a new Builder to instantiate the AeroMapper.
+     */
+    public static class Builder extends AbstractBuilder<ReactiveAeroMapper> {
+        public Builder(IAerospikeReactorClient reactorClient) {
+            super(new ReactiveAeroMapper(reactorClient));
+            ClassCache.getInstance().setReactiveDefaultPolicies(reactorClient);
+        }
     }
 }
