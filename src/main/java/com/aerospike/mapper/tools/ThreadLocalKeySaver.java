@@ -18,9 +18,11 @@ public class ThreadLocalKeySaver {
 
     public static void save(Key key) {
         threadLocalKeys.get().addLast(key);
+        LoadedObjectResolver.begin();
     }
 
     public static void clear() {
+        LoadedObjectResolver.end();
         threadLocalKeys.get().removeLast();
         if (threadLocalKeys.get().isEmpty()) {
             threadLocalKeys.remove();

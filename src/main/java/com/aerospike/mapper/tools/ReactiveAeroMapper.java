@@ -210,12 +210,10 @@ public class ReactiveAeroMapper implements IReactiveAeroMapper {
                 .map(keyRecord -> {
                     try {
                         ThreadLocalKeySaver.save(key);
-                        LoadedObjectResolver.begin();
                         return mappingConverter.convertToObject(clazz, key, keyRecord.record, entry, resolveDependencies);
                     } catch (ReflectiveOperationException e) {
                         throw new AerospikeException(e);
                     } finally {
-                        LoadedObjectResolver.end();
                         ThreadLocalKeySaver.clear();
                     }
                 });
