@@ -1,24 +1,32 @@
 package com.aerospike.mapper.tools;
 
+import com.aerospike.client.Key;
+
 import java.util.ArrayDeque;
 import java.util.Deque;
 
-import com.aerospike.client.Key;
-
 /**
- * Save the keys. Note that this is effectively a stack of keys, as A can load B which can load C, and C needs B's key, not A's.
- *
- * @author timfaulkes
+ * Save the keys. Note that this is effectively a stack of keys, as A can load B which can load C, and C needs B's key,
+ * not A's.
  */
 public class ThreadLocalKeySaver {
+
     private static final ThreadLocal<Deque<Key>> threadLocalKeys = ThreadLocal.withInitial(ArrayDeque::new);
+
+    private ThreadLocalKeySaver() {
+    }
 
     public static void save(Key key) {
         threadLocalKeys.get().addLast(key);
+        LoadedObjectResolver.begin();
     }
 
     public static void clear() {
+        LoadedObjectResolver.end();
         threadLocalKeys.get().removeLast();
+        if (threadLocalKeys.get().isEmpty()) {
+            threadLocalKeys.remove();
+        }
     }
 
     public static Key get() {

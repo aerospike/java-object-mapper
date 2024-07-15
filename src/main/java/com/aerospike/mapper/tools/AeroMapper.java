@@ -1,13 +1,5 @@
 package com.aerospike.mapper.tools;
 
-import java.lang.reflect.Array;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Function;
-
-import javax.validation.constraints.NotNull;
-
 import com.aerospike.client.AerospikeException;
 import com.aerospike.client.AerospikeException.ScanTerminated;
 import com.aerospike.client.Bin;
@@ -29,7 +21,13 @@ import com.aerospike.mapper.tools.ClassCache.PolicyType;
 import com.aerospike.mapper.tools.converters.MappingConverter;
 import com.aerospike.mapper.tools.utils.MapperUtils;
 import com.aerospike.mapper.tools.virtuallist.VirtualList;
-import reactor.core.publisher.Mono;
+
+import javax.validation.constraints.NotNull;
+import java.lang.reflect.Array;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Function;
 
 public class AeroMapper implements IAeroMapper {
 
@@ -42,7 +40,7 @@ public class AeroMapper implements IAeroMapper {
     }
 
     /**
-     * Create a new Builder to instantiate the AeroMapper. 
+     * Create a new Builder to instantiate the AeroMapper.
      * @author tfaulkes
      *
      */
@@ -233,12 +231,10 @@ public class AeroMapper implements IAeroMapper {
         } else {
             try {
                 ThreadLocalKeySaver.save(key);
-                LoadedObjectResolver.begin();
                 return mappingConverter.convertToObject(clazz, key, record, entry, resolveDependencies);
             } catch (ReflectiveOperationException e) {
                 throw new AerospikeException(e);
             } finally {
-                LoadedObjectResolver.end();
                 ThreadLocalKeySaver.clear();
             }
         }
