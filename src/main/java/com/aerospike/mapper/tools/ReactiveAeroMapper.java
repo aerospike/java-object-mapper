@@ -116,7 +116,7 @@ public class ReactiveAeroMapper implements IReactiveAeroMapper {
     }
 
     @Override
-    public <T> Mono<T> readFromDigest(@NotNull Class<T> clazz, @NotNull byte[] digest, boolean resolveDependencies) throws AerospikeException {
+    public <T> Mono<T> readFromDigest(@NotNull Class<T> clazz, @NotNull byte[] digest, boolean resolveDependencies) {
         ClassCacheEntry<T> entry = MapperUtils.getEntryAndValidateNamespace(clazz, this);
         Key key = new Key(entry.getNamespace(), digest, entry.getSetName(), null);
         return this.read(null, clazz, key, entry, resolveDependencies);
@@ -211,8 +211,6 @@ public class ReactiveAeroMapper implements IReactiveAeroMapper {
                     try {
                         ThreadLocalKeySaver.save(key);
                         return mappingConverter.convertToObject(clazz, key, keyRecord.record, entry, resolveDependencies);
-                    } catch (ReflectiveOperationException e) {
-                        throw new AerospikeException(e);
                     } finally {
                         ThreadLocalKeySaver.clear();
                     }
@@ -240,8 +238,6 @@ public class ReactiveAeroMapper implements IReactiveAeroMapper {
                     try {
                         ThreadLocalKeySaver.save(keyRecord.key);
                         return mappingConverter.convertToObject(clazz, keyRecord.key, keyRecord.record, entry, true);
-                    } catch (ReflectiveOperationException e) {
-                        throw new AerospikeException(e);
                     } finally {
                         ThreadLocalKeySaver.clear();
                     }
@@ -296,7 +292,8 @@ public class ReactiveAeroMapper implements IReactiveAeroMapper {
     }
 
     @Override
-    public <T> Mono<Void> find(@NotNull Class<T> clazz, Function<T, Boolean> function) throws AerospikeException {
+    @SuppressWarnings("deprecation")
+    public <T> Mono<Void> find(@NotNull Class<T> clazz, Function<T, Boolean> function) {
         return Mono.fromCallable(() -> {
             asMapper().find(clazz, function);
             return null;
