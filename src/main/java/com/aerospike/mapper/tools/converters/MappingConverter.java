@@ -1,12 +1,5 @@
 package com.aerospike.mapper.tools.converters;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-
-import javax.validation.constraints.NotNull;
-
 import com.aerospike.client.AerospikeException;
 import com.aerospike.client.IAerospikeClient;
 import com.aerospike.client.Key;
@@ -23,6 +16,12 @@ import com.aerospike.mapper.tools.ThreadLocalKeySaver;
 import com.aerospike.mapper.tools.TypeMapper;
 import com.aerospike.mapper.tools.utils.MapperUtils;
 import com.aerospike.mapper.tools.utils.TypeUtils;
+
+import javax.validation.constraints.NotNull;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 
 public class MappingConverter {
 
@@ -76,14 +75,9 @@ public class MappingConverter {
      * @param clazz  The class type to convert the Aerospike record to.
      * @param record The Aerospike record to convert.
      * @return A virtual list.
-     * @throws AerospikeException an AerospikeException will be thrown in case of an encountering a ReflectiveOperationException.
      */
     public <T> T convertToObject(Class<T> clazz, Key key, Record record) {
-        try {
-            return convertToObject(clazz, key, record, null);
-        } catch (ReflectiveOperationException e) {
-            throw new AerospikeException(e);
-        }
+        return convertToObject(clazz, key, record, null);
     }
 
     /**
@@ -94,16 +88,15 @@ public class MappingConverter {
      * @param record The Aerospike record to convert.
      * @param entry  The entry that holds information on how to store the provided class.
      * @return A virtual list.
-     * @throws AerospikeException an AerospikeException will be thrown in case of an encountering a ReflectiveOperationException.
      */
-    public <T> T convertToObject(Class<T> clazz, Key key, Record record, ClassCacheEntry<T> entry) throws ReflectiveOperationException {
+    public <T> T convertToObject(Class<T> clazz, Key key, Record record, ClassCacheEntry<T> entry) {
         return this.convertToObject(clazz, key, record, entry, true);
     }
 
     /**
      * This method should not be used, it is public only to allow mappers to see it.
      */
-    public <T> T convertToObject(Class<T> clazz, Key key, Record record, ClassCacheEntry<T> entry, boolean resolveDependencies) throws ReflectiveOperationException {
+    public <T> T convertToObject(Class<T> clazz, Key key, Record record, ClassCacheEntry<T> entry, boolean resolveDependencies) {
         if (entry == null) {
             entry = ClassCache.getInstance().loadClass(clazz, mapper);
         }
@@ -252,10 +245,14 @@ public class MappingConverter {
                     DeferredObjectLoader.DeferredObjectSetter thisObjectSetter = deferredObjects.get(i);
                     try {
                         ThreadLocalKeySaver.save(keys[i]);
-                        Object result = records[i] == null ? null : convertToObject((Class) thisObjectSetter.getObject().getType(), keys[i], records[i], classCacheEntryList.get(i), false);
+                        Object obj = convertToObject(
+                                (Class<Object>) thisObjectSetter.getObject().getType(),
+                                keys[i],
+                                records[i],
+                                (ClassCacheEntry<Object>) classCacheEntryList.get(i),
+                                false);
+                        Object result = records[i] == null ? null : obj;
                         thisObjectSetter.getSetter().setValue(result);
-                    } catch (ReflectiveOperationException e) {
-                        throw new AerospikeException(e);
                     } finally {
                         ThreadLocalKeySaver.clear();
                     }

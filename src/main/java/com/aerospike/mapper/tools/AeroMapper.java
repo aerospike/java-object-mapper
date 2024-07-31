@@ -232,8 +232,6 @@ public class AeroMapper implements IAeroMapper {
             try {
                 ThreadLocalKeySaver.save(key);
                 return mappingConverter.convertToObject(clazz, key, record, entry, resolveDependencies);
-            } catch (ReflectiveOperationException e) {
-                throw new AerospikeException(e);
             } finally {
                 ThreadLocalKeySaver.clear();
             }
@@ -263,8 +261,6 @@ public class AeroMapper implements IAeroMapper {
                     ThreadLocalKeySaver.save(keys[i]);
                     T result = mappingConverter.convertToObject(clazz, keys[i], records[i], entry, false);
                     results[i] = result;
-                } catch (ReflectiveOperationException e) {
-                    throw new AerospikeException(e);
                 } finally {
                     ThreadLocalKeySaver.clear();
                 }
@@ -328,8 +324,7 @@ public class AeroMapper implements IAeroMapper {
 
         RecordSet recordSet = null;
         try {
-            // TODO: set the policy (If this statement is thought to be useful, which is
-            // dubious)
+            // TODO: set the policy (If this statement is thought to be useful, which is dubious)
             recordSet = mClient.query(null, statement);
             T result;
             while (recordSet.next()) {
