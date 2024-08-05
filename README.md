@@ -60,13 +60,13 @@ The easiest way to use the mapper is through Maven or Gradle. For Maven, pull it
 <dependency>
     <groupId>com.aerospike</groupId>
     <artifactId>java-object-mapper</artifactId>
-    <version>2.5.0</version>
+    <version>2.5.1</version>
 </dependency>
 ```
 For Gradle, you can use
 ```
 // https://mvnrepository.com/artifact/com.aerospike/java-object-mapper
-implementation group: 'com.aerospike', name: 'java-object-mapper', version: '2.5.0'
+implementation group: 'com.aerospike', name: 'java-object-mapper', version: '2.5.1'
 ```
 
 # Motivation and a simple example
