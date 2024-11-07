@@ -9,6 +9,7 @@ import com.aerospike.client.AerospikeException;
 import com.aerospike.mapper.annotations.AerospikeEmbed;
 import com.aerospike.mapper.annotations.AerospikeReference;
 import com.aerospike.mapper.tools.ConfigurationUtils;
+import com.aerospike.mapper.tools.mappers.BooleanMapper;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class ClassConfig {
@@ -26,9 +27,15 @@ public class ClassConfig {
     private String factoryClass;
     private String factoryMethod;
     private final List<BinConfig> bins;
+    private BooleanMapper.Encoding boolEncoding = BooleanMapper.Encoding.Numeric;
+
 
     public ClassConfig() {
         bins = new ArrayList<>();
+    }
+
+    public BooleanMapper.Encoding getBoolEncoding() {
+        return boolEncoding;
     }
 
     public String getClassName() {
@@ -163,16 +170,21 @@ public class ClassConfig {
     private void setShortName(String shortName) {
         this.shortName = shortName;
     }
-    
+
+    private void setBoolEncoding( BooleanMapper.Encoding boolEncoding) {
+        this.boolEncoding = boolEncoding;
+    }
+
     public static class Builder {
         private final Class<?> clazz;
         private final ClassConfig classConfig;
+
         public Builder(final Class<?> clazz) {
             this.clazz = clazz;
             this.classConfig = new ClassConfig();
             this.classConfig.setClassName(clazz.getName());
         }
-        
+
         private void validateFieldExists(String fieldName) {
             if (!ConfigurationUtils.validateFieldOnClass(this.clazz, fieldName)) {
                 throw new AerospikeException(String.format("Field %s does not exist on class %s or its superclasses", fieldName, this.clazz));
@@ -196,6 +208,11 @@ public class ClassConfig {
 
         public Builder withTtl(int ttl) {
             this.classConfig.setTtl(ttl);
+            return this;
+        }
+
+        public Builder withBoolEncoding(BooleanMapper.Encoding boolEncoding) {
+            this.classConfig.setBoolEncoding(boolEncoding);
             return this;
         }
 
@@ -223,7 +240,7 @@ public class ClassConfig {
             this.classConfig.setSendKey(sendKey);
             return this;
         }
-        
+
         public Builder withFactoryClassAndMethod(@NotNull Class<?> factoryClass, @NotNull String factoryMethod) {
             this.classConfig.setFactoryClass(factoryClass.getName());
             this.classConfig.setFactoryMethod(factoryMethod);

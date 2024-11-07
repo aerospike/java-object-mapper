@@ -111,7 +111,8 @@ public class TypeUtils {
             } else if (Integer.class.isAssignableFrom(clazz) || Integer.TYPE.isAssignableFrom(clazz)) {
                 typeMapper = new IntMapper();
             } else if (Boolean.class.isAssignableFrom(clazz) || Boolean.TYPE.isAssignableFrom(clazz)) {
-                typeMapper = new BooleanMapper();
+                ClassConfig config = ClassCache.getInstance().getClassConfig(clazz);
+                typeMapper = new BooleanMapper(config);
             } else if (Float.class.isAssignableFrom(clazz) || Float.TYPE.isAssignableFrom(clazz)) {
                 typeMapper = new FloatMapper();
             } else if (clazz.isEnum()) {
