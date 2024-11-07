@@ -61,7 +61,7 @@ public class BooleanTest extends AeroMapperBaseTest {
                         "    key:\n" +
                         "      field: id\n" +
                         "  - class: java.lang.Boolean\n" +
-                        "    boolEncoding: Object\n";
+                        "    boolEncoding: Boolean\n";
 
         AeroMapper mapper = new AeroMapper.Builder(client).withConfiguration(config).build();
         mapper.save(b);

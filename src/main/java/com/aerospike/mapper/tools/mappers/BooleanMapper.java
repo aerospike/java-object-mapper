@@ -10,7 +10,7 @@ public class BooleanMapper extends TypeMapper {
 
     public enum Encoding {
         Numeric,
-        Object
+        Boolean
     }
 
     private final ClassConfig classConfig;
@@ -27,7 +27,7 @@ public class BooleanMapper extends TypeMapper {
             useObjectEncoding = ClassCache.getInstance()
                     .getClassConfig(Boolean.class)
                     .getBoolEncoding()
-                    .equals(Encoding.Object);
+                    .equals(Encoding.Boolean);
         } else {
             useObjectEncoding = false;
         }
