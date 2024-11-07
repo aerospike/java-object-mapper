@@ -97,11 +97,7 @@ public abstract class ValueType {
                 DeferredObjectSetter objectSetter = new DeferredObjectSetter(setter, (DeferredObject) value);
                 DeferredObjectLoader.add(objectSetter);
             } else {
-                if (this.field.getType().isAssignableFrom(Boolean.class) && value instanceof Long) {
-                    this.field.set(obj, (Long) value != 0);
-                } else {
-                    this.field.set(obj, value);
-                }
+                this.field.set(obj, value);
             }
         }
 

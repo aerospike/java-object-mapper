@@ -87,7 +87,7 @@ public class DefaultFieldValuesTest extends AeroMapperBaseTest {
         UseBoolBin = true;
         mapper.save(obj);
         record = client.get(null, key);
-        assertTrue(record.bins.get("bool2") instanceof Boolean);
+        assertTrue(record.bins.get("bool2") instanceof Long);
         assertFalse(record.getBoolean("bool2"));
         dfc = mapper.read(DefaultFieldsClass.class, "dfc");
         assertFalse(dfc.bool2);

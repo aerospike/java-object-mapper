@@ -22,21 +22,20 @@ public class BooleanMapper extends TypeMapper {
 
     @Override
     public Object toAerospikeFormat(Object value) {
-        final boolean useObjectEncoding;
         if (ClassCache.getInstance().hasClassConfig(Boolean.class)) {
-            useObjectEncoding = ClassCache.getInstance()
+            UseBoolBin = ClassCache.getInstance()
                     .getClassConfig(Boolean.class)
                     .getBoolEncoding()
                     .equals(Encoding.Boolean);
         } else {
-            useObjectEncoding = false;
+            UseBoolBin = false;
         }
 
 
         if (value == null) {
             return null;
         }
-        if (UseBoolBin && useObjectEncoding) {
+        if (UseBoolBin) {
             return value;
         }
         return ((Boolean) value) ? 1 : 0;
