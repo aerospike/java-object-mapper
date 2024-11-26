@@ -7,12 +7,19 @@ import com.aerospike.mapper.annotations.AerospikeKey;
 import com.aerospike.mapper.annotations.AerospikeRecord;
 import com.aerospike.mapper.tools.AeroMapper;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static com.aerospike.client.Value.UseBoolBin;
 
 public class BooleanTest extends AeroMapperBaseTest {
+    @AfterAll
+    public static void resetBooleanEncoding(){
+        UseBoolBin = true;
+    }
+
+
     @AerospikeRecord(namespace = "test", set = "B")
     public static class B {
         @AerospikeKey
