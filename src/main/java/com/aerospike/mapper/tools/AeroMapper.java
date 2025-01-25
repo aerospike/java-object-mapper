@@ -398,7 +398,9 @@ public class AeroMapper implements IAeroMapper {
     public <T> List<T> scan(ScanPolicy policy, @NotNull Class<T> clazz) {
         List<T> result = new ArrayList<>();
         Processor<T> resultProcessor = record -> {
-            result.add(record);
+            synchronized(result) {
+                result.add(record);
+            }
             return true;
         };
         scan(policy, clazz, resultProcessor);
