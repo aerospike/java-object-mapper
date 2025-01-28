@@ -44,15 +44,17 @@ The documentation for this project can be found on [javadoc.io](https://www.java
 
 <details>
   <summary>Compatibility with Aerospike Clients</summary>
-| Java Object Mapper Version | Aerospike Client | Aerospike Reactor Client
-|:---------------------------|:-----------------| :-----------
-| 2.5.2                      | 9.0.x (jdk8)     | 9.0.x
-| 2.5.0, 2.5.1               | 8.1.x (jdk8)     | 8.1.x
-| 2.4.x                      | 8.1.x (jdk8)     | 7.1.x
-| 2.1.x, 2.2.x, 2.3.x        | 6.1.x            | 6.1.x
-| 2.0.x                      | 5.1.x            | 5.1.x
-| 1.2.x, 1.3.x, 1.4.x        | 5.1.x            | 5.0.x
-| 1.1.x                      | 5.0.x            |
+
+| Java Object Mapper Version | Aerospike Client | Aerospike Reactor Client |
+|----------------------------|------------------|--------------------------|
+| 2.5.2                      | 9.0.x (jdk8)     | 9.0.x                    |
+| 2.5.0, 2.5.1               | 8.1.x (jdk8)     | 8.1.x                    |
+| 2.4.x                      | 8.1.x (jdk8)     | 7.1.x                    |
+| 2.1.x, 2.2.x, 2.3.x        | 6.1.x            | 6.1.x                    |
+| 2.0.x                      | 5.1.x            | 5.1.x                    |
+| 1.2.x, 1.3.x, 1.4.x        | 5.1.x            | 5.0.x                    |
+| 1.1.x                      | 5.0.x            |                          |
+
 </details>
 
 # Installing the Mapper
