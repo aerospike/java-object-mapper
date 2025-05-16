@@ -125,8 +125,8 @@ To store an instance of this class into Aerospike requires code similar to:
 
 ```java
 public void save(Person person, IAerospikeClient client) {
-	long dobAsLong = (person.dob == null) ? 0 : person.dob.getTime();
-	client.put( null, new Key("test", "people", person.ssn,
+	long dobAsLong = (person.getDob() == null) ? 0 : person.getDob().getTime();
+	client.put( null, new Key("test", "people", person.ssn),
 		new Bin("ssn", Value.get(person.getSsn())),
 		new Bin("lstNme", Value.get(person.getLastName())),
 		new Bin("frstNme", Value.get(person.getFirstName())),
@@ -139,7 +139,7 @@ Similarly, reading an object requires significant code:
 
 ```java
 public Person get(String ssn, IAerospikeClient client) {
-	Record record = client.get(null, new Key("test", "people", ssn);
+	Record record = client.get(null, new Key("test", "people", ssn));
 	Person person = new Person();
 	person.setSsn(ssn);
 	person.setFirstName(record.getString("frstNme"));
