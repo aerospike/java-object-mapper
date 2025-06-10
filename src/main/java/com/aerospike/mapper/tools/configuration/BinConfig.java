@@ -92,8 +92,8 @@ public class BinConfig {
         this.reference = reference;
     }
 
-    public void setGeneration(Boolean version) {
-        this.generation = version;
+    public void setGeneration(Boolean generation) {
+        this.generation = generation;
     }
 
     public void validate(String className) {

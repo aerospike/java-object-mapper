@@ -17,7 +17,7 @@ public class ClassConfig {
     private String namespace;
     private String set;
     private Integer ttl;
-    private Integer generation;
+    private Integer version;
     private Boolean sendKey;
     private Boolean mapAll;
     private Boolean durableDelete;
@@ -48,7 +48,7 @@ public class ClassConfig {
     }
 
     public Integer getVersion() {
-        return generation;
+        return version;
     }
 
     public Boolean getSendKey() {
@@ -140,8 +140,8 @@ public class ClassConfig {
         this.ttl = ttl;
     }
 
-    private void setGeneration(Integer generation) {
-        this.generation = generation;
+    private void setVersion(Integer version) {
+        this.version = version;
     }
 
     private void setSendKey(Boolean sendKey) {
@@ -199,8 +199,8 @@ public class ClassConfig {
             return this;
         }
 
-        public Builder withGeneration(int generation) {
-            this.classConfig.setGeneration(generation);
+        public Builder withVersion(int version) {
+            this.classConfig.setVersion(version);
             return this;
         }
 

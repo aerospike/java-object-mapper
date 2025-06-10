@@ -109,7 +109,7 @@ public class ReactiveAeroMapper implements IReactiveAeroMapper {
             writePolicy.sendKey = sendKey;
         }
 
-        // #181 Handle @Version field for optimistic concurrency control
+        // #181 Handle @AerospikeGeneration field for optimistic concurrency control
         Integer generationValue = entry.getGenerationValue(object);
         if (generationValue != null && generationValue > 0) {
             writePolicy.generation = generationValue;

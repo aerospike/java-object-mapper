@@ -123,10 +123,10 @@ public class AeroMapper implements IAeroMapper {
             writePolicy.sendKey = sendKey;
         }
 
-        // #181 Handle @Version field for optimistic concurrency control
-        Integer versionValue = entry.getGenerationValue(object);
-        if (versionValue != null && versionValue > 0) {
-            writePolicy.generation = versionValue;
+        // #181 Handle @AerospikeGeneration field for optimistic concurrency control
+        Integer generationValue = entry.getGenerationValue(object);
+        if (generationValue != null && generationValue > 0) {
+            writePolicy.generation = generationValue;
             writePolicy.generationPolicy = GenerationPolicy.EXPECT_GEN_EQUAL;
         }
 
