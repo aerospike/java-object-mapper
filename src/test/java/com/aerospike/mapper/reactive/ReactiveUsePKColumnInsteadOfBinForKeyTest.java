@@ -1,17 +1,21 @@
 package com.aerospike.mapper.reactive;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+
+import org.junit.jupiter.api.Test;
+
 import com.aerospike.client.query.KeyRecord;
 import com.aerospike.mapper.annotations.AerospikeKey;
 import com.aerospike.mapper.annotations.AerospikeRecord;
 import com.aerospike.mapper.tools.ReactiveAeroMapper;
 import com.aerospike.mapper.tools.configuration.ClassConfig;
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.junit.jupiter.api.Test;
 import reactor.core.scheduler.Schedulers;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 public class ReactiveUsePKColumnInsteadOfBinForKeyTest extends ReactiveAeroMapperBaseTest {
 

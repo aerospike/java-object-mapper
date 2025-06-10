@@ -14,6 +14,7 @@ public class BinConfig {
     private Integer ordinal;
     private EmbedConfig embed;
     private ReferenceConfig reference;
+    private Boolean generation;
 
     public String getName() {
         return name;
@@ -51,7 +52,10 @@ public class BinConfig {
         return reference;
     }
 
-    
+    public Boolean isGeneration() {
+        return generation;
+    }
+
     public void setName(String name) {
         this.name = name;
     }
@@ -86,6 +90,10 @@ public class BinConfig {
 
     public void setReference(ReferenceConfig reference) {
         this.reference = reference;
+    }
+
+    public void setGeneration(Boolean version) {
+        this.generation = version;
     }
 
     public void validate(String className) {
@@ -128,6 +136,9 @@ public class BinConfig {
         }
         if (this.reference == null && other.reference != null) {
             this.reference = other.reference;
+        }
+        if (this.generation == null && other.generation != null) {
+            this.generation = other.generation;
         }
         return this;
     }

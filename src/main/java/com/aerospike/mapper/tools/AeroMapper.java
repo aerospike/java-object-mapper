@@ -9,6 +9,7 @@ import com.aerospike.client.Operation;
 import com.aerospike.client.Record;
 import com.aerospike.client.Value;
 import com.aerospike.client.policy.BatchPolicy;
+import com.aerospike.client.policy.GenerationPolicy;
 import com.aerospike.client.policy.Policy;
 import com.aerospike.client.policy.QueryPolicy;
 import com.aerospike.client.policy.RecordExistsAction;
@@ -121,6 +122,14 @@ public class AeroMapper implements IAeroMapper {
         if (sendKey != null) {
             writePolicy.sendKey = sendKey;
         }
+
+        // #181 Handle @Version field for optimistic concurrency control
+        Integer versionValue = entry.getGenerationValue(object);
+        if (versionValue != null && versionValue > 0) {
+            writePolicy.generation = versionValue;
+            writePolicy.generationPolicy = GenerationPolicy.EXPECT_GEN_EQUAL;
+        }
+
         return writePolicy;
     }
 
