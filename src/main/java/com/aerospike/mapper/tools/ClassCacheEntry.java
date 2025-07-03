@@ -583,20 +583,17 @@ public class ClassCacheEntry<T> {
     }
 
     private PropertyDefinition getOrCreateProperty(String name, Map<String, PropertyDefinition> properties) {
-        PropertyDefinition thisProperty = properties.get(name);
-        if (thisProperty == null) {
-            thisProperty = new PropertyDefinition(name, mapper);
-            properties.put(name, thisProperty);
-        }
-        return thisProperty;
+        return properties.computeIfAbsent(name, n -> new PropertyDefinition(n, mapper));
     }
 
     private void loadPropertiesFromClass() {
         Map<String, PropertyDefinition> properties = new HashMap<>();
-        PropertyDefinition keyProperty = null;
         KeyConfig keyConfig = config != null ? config.getKey() : null;
-        for (Method thisMethod : clazz.getDeclaredMethods()) {
 
+        PropertyDefinition keyProperty = null;
+        PropertyDefinition generationProperty = null;
+
+        for (Method thisMethod : clazz.getDeclaredMethods()) {
             String methodName = thisMethod.getName();
             BinConfig getterConfig = getBinFromGetter(methodName);
             BinConfig setterConfig = getBinFromSetter(methodName);
@@ -604,11 +601,12 @@ public class ClassCacheEntry<T> {
             boolean isKey = false;
             boolean isKeyViaConfig = keyConfig != null
                     && (keyConfig.isGetter(methodName) || keyConfig.isSetter(methodName));
-            if (thisMethod.isAnnotationPresent(AerospikeKey.class) || isKeyViaConfig) {
 
+            if (thisMethod.isAnnotationPresent(AerospikeKey.class) || isKeyViaConfig) {
                 if (keyProperty == null) {
                     keyProperty = new PropertyDefinition("_key_", mapper);
                 }
+
                 if (isKeyViaConfig) {
                     if (keyConfig.isGetter(methodName)) {
                         keyProperty.setGetter(thisMethod);
@@ -623,11 +621,16 @@ public class ClassCacheEntry<T> {
                         keyProperty.setGetter(thisMethod);
                     }
                 }
+
                 isKey = true;
             }
 
             // Handle @AerospikeGeneration annotation on methods (getters/setters)
             if (thisMethod.isAnnotationPresent(AerospikeGeneration.class)) {
+                if (generationProperty == null) {
+                    generationProperty = new PropertyDefinition("_generation_", mapper);
+                }
+
                 // For getter methods, validate return type
                 if (methodName.startsWith("get")) {
                     Class<?> returnType = thisMethod.getReturnType();
@@ -636,24 +639,29 @@ public class ClassCacheEntry<T> {
                                 "@AerospikeGeneration getter %s in class %s must return Integer or int type, but returned %s",
                                 methodName, clazz.getName(), returnType.getSimpleName()));
                     }
+                    generationProperty.setGetter(thisMethod);
                 }
 
                 // For setter methods, validate parameter type
-                if (methodName.startsWith("set") && thisMethod.getParameterCount() == 1) {
+                else if (methodName.startsWith("set")) {
+                    if (thisMethod.getParameterCount() != 1) {
+                        throw new AerospikeException(String.format(
+                                "@AerospikeGeneration setter %s in class %s must accept a single parameter, but %d were found",
+                                methodName, clazz.getName(), thisMethod.getParameterCount()));
+                    }
                     Class<?> paramType = thisMethod.getParameterTypes()[0];
                     if (!paramType.equals(Integer.class) && !paramType.equals(int.class)) {
                         throw new AerospikeException(String.format(
                                 "@AerospikeGeneration setter %s in class %s must accept Integer or int type, but accepted %s",
                                 methodName, clazz.getName(), paramType.getSimpleName()));
                     }
+                    generationProperty.setSetter(thisMethod);
                 }
-
-                // We'll handle the generation property creation after processing all methods
-                // to ensure we can pair getters and setters properly
             }
 
             if (thisMethod.isAnnotationPresent(AerospikeGetter.class) || getterConfig != null) {
-                String getterName = (getterConfig != null) ? getterConfig.getName()
+                String getterName = (getterConfig != null)
+                        ? getterConfig.getName()
                         : thisMethod.getAnnotation(AerospikeGetter.class).name();
 
                 String name = ParserUtils.getInstance().get(ParserUtils.getInstance().get(getterName));
@@ -665,8 +673,10 @@ public class ClassCacheEntry<T> {
             }
 
             if (thisMethod.isAnnotationPresent(AerospikeSetter.class) || setterConfig != null) {
-                String setterName = (setterConfig != null) ? setterConfig.getName()
+                String setterName = (setterConfig != null)
+                        ? setterConfig.getName()
                         : thisMethod.getAnnotation(AerospikeSetter.class).name();
+
                 String name = ParserUtils.getInstance().get(ParserUtils.getInstance().get(setterName));
                 PropertyDefinition thisProperty = getOrCreateProperty(name, properties);
                 thisProperty.setSetter(thisMethod);
@@ -674,32 +684,15 @@ public class ClassCacheEntry<T> {
         }
 
         if (keyProperty != null) {
-            keyProperty.validate(clazz.getName(), config, true);
-
             if (key != null) {
                 throw new AerospikeException(String.format("Class %s cannot have more than one key", clazz.getName()));
             }
 
+            keyProperty.validate(clazz.getName(), config, true);
+
             AnnotatedType annotatedType = new AnnotatedType(config, keyProperty.getGetter());
             TypeMapper typeMapper = TypeUtils.getMapper(keyProperty.getType(), annotatedType, this.mapper);
             this.key = new ValueType.MethodValue(keyProperty, typeMapper, annotatedType);
-        }
-
-        // Handle @AerospikeGeneration annotation on methods - find getter/setter pairs
-        PropertyDefinition generationProperty = null;
-        for (Method thisMethod : clazz.getDeclaredMethods()) {
-            if (thisMethod.isAnnotationPresent(AerospikeGeneration.class)) {
-                if (generationProperty == null) {
-                    generationProperty = new PropertyDefinition("_generation_", mapper);
-                }
-
-                String methodName = thisMethod.getName();
-                if (methodName.startsWith("get")) {
-                    generationProperty.setGetter(thisMethod);
-                } else if (methodName.startsWith("set")) {
-                    generationProperty.setSetter(thisMethod);
-                }
-            }
         }
 
         if (generationProperty != null) {
@@ -709,10 +702,12 @@ public class ClassCacheEntry<T> {
             }
 
             generationProperty.validate(clazz.getName(), config, false);
+
             AnnotatedType annotatedType = new AnnotatedType(config, generationProperty.getGetter());
             TypeMapper typeMapper = TypeUtils.getMapper(generationProperty.getType(), annotatedType, this.mapper);
             this.generationField = new ValueType.MethodValue(generationProperty, typeMapper, annotatedType);
         }
+
         for (String thisPropertyName : properties.keySet()) {
             PropertyDefinition thisProperty = properties.get(thisPropertyName);
             thisProperty.validate(clazz.getName(), config, false);
@@ -731,7 +726,6 @@ public class ClassCacheEntry<T> {
 
     private void loadFieldsFromClass() {
         for (Field thisField : this.clazz.getDeclaredFields()) {
-            boolean isKey = false;
             BinConfig thisBin = getBinFromField(thisField);
 
             if (Modifier.isFinal(thisField.getModifiers()) && Modifier.isStatic(thisField.getModifiers())) {
@@ -739,7 +733,6 @@ public class ClassCacheEntry<T> {
                 continue;
             }
 
-            isKey = handleKeyField(thisField, thisBin);
             boolean isGenerationField = this.handleGenerationField(thisField, thisBin);
             if (thisField.isAnnotationPresent(AerospikeExclude.class)
                     || (thisBin != null && thisBin.isExclude() != null && thisBin.isExclude())) {
@@ -755,6 +748,7 @@ public class ClassCacheEntry<T> {
 
             if (this.mapAll || thisField.isAnnotationPresent(AerospikeBin.class) || thisBin != null) {
                 // This field needs to be mapped
+                boolean isKey = handleKeyField(thisField, thisBin);
                 mapField(thisField, thisBin, isKey);
             }
         }
@@ -774,6 +768,7 @@ public class ClassCacheEntry<T> {
             if (key != null) {
                 throw new AerospikeException(String.format("Class %s cannot have more than one key", clazz.getName()));
             }
+
             AerospikeKey keyAnnotation = thisField.getAnnotation(AerospikeKey.class);
             boolean storeAsBin = keyAnnotation == null || keyAnnotation.storeAsBin();
 
@@ -864,8 +859,7 @@ public class ClassCacheEntry<T> {
     private Method findMethodWithNameAndParams(String name, Class<?>... params) {
         try {
             Method method = this.clazz.getDeclaredMethod(name, params);
-            // TODO: Should this ascend the inheritance hierarchy using getMethod on
-            // superclasses?
+            // TODO: Should this ascend the inheritance hierarchy using getMethod on superclasses?
             return method;
         } catch (NoSuchMethodException nsme) {
             return null;
@@ -881,7 +875,8 @@ public class ClassCacheEntry<T> {
         Method getter = findMethodWithNameAndParams(getterName);
         if (getter == null) {
             throw new AerospikeException(String.format(
-                    "Expected to find getter for field %s on class %s due to it being configured to useAccessors, but no method with the signature \"%s %s()\" was found",
+                    "Expected to find getter for field %s on class %s due to it being configured to useAccessors," +
+                            " but no method with the signature \"%s %s()\" was found",
                     fieldName, this.clazz.getSimpleName(), thisField.getType().getSimpleName(), getterName));
         }
 
@@ -894,7 +889,8 @@ public class ClassCacheEntry<T> {
         }
         if (setter == null) {
             throw new AerospikeException(String.format(
-                    "Expected to find setter for field %s on class %s due to it being configured to useAccessors, but no method with the name \"%s\" was found",
+                    "Expected to find setter for field %s on class %s due to it being configured to useAccessors," +
+                            " but no method with the name \"%s\" was found",
                     fieldName, this.clazz.getSimpleName(), setterName));
         }
 
@@ -927,7 +923,7 @@ public class ClassCacheEntry<T> {
             Object key = this._getKey(object);
             if (key == null) {
                 throw new AerospikeException(String.format(
-                        "Null key from annotated object of class %s." + " Did you forget an @AerospikeKey annotation?",
+                        "Null key from annotated object of class %s. Did you forget an @AerospikeKey annotation?",
                         this.clazz.getSimpleName()));
             }
             return key;
