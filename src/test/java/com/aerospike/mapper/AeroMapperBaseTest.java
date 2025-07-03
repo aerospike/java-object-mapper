@@ -6,6 +6,7 @@ import com.aerospike.client.async.NioEventLoops;
 import com.aerospike.client.policy.ClientPolicy;
 
 import com.aerospike.client.AerospikeClient;
+import com.aerospike.client.Host;
 import com.aerospike.client.IAerospikeClient;
 import com.aerospike.mapper.tools.ClassCache;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -25,7 +26,8 @@ public abstract class AeroMapperBaseTest {
         ClientPolicy policy = new ClientPolicy();
         // Set event loops to use in asynchronous commands.
         policy.eventLoops = new NioEventLoops(1);
-        client = new AerospikeClient(policy, "localhost", 3000);
+        Host[] hosts = Host.parseHosts(System.getProperty("test.host", "localhost:3000"), 3000);
+        client = new AerospikeClient(policy, hosts);
     }
 
     @AfterAll

@@ -321,6 +321,11 @@ public class ClassConfig {
             return this.end();
         }
 
+        public Builder asGenerationField() {
+            this.binConfig.setGeneration(true);
+            return this.end();
+        }
+
         public Builder beingEmbeddedAs(AerospikeEmbed.EmbedType type, AerospikeEmbed.EmbedType elementType, boolean saveKey) {
             EmbedConfig embedConfig = new EmbedConfig();
             embedConfig.setType(type);

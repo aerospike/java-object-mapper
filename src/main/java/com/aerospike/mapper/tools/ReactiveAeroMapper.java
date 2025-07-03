@@ -6,6 +6,7 @@ import com.aerospike.client.Key;
 import com.aerospike.client.Operation;
 import com.aerospike.client.Value;
 import com.aerospike.client.policy.BatchPolicy;
+import com.aerospike.client.policy.GenerationPolicy;
 import com.aerospike.client.policy.Policy;
 import com.aerospike.client.policy.QueryPolicy;
 import com.aerospike.client.policy.RecordExistsAction;
@@ -107,6 +108,14 @@ public class ReactiveAeroMapper implements IReactiveAeroMapper {
         if (sendKey != null) {
             writePolicy.sendKey = sendKey;
         }
+
+        // #181 Handle @AerospikeGeneration field for optimistic concurrency control
+        Integer generationValue = entry.getGenerationValue(object);
+        if (generationValue != null && generationValue > 0) {
+            writePolicy.generation = generationValue;
+            writePolicy.generationPolicy = GenerationPolicy.EXPECT_GEN_EQUAL;
+        }
+
         return writePolicy;
     }
 
