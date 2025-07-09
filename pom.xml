@@ -5,7 +5,7 @@
 
 	<groupId>com.aerospike</groupId>
 	<artifactId>java-object-mapper</artifactId>
-	<version>2.5.2</version>
+	<version>2.6.0</version>
 	<packaging>jar</packaging>
 	
 	<name>Aerospike Object Mapper</name>
@@ -27,13 +27,14 @@
 		<maven.gpg.plugin.version>1.6</maven.gpg.plugin.version>
 		<maven.compiler.plugin.version>3.13.0</maven.compiler.plugin.version>
 		<maven-surefire-plugin.version>3.3.0</maven-surefire-plugin.version>
+		<maven-central-publishing-plugin.version>0.8.0</maven-central-publishing-plugin.version>
 		<javax.validation-api.version>2.0.1.Final</javax.validation-api.version>
-		<aerospike-client-jdk8.version>9.0.3</aerospike-client-jdk8.version>
-		<aerospike-reactor.version>9.0.2</aerospike-reactor.version>
+		<aerospike-client-jdk8.version>9.0.5</aerospike-client-jdk8.version>
+		<aerospike-reactor.version>9.0.5</aerospike-reactor.version>
 		<commons-lang3.version>3.14.0</commons-lang3.version>
-		<jackson-dataformat-yaml.version>2.18.2</jackson-dataformat-yaml.version>
-		<lombok.version>1.18.36</lombok.version>
-		<reactor-test.version>3.7.2</reactor-test.version>
+		<jackson-dataformat-yaml.version>2.19.1</jackson-dataformat-yaml.version>
+		<lombok.version>1.18.38</lombok.version>
+		<reactor-test.version>3.7.7</reactor-test.version>
 		<junit-jupiter.version>5.11.4</junit-jupiter.version>
 	</properties>
 
@@ -193,6 +194,15 @@
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-surefire-plugin</artifactId>
 				<version>${maven-surefire-plugin.version}</version>
+			</plugin>
+			<plugin>
+				<groupId>org.sonatype.central</groupId>
+				<artifactId>central-publishing-maven-plugin</artifactId>
+				<version>${maven-central-publishing-plugin.version}</version>
+				<extensions>true</extensions>
+				<configuration>
+					<publishingServerId>central</publishingServerId>
+				</configuration>
 			</plugin>
 		</plugins>
 		<resources>
