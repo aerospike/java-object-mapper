@@ -25,6 +25,8 @@ jobs:
       # Aerospike cluster for integration tests (https://github.com/reugn/github-action-aerospike)
       - name: Set up Aerospike Database
         uses: reugn/github-action-aerospike@v1
+        with:
+          server-version: 7.2.0.6
 
       # See: https://github.com/actions/cache/blob/master/examples.md#java---maven
       - name: Cache local Maven repository
