@@ -925,9 +925,14 @@ public class ClassCacheEntry<T> {
     public Object getKey(Object object) {
         try {
             Object key = this._getKey(object);
-            if (key == null) {
+            if (key == null && this.key == null) {
                 throw new AerospikeException(String.format(
                         "Null key from annotated object of class %s." + " Did you forget an @AerospikeKey annotation?",
+                        this.clazz.getSimpleName()));
+            }
+            else if (key == null) {
+                throw new AerospikeException(String.format(
+                        "Key of class %s was null. Make sure the key is set.",
                         this.clazz.getSimpleName()));
             }
             return key;
