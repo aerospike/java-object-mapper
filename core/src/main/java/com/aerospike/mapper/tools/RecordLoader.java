@@ -23,4 +23,10 @@ public interface RecordLoader {
      * Batch-fetch records. Entries with no matching record are returned as null in the list.
      */
     List<Map<String, Object>> getBatchRecords(List<RecordKey> keys);
+
+    /**
+     * Compute the Aerospike record digest for the given set and user key.
+     * Used for lazy-loaded @AerospikeReference objects stored by digest.
+     */
+    byte[] computeDigest(String setName, Object userKey);
 }

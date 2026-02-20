@@ -1,8 +1,14 @@
 # Copilot Instructions for Aerospike Java Object Mapper
 
 ## Running Java commands
-JAVA_HOME=/usr/lib/jvm/java-17-openjdk-arm64
-PATH=/usr/lib/jvm/java-17-openjdk-arm64/bin:$PATH
+JAVA_HOME=/usr/lib/jvm/java-1.21.0-openjdk-arm64/
+PATH=/usr/lib/jvm/java-1.21.0-openjdk-arm64//bin:$PATH
+
+## Starting Aerospike Server in Docker for testing
+
+Command to run Aerospike Server 8.1.0.1: aerospike_server_8101 and wait for its finishing
+Command to run aql utility to connect to the DB if needed: 
+docker run --rm -it aerospike/aerospike-tools:8.1.0 aql -h 172.17.0.2 -U tester -P psw
 
 ## Build & Test
 
