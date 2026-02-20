@@ -14,8 +14,8 @@
 
 	<modules>
 		<module>core</module>
-		<module>legacy_client_api</module>
-		<module>fluent_client_api</module>
+        <module>legacyapi</module>
+        <module>fluentapi</module>
 	</modules>
 	<organization>
 		<name>Aerospike Inc.</name>
