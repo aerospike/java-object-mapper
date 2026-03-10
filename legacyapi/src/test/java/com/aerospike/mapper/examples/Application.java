@@ -2,6 +2,7 @@ package com.aerospike.mapper.examples;
 
 import com.aerospike.client.AerospikeClient;
 import com.aerospike.client.IAerospikeClient;
+import com.aerospike.client.policy.ClientPolicy;
 import com.aerospike.client.policy.Policy;
 import com.aerospike.client.policy.Replica;
 import com.aerospike.client.policy.WritePolicy;
@@ -37,7 +38,10 @@ public class Application extends ApplicationBase {
         writePolicy.durableDelete = true;
         writePolicy.sendKey = true;    // For ease of debugging for now
 
-        IAerospikeClient client = new AerospikeClient(null, "127.0.0.1", 3000);
+        ClientPolicy policy = new ClientPolicy();
+//        policy.user = "";
+//        policy.password = "";
+        IAerospikeClient client = new AerospikeClient(policy, "127.0.0.1", 3000);
 
         AeroMapper mapper = new AeroMapper.Builder(client)
                 .withWritePolicy(writePolicy).forAll()

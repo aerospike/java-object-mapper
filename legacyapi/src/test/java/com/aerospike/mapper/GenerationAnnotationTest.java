@@ -115,7 +115,9 @@ public class GenerationAnnotationTest extends AeroMapperBaseTest {
         AeroMapper mapper = new AeroMapper.Builder(client).build();
         
         // Start with a clean slate
-        mapper.delete(GenerationEntity.class, 1);
+        WritePolicy writePolicy = new WritePolicy();
+        writePolicy.durableDelete = true;
+        mapper.delete(writePolicy, GenerationEntity.class, 1);
 
         // Create and save entity
         GenerationEntity entity = new GenerationEntity(1, "Test Entity");
@@ -134,7 +136,9 @@ public class GenerationAnnotationTest extends AeroMapperBaseTest {
     public void testGenerationFieldMappingWithInteger() {
         AeroMapper mapper = new AeroMapper.Builder(client).build();
         // Start with a clean slate
-        mapper.delete(GenerationEntityWithInteger.class, 2);
+        WritePolicy writePolicy = new WritePolicy();
+        writePolicy.durableDelete = true;
+        mapper.delete(writePolicy, GenerationEntityWithInteger.class, 2);
         
         // Create and save entity
         GenerationEntityWithInteger entity = new GenerationEntityWithInteger(2, "Test Entity Integer");
@@ -154,7 +158,9 @@ public class GenerationAnnotationTest extends AeroMapperBaseTest {
         AeroMapper mapper = new AeroMapper.Builder(client).build();
         
         // Start with a clean slate
-        mapper.delete(GenerationEntityWithMethods.class, 3);
+        WritePolicy writePolicy = new WritePolicy();
+        writePolicy.durableDelete = true;
+        mapper.delete(writePolicy, GenerationEntityWithMethods.class, 3);
 
         // Create and save entity
         GenerationEntityWithMethods entity = new GenerationEntityWithMethods(3, "Test Entity Methods");
@@ -174,7 +180,9 @@ public class GenerationAnnotationTest extends AeroMapperBaseTest {
         AeroMapper mapper = new AeroMapper.Builder(client).build();
         
         // Start with a clean slate
-        mapper.delete(GenerationEntity.class, 4);
+        WritePolicy writePolicy = new WritePolicy();
+        writePolicy.durableDelete = true;
+        mapper.delete(writePolicy, GenerationEntity.class, 4);
 
         // Create and save entity
         GenerationEntity entity = new GenerationEntity(4, "Concurrency Test");
@@ -201,7 +209,9 @@ public class GenerationAnnotationTest extends AeroMapperBaseTest {
         AeroMapper mapper = new AeroMapper.Builder(client).build();
         
         // Start with a clean slate
-        mapper.delete(GenerationEntity.class, 5);
+        WritePolicy writePolicy = new WritePolicy();
+        writePolicy.durableDelete = true;
+        mapper.delete(writePolicy, GenerationEntity.class, 5);
 
         // Create and save entity
         GenerationEntity entity = new GenerationEntity(5, "Generation Increment Test");
@@ -253,7 +263,9 @@ public class GenerationAnnotationTest extends AeroMapperBaseTest {
                 .build();
         
         // Start with a clean slate
-        mapper.delete(GenerationEntity.class, 8);
+        WritePolicy writePolicy = new WritePolicy();
+        writePolicy.durableDelete = true;
+        mapper.delete(writePolicy, GenerationEntity.class, 8);
 
         GenerationEntity entity = new GenerationEntity(8, "Config Test");
         mapper.save(entity);
@@ -267,7 +279,9 @@ public class GenerationAnnotationTest extends AeroMapperBaseTest {
         AeroMapper mapper = new AeroMapper.Builder(client).build();
         
         // Start with a clean slate
-        mapper.delete(GenerationEntity.class, 9);
+        WritePolicy writePolicyForDelete = new WritePolicy();
+        writePolicyForDelete.durableDelete = true;
+        mapper.delete(writePolicyForDelete, GenerationEntity.class, 9);
 
         // Create entity with specific generation
         GenerationEntity entity = new GenerationEntity(9, "Policy Test");
@@ -289,7 +303,9 @@ public class GenerationAnnotationTest extends AeroMapperBaseTest {
         AeroMapper mapper = new AeroMapper.Builder(client).build();
         
         // Start with a clean slate
-        mapper.delete(GenerationEntity.class, 10);
+        WritePolicy writePolicy = new WritePolicy();
+        writePolicy.durableDelete = true;
+        mapper.delete(writePolicy, GenerationEntity.class, 10);
 
         // Create entity with generation 0 (should not set generation policy)
         GenerationEntity entity = new GenerationEntity(10, "Zero Generation Test");

@@ -3,6 +3,7 @@ package com.aerospike.mapper;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.aerospike.client.policy.WritePolicy;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -71,7 +72,9 @@ public class ConfigurationThroughCodeTest extends AeroMapperBaseTest {
     public void testNoConfiguration() {
         AeroMapper mapper = new AeroMapper.Builder(client).build();
         A a = setupA();
-        mapper.delete(a);
+        WritePolicy writePolicy = new WritePolicy();
+        writePolicy.durableDelete = true;
+        mapper.delete(writePolicy, a);
         
         try {
             mapper.save(a);
@@ -114,7 +117,9 @@ public class ConfigurationThroughCodeTest extends AeroMapperBaseTest {
                 .withClassConfigurations(classConfigB, classConfigC)
                 .build();
         A a = setupA();
-        mapper.delete(a);
+        WritePolicy writePolicy = new WritePolicy();
+        writePolicy.durableDelete = true;
+        mapper.delete(writePolicy, a);
         
         mapper.save(a);
             
