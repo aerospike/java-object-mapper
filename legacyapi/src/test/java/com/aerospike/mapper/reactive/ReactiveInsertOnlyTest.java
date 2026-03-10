@@ -4,8 +4,10 @@ import com.aerospike.client.AerospikeException;
 import com.aerospike.client.Key;
 import com.aerospike.client.Record;
 import com.aerospike.client.policy.WritePolicy;
+import com.aerospike.mapper.InsertOnlyTest;
 import com.aerospike.mapper.annotations.AerospikeKey;
 import com.aerospike.mapper.annotations.AerospikeRecord;
+import com.aerospike.mapper.tools.PolicyCache;
 import com.aerospike.mapper.tools.ReactiveAeroMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -27,7 +29,11 @@ public class ReactiveInsertOnlyTest extends ReactiveAeroMapperBaseTest {
 
     @BeforeEach
     public void setup() {
-        client.delete(null, new Key("test", "testSet", 1));
+        WritePolicy writePolicy =
+            PolicyCache.getInstance()
+                .getEffectiveWritePolicy(InsertOnlyTest.DataClass.class, client.getWritePolicyDefault());
+        writePolicy.durableDelete = false;
+        client.delete(writePolicy, new Key("test", "testSet", 1));
     }
 
     @Test
