@@ -133,11 +133,12 @@ public abstract class ValueType {
                     case KEY: {
                         final Object key = ThreadLocalKeySaver.getKeyContext();
                         if (value instanceof DeferredObject) {
-                            DeferredSetter setter = object -> {
+                            DeferredSetter setter = resolved -> {
                                 try {
-                                    property.getSetter().invoke(obj, value, key);
+                                    property.getSetter().invoke(obj, resolved, key);
                                 } catch (ReflectiveOperationException e) {
-                                    throw new AerospikeMapperException(String.format("Could not set field %s on %s to %s", property, obj, value));
+                                    throw new AerospikeMapperException(String.format("Could not set field %s on %s to" +
+                                        " %s", property, obj, resolved));
                                 }
                             };
                             DeferredObjectSetter objectSetter = new DeferredObjectSetter(setter, (DeferredObject) value);
@@ -149,13 +150,14 @@ public abstract class ValueType {
                     }
 
                     case VALUE: {
-                        final Object key = ThreadLocalKeySaver.getKeyContext();
+                        final Object userKeyValue = ThreadLocalKeySaver.getUserKeyValue();
                         if (value instanceof DeferredObject) {
-                            DeferredSetter setter = object -> {
+                            DeferredSetter setter = resolved -> {
                                 try {
-                                    property.getSetter().invoke(obj, value, ThreadLocalKeySaver.getUserKeyValue());
+                                    property.getSetter().invoke(obj, resolved, userKeyValue);
                                 } catch (ReflectiveOperationException e) {
-                                    throw new AerospikeMapperException(String.format("Could not set field %s on %s to %s", property, obj, value));
+                                    throw new AerospikeMapperException(String.format("Could not set field %s on %s to" +
+                                        " %s", property, obj, resolved));
                                 }
                             };
                             DeferredObjectSetter objectSetter = new DeferredObjectSetter(setter, (DeferredObject) value);
@@ -168,11 +170,12 @@ public abstract class ValueType {
 
                     default:
                         if (value instanceof DeferredObject) {
-                            DeferredSetter setter = object -> {
+                            DeferredSetter setter = resolved -> {
                                 try {
-                                    property.getSetter().invoke(obj, value);
+                                    property.getSetter().invoke(obj, resolved);
                                 } catch (ReflectiveOperationException e) {
-                                    throw new AerospikeMapperException(String.format("Could not set field %s on %s to %s", property, obj, value));
+                                    throw new AerospikeMapperException(String.format("Could not set field %s on %s to" +
+                                        " %s", property, obj, resolved));
                                 }
                             };
                             DeferredObjectSetter objectSetter = new DeferredObjectSetter(setter, (DeferredObject) value);

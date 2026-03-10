@@ -7,28 +7,46 @@ import com.aerospike.client.policy.QueryPolicy;
 import com.aerospike.client.policy.ScanPolicy;
 import com.aerospike.client.policy.WritePolicy;
 import com.aerospike.client.reactor.IAerospikeReactorClient;
-import com.aerospike.mapper.tools.ClassCache.PolicyType;
 import lombok.Getter;
 
-import java.util.HashMap;
+import java.util.EnumMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Stores per-class and default Aerospike client policies.
- * This is the legacy home for the policy storage that was removed from ClassCache.
+ * Thread-safe singleton for policy resolution across mapper instances.
  */
 public class PolicyCache {
 
+    public enum PolicyType {
+        READ,
+        WRITE,
+        BATCH,
+        SCAN,
+        QUERY
+    }
+
     @Getter
     private static final PolicyCache instance = new PolicyCache();
-    private final Map<PolicyType, Policy> defaultPolicies = new HashMap<>();
-    private final Map<PolicyType, Map<Class<?>, Policy>> childrenPolicies = new HashMap<>();
-    private final Map<PolicyType, Map<Class<?>, Policy>> specificPolicies = new HashMap<>();
+    private final Map<PolicyType, Policy> defaultPolicies = new ConcurrentHashMap<>();
+    private final EnumMap<PolicyType, ConcurrentHashMap<Class<?>, Policy>> childrenPolicies =
+        new EnumMap<>(PolicyType.class);
+    private final EnumMap<PolicyType, ConcurrentHashMap<Class<?>, Policy>> specificPolicies =
+        new EnumMap<>(PolicyType.class);
 
     private PolicyCache() {
         for (PolicyType thisType : PolicyType.values()) {
-            this.childrenPolicies.put(thisType, new HashMap<>());
-            this.specificPolicies.put(thisType, new HashMap<>());
+            this.childrenPolicies.put(thisType, new ConcurrentHashMap<>());
+            this.specificPolicies.put(thisType, new ConcurrentHashMap<>());
+        }
+    }
+
+    public void clear() {
+        defaultPolicies.clear();
+        for (PolicyType type : PolicyType.values()) {
+            childrenPolicies.get(type).clear();
+            specificPolicies.get(type).clear();
         }
     }
 
@@ -67,19 +85,19 @@ public class PolicyCache {
     }
 
     public Policy determinePolicy(Class<?> clazz, PolicyType policyType) {
-        // Specific classes have the highest precedence
-        Policy result = specificPolicies.get(policyType).get(clazz);
-        if (result != null) {
-            return result;
-        }
-        // Otherwise, iterate up class hierarchy looking for the policy.
-        Class<?> thisClass = clazz;
-        while (thisClass != null) {
-            Policy aPolicy = childrenPolicies.get(policyType).get(thisClass);
-            if (aPolicy != null) {
-                return aPolicy;
+        if (clazz != null) {
+            Policy result = specificPolicies.get(policyType).get(clazz);
+            if (result != null) {
+                return result;
             }
-            thisClass = thisClass.getSuperclass();
+            Class<?> thisClass = clazz;
+            while (thisClass != null) {
+                Policy aPolicy = childrenPolicies.get(policyType).get(thisClass);
+                if (aPolicy != null) {
+                    return aPolicy;
+                }
+                thisClass = thisClass.getSuperclass();
+            }
         }
         return this.defaultPolicies.get(policyType);
     }

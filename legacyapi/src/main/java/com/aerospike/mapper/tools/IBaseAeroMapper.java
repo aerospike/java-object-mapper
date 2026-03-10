@@ -7,10 +7,16 @@ import com.aerospike.client.policy.WritePolicy;
 import com.aerospike.client.policy.QueryPolicy;
 import com.aerospike.mapper.tools.converters.MappingConverter;
 
+@SuppressWarnings("unused")
 public interface IBaseAeroMapper extends IObjectMapper {
 
     @Override
     MappingConverter getMappingConverter();
+
+    @Override
+    default SetterParamTypeResolver getSetterParamTypeResolver() {
+        return LegacySetterParamTypeResolver.INSTANCE;
+    }
 
     IAeroMapper asMapper();
 

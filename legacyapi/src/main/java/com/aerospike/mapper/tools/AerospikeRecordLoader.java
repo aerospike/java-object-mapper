@@ -5,6 +5,7 @@ import com.aerospike.client.Key;
 import com.aerospike.client.Record;
 import com.aerospike.client.Value;
 import com.aerospike.client.policy.BatchPolicy;
+import com.aerospike.client.policy.Policy;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -13,6 +14,7 @@ import java.util.Map;
 
 /**
  * Implements {@link RecordLoader} using the legacy {@link IAerospikeClient}.
+ * Uses {@link PolicyCache} for policy resolution so that user-overridden default policies are respected.
  */
 public class AerospikeRecordLoader implements RecordLoader {
 
@@ -25,14 +27,16 @@ public class AerospikeRecordLoader implements RecordLoader {
     @Override
     public Map<String, Object> getRecord(String namespace, String setName, Object keyValue) {
         Key key = new Key(namespace, setName, Value.get(keyValue));
-        Record record = client.get(client.getReadPolicyDefault(), key);
+        Policy readPolicy = resolveReadPolicy();
+        Record record = client.get(readPolicy, key);
         return record == null ? null : new HashMap<>(record.bins);
     }
 
     @Override
     public Map<String, Object> getRecordByDigest(String namespace, String setName, byte[] digest) {
         Key key = new Key(namespace, digest, setName, null);
-        Record record = client.get(client.getReadPolicyDefault(), key);
+        Policy readPolicy = resolveReadPolicy();
+        Record record = client.get(readPolicy, key);
         return record == null ? null : new HashMap<>(record.bins);
     }
 
@@ -48,7 +52,8 @@ public class AerospikeRecordLoader implements RecordLoader {
             }
         }
 
-        BatchPolicy batchPolicy = client.getBatchPolicyDefault();
+        BatchPolicy batchPolicy = PolicyCache.getInstance()
+            .getEffectiveBatchPolicy(Object.class, client.getBatchPolicyDefault());
         if (keys.size() <= 2) {
             batchPolicy = new BatchPolicy(batchPolicy);
             batchPolicy.maxConcurrentThreads = 1;
@@ -66,5 +71,9 @@ public class AerospikeRecordLoader implements RecordLoader {
     @Override
     public byte[] computeDigest(String setName, Object userKey) {
         return com.aerospike.client.util.Crypto.computeDigest(setName, Value.get(userKey));
+    }
+
+    private Policy resolveReadPolicy() {
+        return PolicyCache.getInstance().getEffectiveReadPolicy(Object.class, client.getReadPolicyDefault());
     }
 }

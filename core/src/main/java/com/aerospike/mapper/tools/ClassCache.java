@@ -8,16 +8,15 @@ import com.aerospike.mapper.tools.utils.TypeUtils;
 import lombok.Getter;
 
 import javax.validation.constraints.NotNull;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class ClassCache {
 
     @Getter
     private static final ClassCache instance = new ClassCache();
-    private final Map<Class<?>, ClassCacheEntry<?>> cacheMap = new HashMap<>();
-    private final Map<String, ClassConfig> classesConfig = new HashMap<>();
-    private final Map<String, ClassCacheEntry<?>> storedNameToCacheEntry = new HashMap<>();
+    private final ConcurrentHashMap<Class<?>, ClassCacheEntry<?>> cacheMap = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, ClassConfig> classesConfig = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, ClassCacheEntry<?>> storedNameToCacheEntry = new ConcurrentHashMap<>();
     private final Object lock = new Object();
 
     private ClassCache() {
@@ -29,7 +28,6 @@ public class ClassCache {
 
     @SuppressWarnings("unchecked")
     public <T> ClassCacheEntry<T> loadClass(@NotNull Class<T> clazz, IObjectMapper mapper, boolean requireRecord) {
-        // Clazz can be null if an interface is passed
         if (clazz == null || clazz.isPrimitive() || clazz.equals(Object.class) || clazz.equals(String.class)
                 || clazz.equals(Character.class) || Number.class.isAssignableFrom(clazz)) {
             return null;
@@ -41,14 +39,6 @@ public class ClassCache {
                 entry = (ClassCacheEntry<T>) cacheMap.get(clazz);
                 if (entry == null) {
                     try {
-                        // Construct a class cache entry. This must be done in 2 steps, one creating the entry
-                        // and the other finalizing construction of it.
-                        // This is to cater for classes which recursively refer to themselves, such as
-                        // 	public static class A {
-                        //      @AerospikeKey
-                        //      public int id;
-                        //      public A a;
-                        //  }
                         entry = new ClassCacheEntry<>(clazz, mapper, getClassConfig(clazz), requireRecord);
                     } catch (NotAnnotatedClass nae) {
                         return null;
@@ -69,7 +59,6 @@ public class ClassCache {
         return entry;
     }
 
-    // package visibility
     void setStoredName(@NotNull ClassCacheEntry<?> entry, @NotNull String name) {
         ClassCacheEntry<?> existingEntry = storedNameToCacheEntry.get(name);
         if (existingEntry != null && !(existingEntry.equals(entry))) {
@@ -89,14 +78,13 @@ public class ClassCache {
         return cacheMap.containsKey(clazz);
     }
 
-    /**
-     * This method is typically only used for testing
-     */
     public void clear() {
-        this.cacheMap.clear();
-        this.classesConfig.clear();
-        TypeUtils.clear();
-        this.storedNameToCacheEntry.clear();
+        synchronized (lock) {
+            this.cacheMap.clear();
+            this.classesConfig.clear();
+            TypeUtils.clear();
+            this.storedNameToCacheEntry.clear();
+        }
     }
 
     public void addConfiguration(@NotNull Configuration configuration) {
@@ -105,6 +93,7 @@ public class ClassCache {
         }
     }
 
+    @SuppressWarnings("unused")
     public ClassConfig getClassConfig(String className) {
         return classesConfig.get(className);
     }
@@ -113,19 +102,12 @@ public class ClassCache {
         return classesConfig.get(clazz.getName());
     }
 
+    @SuppressWarnings("unused")
     public boolean hasClassConfig(String className) {
         return classesConfig.containsKey(className);
     }
 
     public boolean hasClassConfig(Class<?> clazz) {
         return classesConfig.containsKey(clazz.getName());
-    }
-
-    public enum PolicyType {
-        READ,
-        WRITE,
-        BATCH,
-        SCAN,
-        QUERY
     }
 }

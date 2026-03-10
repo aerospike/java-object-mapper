@@ -36,6 +36,7 @@ public class ClassConfig {
         bins = new ArrayList<>();
     }
 
+    @SuppressWarnings("unused")
     public BinConfig getBinByName(@NotNull String name) {
         for (BinConfig thisBin : bins) {
             if (name.equals(thisBin.getName())) {
@@ -108,7 +109,8 @@ public class ClassConfig {
     private void setShortName(String shortName) {
         this.shortName = shortName;
     }
-    
+
+    @SuppressWarnings("unused")
     public static class Builder {
         private final Class<?> clazz;
         private final ClassConfig classConfig;
@@ -164,11 +166,6 @@ public class ClassConfig {
             return this;
         }
 
-        public Builder withShortName(boolean sendKey) {
-            this.classConfig.setSendKey(sendKey);
-            return this;
-        }
-        
         public Builder withFactoryClassAndMethod(@NotNull Class<?> factoryClass, @NotNull String factoryMethod) {
             this.classConfig.setFactoryClass(factoryClass.getName());
             this.classConfig.setFactoryMethod(factoryMethod);
@@ -225,6 +222,7 @@ public class ClassConfig {
         }
     }
 
+    @SuppressWarnings("unused")
     public static class AeroBinConfig {
         private final Builder builder;
         private final BinConfig binConfig;

@@ -22,7 +22,7 @@ import com.aerospike.client.policy.Policy;
 import com.aerospike.client.policy.QueryPolicy;
 import com.aerospike.client.policy.ScanPolicy;
 import com.aerospike.mapper.annotations.AerospikeRecord;
-import com.aerospike.mapper.tools.ClassCache.PolicyType;
+import com.aerospike.mapper.tools.PolicyCache.PolicyType;
 import com.aerospike.mapper.tools.configuration.ClassConfig;
 import com.aerospike.mapper.tools.configuration.Configuration;
 import com.aerospike.mapper.tools.utils.TypeUtils;
@@ -30,6 +30,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 
+@SuppressWarnings("unused")
 public abstract class AbstractBuilder<T extends IBaseAeroMapper> {
     private final T mapper;
     private List<Class<?>> classesToPreload = null;
@@ -95,6 +96,9 @@ public abstract class AbstractBuilder<T extends IBaseAeroMapper> {
     private Set<Class<?>> findAllClassesUsingClassLoader(String packageName) {
         InputStream stream = ClassLoader.getSystemClassLoader()
                 .getResourceAsStream(packageName.replaceAll("[.]", "/"));
+        if (stream == null) {
+            throw new AerospikeException("Package not found: " + packageName);
+        }
         BufferedReader reader = new BufferedReader(new InputStreamReader(stream));
         return reader.lines().filter(line -> line.endsWith(".class")).map(line -> getClass(line, packageName))
                 .collect(Collectors.toSet());

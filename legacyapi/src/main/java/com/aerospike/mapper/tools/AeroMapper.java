@@ -19,7 +19,7 @@ import com.aerospike.client.query.Filter;
 import com.aerospike.client.query.RecordSet;
 import com.aerospike.client.query.Statement;
 import com.aerospike.client.cdt.MapOrder;
-import com.aerospike.mapper.tools.ClassCache.PolicyType;
+import com.aerospike.mapper.tools.PolicyCache.PolicyType;
 import com.aerospike.mapper.tools.converters.MappingConverter;
 import com.aerospike.mapper.tools.utils.MapperUtils;
 import com.aerospike.mapper.tools.virtuallist.VirtualList;

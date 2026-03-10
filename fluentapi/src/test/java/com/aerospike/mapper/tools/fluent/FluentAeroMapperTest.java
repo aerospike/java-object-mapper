@@ -11,6 +11,8 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import com.aerospike.mapper.exceptions.AerospikeMapperException;
+
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
 
@@ -20,6 +22,7 @@ import static org.mockito.Mockito.mock;
  */
 public class FluentAeroMapperTest {
 
+    @SuppressWarnings("unused")
     @AerospikeRecord(namespace = "test", set = "fam_pojo")
     private static class SamplePojo {
         @AerospikeKey
@@ -70,13 +73,10 @@ public class FluentAeroMapperTest {
     }
 
     @Test
-    public void getRecordMapper_calledTwice_returnsSameType() {
+    public void getRecordMapper_cachedAcrossCalls() {
         FluentRecordMapper<SamplePojo> first = fluentMapper.getRecordMapper(SamplePojo.class);
         FluentRecordMapper<SamplePojo> second = fluentMapper.getRecordMapper(SamplePojo.class);
-        assertNotNull(first);
-        assertNotNull(second);
-        // Both instances wrap the same (cached) ClassCacheEntry
-        assertEquals(first.getClass(), second.getClass());
+        assertSame(first, second, "getRecordMapper should return cached instance");
     }
 
     // ── getMapper (RecordMappingFactory interface) ─────────────────────────────
@@ -92,8 +92,17 @@ public class FluentAeroMapperTest {
     public void getMapper_isConsistentWithGetRecordMapper() {
         RecordMapper<SamplePojo> viaInterface = fluentMapper.getMapper(SamplePojo.class);
         FluentRecordMapper<SamplePojo> viaDirect = fluentMapper.getRecordMapper(SamplePojo.class);
-        // Both return FluentRecordMapper instances backed by the same ClassCacheEntry
         assertInstanceOf(FluentRecordMapper.class, viaInterface);
-        assertNotNull(viaDirect);
+        assertSame(viaInterface, viaDirect, "getMapper and getRecordMapper should return the same cached instance");
+    }
+
+    // ── Null validation ───────────────────────────────────────────────────────
+
+    @Test
+    public void constructor_nullSession_throws() {
+        AerospikeMapperException ex = assertThrows(
+                AerospikeMapperException.class,
+                () -> new FluentAeroMapper(null));
+        assertTrue(ex.getMessage().contains("Session must not be null"));
     }
 }

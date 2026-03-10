@@ -11,7 +11,6 @@ import lombok.Setter;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
-import java.lang.reflect.Type;
 
 public class PropertyDefinition {
 
@@ -50,10 +49,6 @@ public class PropertyDefinition {
         return getter != null ? getter.getAnnotations() : setter.getAnnotations();
     }
 
-    public Type getGenericType() {
-        return this.getter.getGenericReturnType();
-    }
-
     /**
      * Validate that this is a valid property
      */
@@ -79,11 +74,9 @@ public class PropertyDefinition {
             if (setter.getParameterCount() == 2) {
                 Parameter param = setter.getParameters()[1];
                 String paramTypeName = param.getType().getName();
-                if ("com.aerospike.client.Key".equals(paramTypeName)) {
-                    this.setterParamType = SetterParamType.KEY;
-                } else if ("com.aerospike.client.Value".equals(paramTypeName)) {
-                    this.setterParamType = SetterParamType.VALUE;
-                } else {
+                SetterParamTypeResolver resolver = mapper.getSetterParamTypeResolver();
+                this.setterParamType = resolver.resolve(paramTypeName);
+                if (this.setterParamType == SetterParamType.NONE) {
                     throw new AerospikeMapperException(String.format("Property %s on class %s has a setter with 2 arguments," +
                             " but the second one is neither a Key nor a Value", this.name, className));
                 }

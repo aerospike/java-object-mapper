@@ -113,7 +113,7 @@ public class ClassCacheEntry<T> {
         this.config = config;
     }
 
-    public ClassCacheEntry<T> construct() {
+    public void construct() {
         if (config != null) {
             config.validate();
             this.overrideSettings(config);
@@ -146,7 +146,6 @@ public class ClassCacheEntry<T> {
 
         this.checkRecordSettingsAgainstSuperClasses();
         constructed = true;
-        return this;
     }
 
     public boolean isNotConstructed() {
@@ -378,7 +377,7 @@ public class ClassCacheEntry<T> {
                         String.format("Missing factoryClass definition when factoryMethod is specified on class %s",
                                 clazz.getSimpleName()));
             }
-            if (StringUtils.isBlank(this.factoryClass)) {
+            if (StringUtils.isBlank(this.factoryMethod)) {
                 throw new AerospikeMapperException(
                         String.format("Missing factoryMethod definition when factoryClass is specified on class %s",
                                 clazz.getSimpleName()));
@@ -806,21 +805,25 @@ public class ClassCacheEntry<T> {
 
     private Method findMethodWithNameAndParams(String name, Class<?>... params) {
         try {
-            Method method = this.clazz.getDeclaredMethod(name, params);
             // TODO: Should this ascend the inheritance hierarchy using getMethod on superclasses?
-            return method;
+            return this.clazz.getDeclaredMethod(name, params);
         } catch (NoSuchMethodException nsme) {
             return null;
         }
     }
 
-    private Method findMethodWithNameAndParamByTypeName(String name, Class<?> firstParam, String secondParamTypeName) {
+    /**
+     * Searches for a 2-param setter whose second parameter is a recognized client Key or Value type, as determined by
+     * the mapper's {@link SetterParamTypeResolver}.
+     */
+    private Method findSetterWithClientParamType(String setterName, Class<?> firstParam) {
+        SetterParamTypeResolver resolver = this.mapper.getSetterParamTypeResolver();
         for (Method m : this.clazz.getDeclaredMethods()) {
-            if (m.getName().equals(name)) {
+            if (m.getName().equals(setterName)) {
                 Class<?>[] paramTypes = m.getParameterTypes();
                 if (paramTypes.length == 2
                         && paramTypes[0].isAssignableFrom(firstParam)
-                        && secondParamTypeName.equals(paramTypes[1].getName())) {
+                    && resolver.resolve(paramTypes[1].getName()) != PropertyDefinition.SetterParamType.NONE) {
                     return m;
                 }
             }
@@ -844,10 +847,7 @@ public class ClassCacheEntry<T> {
 
         Method setter = findMethodWithNameAndParams(setterName, thisField.getType());
         if (setter == null) {
-            setter = findMethodWithNameAndParamByTypeName(setterName, thisField.getType(), "com.aerospike.client.Key");
-        }
-        if (setter == null) {
-            setter = findMethodWithNameAndParamByTypeName(setterName, thisField.getType(), "com.aerospike.client.Value");
+            setter = findSetterWithClientParamType(setterName, thisField.getType());
         }
         if (setter == null) {
             throw new AerospikeMapperException(String.format(
@@ -917,11 +917,6 @@ public class ClassCacheEntry<T> {
         return ttl;
     }
 
-    /** Returns whether the key field is stored as a regular bin (true) or only in key metadata (false). */
-    public boolean isKeyStoredAsBin() {
-        return keyAsBin;
-    }
-
     /**
      * Traverses the class hierarchy to find the field name of the key (may be in a superclass).
      * Returns null if no key field is found.
@@ -976,21 +971,6 @@ public class ClassCacheEntry<T> {
         }
     }
 
-    private boolean contains(String[] names, String thisName) {
-        if (names == null || names.length == 0) {
-            return true;
-        }
-        if (thisName == null) {
-            return false;
-        }
-        for (String aName : names) {
-            if (thisName.equals(aName)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
     public Map<String, Object> getMap(Object instance, boolean needsType) {
         try {
             Map<String, Object> results = new HashMap<>();
@@ -1023,8 +1003,8 @@ public class ClassCacheEntry<T> {
         }
     }
 
-    private boolean isKeyField(String name) {
-        return keyName != null && keyName.equals(name);
+    private boolean isNotKeyField(String name) {
+        return keyName == null || !keyName.equals(name);
     }
 
     public List<Object> getList(Object instance, boolean skipKey, boolean needsType) {
@@ -1039,14 +1019,14 @@ public class ClassCacheEntry<T> {
                 if (thisClass.ordinals != null) {
                     for (int i = 1; i <= thisClass.ordinals.size(); i++) {
                         String name = thisClass.ordinals.get(i);
-                        if (!skipKey || !isKeyField(name)) {
+                        if (!skipKey || isNotKeyField(name)) {
                             addDataFromValueName(name, instance, thisClass, results);
                         }
                     }
                 }
                 for (String name : thisClass.values.keySet()) {
                     if (thisClass.fieldsWithOrdinals == null || !thisClass.fieldsWithOrdinals.contains(name)) {
-                        if (!skipKey || !isKeyField(name)) {
+                        if (!skipKey || isNotKeyField(name)) {
                             addDataFromValueName(name, instance, thisClass, results);
                         }
                     }
@@ -1237,7 +1217,7 @@ public class ClassCacheEntry<T> {
                     if (thisClass.ordinals != null) {
                         for (int i = 1; i <= thisClass.ordinals.size(); i++) {
                             String name = thisClass.ordinals.get(i);
-                            if (!skipKey || !isKeyField(name)) {
+                            if (!skipKey || isNotKeyField(name)) {
                                 index = thisClass.setValueByField(name, objectVersion, recordVersion, null, index, list,
                                         valueMap);
                             }
@@ -1245,7 +1225,7 @@ public class ClassCacheEntry<T> {
                     }
                     for (String name : thisClass.values.keySet()) {
                         if (thisClass.fieldsWithOrdinals == null || !thisClass.fieldsWithOrdinals.contains(name)) {
-                            if (!skipKey || !isKeyField(name)) {
+                            if (!skipKey || isNotKeyField(name)) {
                                 index = thisClass.setValueByField(name, objectVersion, recordVersion, null, index, list,
                                         valueMap);
                             }
@@ -1286,7 +1266,7 @@ public class ClassCacheEntry<T> {
                     if (ordinals != null) {
                         for (int i = 1; i <= ordinals.size(); i++) {
                             String name = ordinals.get(i);
-                            if (!skipKey || !isKeyField(name)) {
+                            if (!skipKey || isNotKeyField(name)) {
                                 index = setValueByField(name, objectVersion, recordVersion, instance, index, list,
                                         null);
                             }
@@ -1294,7 +1274,7 @@ public class ClassCacheEntry<T> {
                     }
                     for (String name : this.values.keySet()) {
                         if (this.fieldsWithOrdinals == null || !thisClass.fieldsWithOrdinals.contains(name)) {
-                            if (!skipKey || !isKeyField(name)) {
+                            if (!skipKey || isNotKeyField(name)) {
                                 index = setValueByField(name, objectVersion, recordVersion, instance, index, list,
                                         null);
                             }

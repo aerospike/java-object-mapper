@@ -89,7 +89,7 @@ public abstract class BaseVirtualList<E> {
     protected WritePolicy getWritePolicy(Policy policy) {
         if (policy == null) {
             Policy p = PolicyCache.getInstance().determinePolicy(
-                    owningEntry.getUnderlyingClass(), ClassCache.PolicyType.WRITE);
+                owningEntry.getUnderlyingClass(), PolicyCache.PolicyType.WRITE);
             return p != null ? new WritePolicy((WritePolicy) p) : new WritePolicy();
         }
         return new WritePolicy(policy);
