@@ -42,7 +42,7 @@
 		<lombok.version>1.18.38</lombok.version>
 		<reactor-test.version>3.7.7</reactor-test.version>
 		<junit-jupiter.version>5.11.4</junit-jupiter.version>
-		<mockito.version>5.14.2</mockito.version>
+        <mockito.version>4.11.0</mockito.version>
 	</properties>
 
 	<licenses>
@@ -214,13 +214,6 @@
 					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-surefire-plugin</artifactId>
 					<version>${maven-surefire-plugin.version}</version>
-					<configuration>
-						<argLine>
-							<!--suppress UnresolvedMavenProperty -->
-							<!-- Property is generated at build-time by maven-dependency-plugin -->
-							-javaagent:${org.mockito:mockito-core:jar}
-						</argLine>
-					</configuration>
 				</plugin>
 				<plugin>
 					<groupId>org.sonatype.central</groupId>
