@@ -2,7 +2,6 @@ package com.aerospike.mapper;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import com.aerospike.client.policy.WritePolicy;
 import com.aerospike.mapper.annotations.AerospikeKey;
 import lombok.Getter;
 import lombok.Setter;
@@ -46,9 +45,7 @@ public class GenerationConfigurationTest extends AeroMapperBaseTest {
                 .build();
         
         // Start with a clean slate
-        WritePolicy writePolicy = new WritePolicy();
-        writePolicy.durableDelete = true;
-        mapper.delete(writePolicy, ConfigGenerationEntity.class, 1);
+        mapper.delete(ConfigGenerationEntity.class, 1);
 
         // Create and save entity
         ConfigGenerationEntity entity = new ConfigGenerationEntity(1, "Config Test");
@@ -76,9 +73,7 @@ public class GenerationConfigurationTest extends AeroMapperBaseTest {
                 .build();
         
         // Start with a clean slate
-        WritePolicy writePolicy = new WritePolicy();
-        writePolicy.durableDelete = true;
-        mapper.delete(writePolicy, ConfigGenerationEntity.class, 2);
+        mapper.delete(ConfigGenerationEntity.class, 2);
 
         // Create and save entity
         ConfigGenerationEntity entity = new ConfigGenerationEntity(2, "YAML Config Test");
@@ -105,9 +100,7 @@ public class GenerationConfigurationTest extends AeroMapperBaseTest {
                 .build();
         
         // Start with a clean slate
-        WritePolicy writePolicy = new WritePolicy();
-        writePolicy.durableDelete = true;
-        mapper.delete(writePolicy, ConfigGenerationEntity.class, 3);
+        mapper.delete(ConfigGenerationEntity.class, 3);
 
         // Create and save entity
         ConfigGenerationEntity entity = new ConfigGenerationEntity(3, "Concurrency Config Test");
@@ -141,9 +134,7 @@ public class GenerationConfigurationTest extends AeroMapperBaseTest {
                 .build();
         
         // Start with a clean slate
-        WritePolicy writePolicy = new WritePolicy();
-        writePolicy.durableDelete = true;
-        mapper.delete(writePolicy, ConfigGenerationEntity.class, 4);
+        mapper.delete(ConfigGenerationEntity.class, 4);
 
         // Create and save entity
         ConfigGenerationEntity entity = new ConfigGenerationEntity(4, "Generation Increment Config Test");

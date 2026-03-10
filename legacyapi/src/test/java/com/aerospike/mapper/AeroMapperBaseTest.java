@@ -26,8 +26,6 @@ public abstract class AeroMapperBaseTest {
         ClientPolicy policy = new ClientPolicy();
         // Set event loops to use in asynchronous commands.
         policy.eventLoops = new NioEventLoops(1);
-//        policy.user = "";
-//        policy.password = "";
         policy.writePolicyDefault.durableDelete = true;
         Host[] hosts = Host.parseHosts(System.getProperty("test.host", "localhost:3000"), 3000);
         client = new AerospikeClient(policy, hosts);
