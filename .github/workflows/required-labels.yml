@@ -1,5 +1,7 @@
 #  https://github.com/mheap/github-action-required-labels
 name: Pull Request Required Labels
+permissions:
+  contents: read
 on:
   pull_request:
     types: [ opened, labeled, unlabeled, synchronize ]
