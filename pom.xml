@@ -32,7 +32,8 @@
 		<aerospike-client-jdk8.version>9.0.5</aerospike-client-jdk8.version>
 		<aerospike-reactor.version>9.0.5</aerospike-reactor.version>
 		<commons-lang3.version>3.18.0</commons-lang3.version>
-        <jackson-dataformat-yaml.version>2.21.1</jackson-dataformat-yaml.version>
+        <snakeyaml.version>2.6</snakeyaml.version>
+        <jackson-databind.version>2.21.2</jackson-databind.version>
 		<lombok.version>1.18.38</lombok.version>
 		<reactor-test.version>3.7.7</reactor-test.version>
 		<junit-jupiter.version>5.11.4</junit-jupiter.version>
@@ -101,12 +102,18 @@
 			<version>${commons-lang3.version}</version>
 		</dependency>
 
-		<!-- https://mvnrepository.com/artifact/com.fasterxml.jackson.dataformat/jackson-dataformat-yaml -->
-		<!-- Needed to parse the options file -->
-		<dependency>
-		    <groupId>com.fasterxml.jackson.dataformat</groupId>
-		    <artifactId>jackson-dataformat-yaml</artifactId>
-		    <version>${jackson-dataformat-yaml.version}</version>
+        <dependency>
+            <groupId>org.yaml</groupId>
+            <artifactId>snakeyaml</artifactId>
+            <version>${snakeyaml.version}</version>
+        </dependency>
+
+        <!-- Jackson databind for JSON comparison in tests -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <version>${jackson-databind.version}</version>
+            <scope>test</scope>
 		</dependency>
 
 		<dependency>
