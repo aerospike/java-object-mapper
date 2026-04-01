@@ -2,6 +2,7 @@ package com.aerospike.mapper.tools;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -23,12 +24,14 @@ import com.aerospike.client.policy.QueryPolicy;
 import com.aerospike.client.policy.ScanPolicy;
 import com.aerospike.mapper.annotations.AerospikeRecord;
 import com.aerospike.mapper.tools.ClassCache.PolicyType;
+import com.aerospike.mapper.tools.configuration.BinConfig;
 import com.aerospike.mapper.tools.configuration.ClassConfig;
 import com.aerospike.mapper.tools.configuration.Configuration;
 import com.aerospike.mapper.tools.utils.TypeUtils;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import org.yaml.snakeyaml.LoaderOptions;
+import org.yaml.snakeyaml.TypeDescription;
+import org.yaml.snakeyaml.Yaml;
+import org.yaml.snakeyaml.constructor.Constructor;
 
 public abstract class AbstractBuilder<T extends IBaseAeroMapper> {
     private final T mapper;
@@ -121,10 +124,9 @@ public abstract class AbstractBuilder<T extends IBaseAeroMapper> {
     }
 
     public AbstractBuilder<T> withConfigurationFile(File file, boolean allowsInvalid) throws IOException {
-        ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory());
-        Configuration configuration = objectMapper.readValue(file, Configuration.class);
-        this.loadConfiguration(configuration, allowsInvalid);
-        return this;
+        try (InputStream fis = new FileInputStream(file)) {
+            return this.withConfigurationFile(fis, allowsInvalid);
+        }
     }
 
     public AbstractBuilder<T> withConfigurationFile(InputStream ios) throws IOException {
@@ -132,23 +134,38 @@ public abstract class AbstractBuilder<T extends IBaseAeroMapper> {
     }
 
     public AbstractBuilder<T> withConfigurationFile(InputStream ios, boolean allowsInvalid) throws IOException {
-        ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory());
-        Configuration configuration = objectMapper.readValue(ios, Configuration.class);
+        Yaml yaml = createYamlParser();
+        Configuration configuration = yaml.load(ios);
         this.loadConfiguration(configuration, allowsInvalid);
         return this;
     }
 
-    public AbstractBuilder<T> withConfiguration(String configurationYaml) throws JsonProcessingException {
+    public AbstractBuilder<T> withConfiguration(String configurationYaml) {
         return this.withConfiguration(configurationYaml, false);
     }
 
-    public AbstractBuilder<T> withConfiguration(String configurationYaml, boolean allowsInvalid) throws JsonProcessingException {
-        ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory());
-        Configuration configuration = objectMapper.readValue(configurationYaml, Configuration.class);
+    public AbstractBuilder<T> withConfiguration(String configurationYaml, boolean allowsInvalid) {
+        Yaml yaml = createYamlParser();
+        Configuration configuration = yaml.load(configurationYaml);
         this.loadConfiguration(configuration, allowsInvalid);
         return this;
     }
-    
+
+    private static Yaml createYamlParser() {
+        Constructor constructor = new Constructor(Configuration.class, new LoaderOptions());
+
+        TypeDescription configDesc = new TypeDescription(Configuration.class);
+        configDesc.addPropertyParameters("classes", ClassConfig.class);
+        constructor.addTypeDescription(configDesc);
+
+        TypeDescription classConfigDesc = new TypeDescription(ClassConfig.class);
+        classConfigDesc.substituteProperty("class", String.class, "getClassName", "setClassName");
+        classConfigDesc.addPropertyParameters("bins", BinConfig.class);
+        constructor.addTypeDescription(classConfigDesc);
+
+        return new Yaml(constructor);
+    }
+
     public AbstractBuilder<T> withClassConfigurations(ClassConfig classConfig, ClassConfig ...classConfigs) {
         Configuration configuration = new Configuration();
         configuration.add(classConfig);
@@ -161,6 +178,9 @@ public abstract class AbstractBuilder<T extends IBaseAeroMapper> {
     }
 
     private void loadConfiguration(@NotNull Configuration configuration, boolean allowsInvalid) {
+        if (configuration == null) {
+            throw new AerospikeException("YAML configuration is empty or invalid");
+        }
         for (ClassConfig config : configuration.getClasses()) {
             try {
                 String name = config.getClassName();

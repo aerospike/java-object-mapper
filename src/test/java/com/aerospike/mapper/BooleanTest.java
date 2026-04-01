@@ -6,7 +6,6 @@ import com.aerospike.client.policy.Policy;
 import com.aerospike.mapper.annotations.AerospikeKey;
 import com.aerospike.mapper.annotations.AerospikeRecord;
 import com.aerospike.mapper.tools.AeroMapper;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
 
@@ -28,7 +27,7 @@ public class BooleanTest extends AeroMapperBaseTest {
     }
 
     @Test
-    public void testNumericEncoding() throws JsonProcessingException {
+    public void testNumericEncoding() {
         UseBoolBin = false;
 
         B b = new B();
@@ -57,7 +56,7 @@ public class BooleanTest extends AeroMapperBaseTest {
     }
 
     @Test
-    public void testObjectEncoding() throws JsonProcessingException {
+    public void testObjectEncoding() {
         UseBoolBin = true;
 
         B b = new B();
@@ -85,7 +84,7 @@ public class BooleanTest extends AeroMapperBaseTest {
     }
 
     @Test
-    public void testObjectByDefault() throws JsonProcessingException {
+    public void testObjectByDefault() {
         B b = new B();
         b.boolValue = true;
         b.id = 1;

@@ -9,10 +9,8 @@ import com.aerospike.client.AerospikeException;
 import com.aerospike.mapper.annotations.AerospikeEmbed;
 import com.aerospike.mapper.annotations.AerospikeReference;
 import com.aerospike.mapper.tools.ConfigurationUtils;
-import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class ClassConfig {
-    @JsonProperty(value = "class")
     private String className;
     private String namespace;
     private String set;
@@ -124,43 +122,43 @@ public class ClassConfig {
         }
     }
 
-    private void setClassName(String className) {
+    public void setClassName(String className) {
         this.className = className;
     }
 
-    private void setNamespace(String namespace) {
+    public void setNamespace(String namespace) {
         this.namespace = namespace;
     }
 
-    private void setSet(String set) {
+    public void setSet(String set) {
         this.set = set;
     }
 
-    private void setTtl(Integer ttl) {
+    public void setTtl(Integer ttl) {
         this.ttl = ttl;
     }
 
-    private void setVersion(Integer version) {
+    public void setVersion(Integer version) {
         this.version = version;
     }
 
-    private void setSendKey(Boolean sendKey) {
+    public void setSendKey(Boolean sendKey) {
         this.sendKey = sendKey;
     }
 
-    private void setMapAll(Boolean mapAll) {
+    public void setMapAll(Boolean mapAll) {
         this.mapAll = mapAll;
     }
 
-    private void setDurableDelete(Boolean durableDelete) {
+    public void setDurableDelete(Boolean durableDelete) {
         this.durableDelete = durableDelete;
     }
 
-    private void setKey(KeyConfig key) {
+    public void setKey(KeyConfig key) {
         this.key = key;
     }
 
-    private void setShortName(String shortName) {
+    public void setShortName(String shortName) {
         this.shortName = shortName;
     }
     

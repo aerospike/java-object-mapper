@@ -24,7 +24,7 @@ public class KeyConfig {
         return storeAsBin;
     }
 
-    public void setStoreAsBin(boolean value) {
+    public void setStoreAsBin(Boolean value) {
         this.storeAsBin = value;
     }
     
