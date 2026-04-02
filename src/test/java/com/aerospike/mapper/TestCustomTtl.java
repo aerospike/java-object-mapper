@@ -11,6 +11,9 @@ import com.aerospike.mapper.annotations.AerospikeKey;
 import com.aerospike.mapper.annotations.AerospikeRecord;
 import com.aerospike.mapper.tools.AeroMapper;
 
+/**
+ * This test class requires positive nsup-period configured
+ */
 public class TestCustomTtl extends AeroMapperBaseTest {
 	
 	@AerospikeRecord(namespace = "test", set = "classWithTtl", ttl=300)
@@ -29,6 +32,7 @@ public class TestCustomTtl extends AeroMapperBaseTest {
 	
 	@Test
 	public void testTtl() {
+        // This test requires positive nsup-period configured
 		AeroMapper mapper = new AeroMapper.Builder(client)
 				.build();
 		
@@ -53,6 +57,7 @@ public class TestCustomTtl extends AeroMapperBaseTest {
 	
 	@Test
 	public void testTtlViaPolicy() {
+        // This test requires positive nsup-period configured
 		WritePolicy writePolicy = new WritePolicy();
 		writePolicy.expiration = 300;
 		AeroMapper mapper = new AeroMapper.Builder(client)
