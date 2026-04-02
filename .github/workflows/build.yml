@@ -32,7 +32,6 @@ jobs:
         with:
           oidc-provider: ${{ secrets.JFROG_OIDC_PROVIDER }}
           oidc-audience: ${{ secrets.JFROG_OIDC_AUDIENCE }}
-          features-content: ${{ vars.AEROSPIKE_CONF }}
 
       # See: https://github.com/actions/cache/blob/master/examples.md#java---maven
       - name: Cache local Maven repository
