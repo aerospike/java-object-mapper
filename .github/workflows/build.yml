@@ -1,4 +1,9 @@
 name: Build project
+
+permissions:
+  id-token: write
+  contents: read
+
 on:
   push:
     branches:
