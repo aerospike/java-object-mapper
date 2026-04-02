@@ -1,6 +1,6 @@
 package com.aerospike.mapper.tools.virtuallist;
 
-import javax.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotNull;
 
 import com.aerospike.client.Operation;
 

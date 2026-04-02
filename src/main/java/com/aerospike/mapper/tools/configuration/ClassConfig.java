@@ -3,7 +3,7 @@ package com.aerospike.mapper.tools.configuration;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotNull;
 
 import com.aerospike.client.AerospikeException;
 import com.aerospike.mapper.annotations.AerospikeEmbed;

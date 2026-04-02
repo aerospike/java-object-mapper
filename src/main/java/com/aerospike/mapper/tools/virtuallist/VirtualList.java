@@ -9,7 +9,7 @@ import com.aerospike.client.policy.WritePolicy;
 import com.aerospike.mapper.tools.ClassCache;
 import com.aerospike.mapper.tools.IAeroMapper;
 
-import javax.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotNull;
 import java.util.List;
 
 public class VirtualList<E> extends BaseVirtualList<E> implements IVirtualList<E> {

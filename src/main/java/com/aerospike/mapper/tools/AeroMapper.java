@@ -23,7 +23,7 @@ import com.aerospike.mapper.tools.converters.MappingConverter;
 import com.aerospike.mapper.tools.utils.MapperUtils;
 import com.aerospike.mapper.tools.virtuallist.VirtualList;
 
-import javax.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotNull;
 import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.List;

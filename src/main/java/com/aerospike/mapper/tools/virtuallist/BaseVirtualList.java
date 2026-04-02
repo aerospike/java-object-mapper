@@ -14,7 +14,7 @@ import com.aerospike.mapper.tools.ValueType;
 import com.aerospike.mapper.tools.mappers.ListMapper;
 import com.aerospike.mapper.tools.utils.TypeUtils;
 
-import javax.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotNull;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
