@@ -10,7 +10,7 @@ import com.aerospike.mapper.tools.ClassCache;
 import com.aerospike.mapper.tools.IReactiveAeroMapper;
 import reactor.core.publisher.Mono;
 
-import javax.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotNull;
 import java.util.List;
 
 public class ReactiveVirtualList<E> extends BaseVirtualList<E> implements IReactiveVirtualList<E> {

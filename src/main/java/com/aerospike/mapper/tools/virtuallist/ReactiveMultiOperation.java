@@ -9,7 +9,7 @@ import com.aerospike.mapper.tools.IReactiveAeroMapper;
 import com.aerospike.mapper.tools.mappers.ListMapper;
 import reactor.core.publisher.Mono;
 
-import javax.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotNull;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
