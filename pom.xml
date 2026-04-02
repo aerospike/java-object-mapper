@@ -36,7 +36,7 @@
         <jackson-databind.version>2.21.2</jackson-databind.version>
         <lombok.version>1.18.44</lombok.version>
         <reactor-test.version>3.8.4</reactor-test.version>
-        <junit-jupiter.version>6.0.3</junit-jupiter.version>
+        <junit-jupiter.version>5.12.2</junit-jupiter.version>
 	</properties>
 
 	<licenses>
