@@ -27,7 +27,6 @@ jobs:
           distribution: 'temurin'
           java-version: 8
 
-      # Aerospike cluster for integration tests (https://github.com/reugn/github-action-aerospike)
       - name: Set up Aerospike Database
         uses: aerospike/shared-workflows/.github/actions/setup-aerospike-server@334ad55b790658d549747b0d154407dfc730acca
         with:
