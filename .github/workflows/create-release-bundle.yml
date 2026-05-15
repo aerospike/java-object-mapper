@@ -1,4 +1,4 @@
-name: Build and release
+name: Build artifact and create release bundle
 
 permissions:
   id-token: write
@@ -37,21 +37,24 @@ jobs:
       version: ${{ steps.extract.outputs.release-version }}
       is-snapshot: ${{ steps.extract.outputs.is-snapshot }}
 
-  build-packages:
+  build-sign-deploy:
     needs: extract-version
-    uses: aerospike/shared-workflows/.github/workflows/reusable_execute-build.yaml@1af48ee617c69f3ee53d4d63fc933eb4b14e7a12
+    uses: aerospike/shared-workflows/.github/workflows/reusable_artifacts-cicd.yaml@1004088a1b5122b9b71a39b40f619f6b50e78d16
     with:
-      runs-on: ${{ vars.BUILD_CONTAINER_DISTRO_VERSION }}
-      jf-project: ${{ vars.JFROG_PROJECT }}
+      gh-artifact-directory: build
+      gh-workflows-ref: 1004088a1b5122b9b71a39b40f619f6b50e78d16
       jf-build-name: java-object-mapper
-      jf-build-id: ${{ github.run_number }}-buildinfo-${{ needs.extract-version.outputs.version }}
-      gh-checkout-path: shared-workflows
-      gh-source-path: java-object-mapper
-      working-directory: java-object-mapper
-      gh-workflows-ref: 1af48ee617c69f3ee53d4d63fc933eb4b14e7a12
+      jf-project: ${{ vars.JFROG_PROJECT }}
+      oidc-audience: ${{ vars.OIDC_AUDIENCE }}
+      oidc-provider-name: ${{ vars.OIDC_PROVIDER_NAME }}
+      version: ${{ needs.extract-version.outputs.version }}
+      jar-group-id: com.aerospike
       setup-java: true
       java-version: 17
       java-distribution: "temurin"
+      gh-source-path: java-object-mapper
+      gh-retention-days: 1
+      runs-on: ${{ vars.BUILD_CONTAINER_DISTRO_VERSION }}
       build-script: |
         # Maven build
         if [ "${{ needs.extract-version.outputs.is-snapshot }}" == "true" ]; then
@@ -95,53 +98,54 @@ jobs:
         fi
         
         ls -lar build/
-      gh-artifact-directory: build
-      gh-artifact-name: build-artifacts-${{ needs.extract-version.outputs.version }}
-      gh-retention-days: 1
-      jf-url: https://artifact.aerospike.io
-      publish-build-info: true
-      oidc-provider-name: ${{ vars.OIDC_PROVIDER_NAME }}
-      oidc-audience: ${{ vars.OIDC_AUDIENCE }}
-
-  sign-artifacts:
-    needs: [ build-packages, extract-version ]
-    uses: aerospike/shared-workflows/.github/workflows/reusable_sign-artifacts.yaml@main
-    with:
-      gh-retention-days: 1
-      gh-artifact-name: signed_build-artifacts-${{ needs.extract-version.outputs.version }}
-      gh-unsigned-artifacts: build-artifacts-${{ needs.extract-version.outputs.version }}
-      gh-workflows-ref: 1af48ee617c69f3ee53d4d63fc933eb4b14e7a12
     secrets:
       gpg-private-key: ${{ secrets.GPG_SECRET_KEY }}
       gpg-public-key: ${{ secrets.GPG_PUBLIC_KEY }}
       gpg-key-pass: ${{ secrets.GPG_PASS }}
 
-  deploy-artifacts:
-    needs: [ sign-artifacts, extract-version ]
-    uses: aerospike/shared-workflows/.github/workflows/reusable_deploy-artifacts.yaml@1af48ee617c69f3ee53d4d63fc933eb4b14e7a12
+  create-release-bundle:
+    needs: [ extract-version, build-sign-deploy ]
+    uses: aerospike/shared-workflows/.github/workflows/reusable_create-release-bundle.yaml@1004088a1b5122b9b71a39b40f619f6b50e78d16
     with:
-      gh-workflows-ref: 1af48ee617c69f3ee53d4d63fc933eb4b14e7a12
       jf-project: ${{ vars.JFROG_PROJECT }}
-      jf-build-name: java-object-mapper
-      jf-metadata-build-id: ${{ github.run_number }}-buildinfo
-      jf-build-id: ${{ github.run_number }}
-      gh-artifact-name: ${{ needs.sign-artifacts.outputs.gh-artifact-name }}
-      jar-group-id: com.aerospike
+      jf-build-names: ${{ needs.build-sign-deploy.outputs.jf-build-name }}:${{ needs.build-sign-deploy.outputs.jf-build-id }}
+      jf-bundle-name: java-object-mapper
+      gh-workflows-ref: 1004088a1b5122b9b71a39b40f619f6b50e78d16
       version: ${{ needs.extract-version.outputs.version }}
-      gh-retention-days: 1
       oidc-provider-name: ${{ vars.OIDC_PROVIDER_NAME }}
       oidc-audience: ${{ vars.OIDC_AUDIENCE }}
       dry-run: false
 
-  create-release-bundle:
-    needs: [ extract-version, deploy-artifacts ]
-    uses: aerospike/shared-workflows/.github/workflows/reusable_create-release-bundle.yaml@main
-    with:
-      jf-project: ${{ vars.JFROG_PROJECT }}
-      jf-build-names: java-object-mapper:${{ github.run_number }}
-      jf-bundle-name: java-object-mapper
-      gh-workflows-ref: 1af48ee617c69f3ee53d4d63fc933eb4b14e7a12
-      version: ${{ needs.extract-version.outputs.version }}
-      oidc-provider-name: ${{ vars.OIDC_PROVIDER_NAME }}
-      oidc-audience: ${{ vars.OIDC_AUDIENCE }}
-      dry-run: false
+  promote-to-dev:
+    needs: [ extract-version, create-release-bundle ]
+    name: Promote to DEV
+    runs-on: ${{ vars.BUILD_CONTAINER_DISTRO_VERSION }}
+    steps:
+      - name: Harden the runner (Audit all outbound calls)
+        uses: step-security/harden-runner@20cf305ff2072d973412fa9b1e3a4f227bda3c76 # v2.14.0
+        with:
+          egress-policy: audit
+
+      - name: Setup JFrog CLI
+        uses: step-security/setup-jfrog-cli@893a92f96c7727242adf0e603c77b1f2a22390e1 # v4.9.1
+        env:
+          JF_URL: ${{ vars.JFROG_PLATFORM_URL }}
+          JF_PROJECT: ${{ vars.JFROG_PROJECT }}
+        with:
+          oidc-provider-name: ${{ vars.OIDC_PROVIDER_NAME }}
+          oidc-audience: ${{ vars.OIDC_AUDIENCE }}
+
+      - name: Check if snapshot build
+        run: |
+          if [[ "${{ needs.extract-version.outputs.is-snapshot }}" == "true" ]]; then
+            echo "Error: this is a SNAPSHOT build. Snapshots are not promoted."
+            exit 1
+          fi
+
+      - name: Promoting release bundle to DEV
+        uses: aerospike/shared-workflows/.github/actions/promote-release-bundle@8ec712eafbec26c8db8d1183688a5fd806560a95 # v3.5.0
+        with:
+          bundle-name: java-object-mapper
+          version: ${{ needs.extract-version.outputs.version }}
+          environment: DEV
+          jf-project: ${{ vars.JFROG_PROJECT }}
