@@ -29,7 +29,7 @@
 		<maven-surefire-plugin.version>3.3.0</maven-surefire-plugin.version>
         <maven-central-publishing-plugin.version>0.10.0</maven-central-publishing-plugin.version>
         <jakarta.validation-api.version>3.1.1</jakarta.validation-api.version>
-        <aerospike-client-jdk8.version>10.0.0</aerospike-client-jdk8.version>
+        <aerospike-client-jdk8.version>10.1.0</aerospike-client-jdk8.version>
         <aerospike-reactor.version>10.0.0</aerospike-reactor.version>
         <commons-lang3.version>3.20.0</commons-lang3.version>
         <snakeyaml.version>2.6</snakeyaml.version>
@@ -162,7 +162,7 @@
 					<doctitle>Aerospike Java Object Mapper</doctitle>
 					<show>public</show>
 					<splitindex>true</splitindex>
-					<bottom>Copyright &#169; 2020&#x2013;{currentYear} Aerospike, Inc. All rights reserved.</bottom>
+					<bottom>Copyright © 2020–{currentYear} Aerospike, Inc. All rights reserved.</bottom>
 					<sourcepath>${basedir}/src/main/java</sourcepath>
 					<source>1.8</source>
 				</configuration>
