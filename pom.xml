@@ -32,7 +32,7 @@
         <aerospike-client-jdk8.version>10.4.0</aerospike-client-jdk8.version>
         <aerospike-reactor.version>10.4.0</aerospike-reactor.version>
         <commons-lang3.version>3.20.0</commons-lang3.version>
-        <snakeyaml.version>2.6</snakeyaml.version>
+        <snakeyaml.version>2.7</snakeyaml.version>
         <jackson-databind.version>2.22.1</jackson-databind.version>
         <lombok.version>1.18.46</lombok.version>
         <reactor-test.version>3.8.6</reactor-test.version>
@@ -162,7 +162,7 @@
 					<doctitle>Aerospike Java Object Mapper</doctitle>
 					<show>public</show>
 					<splitindex>true</splitindex>
-					<bottom>Copyright &#169; 2020&#x2013;{currentYear} Aerospike, Inc. All rights reserved.</bottom>
+					<bottom>Copyright © 2020–{currentYear} Aerospike, Inc. All rights reserved.</bottom>
 					<sourcepath>${basedir}/src/main/java</sourcepath>
 					<source>1.8</source>
 				</configuration>
